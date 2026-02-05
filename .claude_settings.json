@@ -1,0 +1,39 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/**)",
+      "Write(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/**)",
+      "Edit(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/**)",
+      "Glob(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/**)",
+      "Grep(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/**)",
+      "Read(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/.auto-claude/specs/001-/**)",
+      "Write(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/.auto-claude/specs/001-/**)",
+      "Edit(/Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-/.auto-claude/specs/001-/**)",
+      "Read(/Users/theo/theo_repo/matrix/.auto-claude/**)",
+      "Write(/Users/theo/theo_repo/matrix/.auto-claude/**)",
+      "Edit(/Users/theo/theo_repo/matrix/.auto-claude/**)",
+      "Glob(/Users/theo/theo_repo/matrix/.auto-claude/**)",
+      "Grep(/Users/theo/theo_repo/matrix/.auto-claude/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
