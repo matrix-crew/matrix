@@ -72,10 +72,9 @@ async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
     // Configure python-shell options
     const options = {
       mode: 'json' as const, // Parse stdin/stdout as JSON
-      pythonPath: 'uv', // Use uv to run Python (ensures correct venv)
+      pythonPath: 'uv run python', // Full command to execute Python via uv (ensures correct venv)
       pythonOptions: ['-u'], // Unbuffered output for real-time communication
-      scriptPath: join(__dirname, '../../packages/python-core/src'),
-      args: ['run', 'python'] // uv run python
+      scriptPath: join(__dirname, '../../packages/python-core/src')
     }
 
     // Create python shell instance
