@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { setupIPCHandlers } from './ipc'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -40,6 +41,9 @@ function createWindow(): void {
 
 // App lifecycle handlers
 app.whenReady().then(() => {
+  // Initialize IPC handlers for Python backend communication
+  setupIPCHandlers()
+
   createWindow()
 
   app.on('activate', () => {
