@@ -23,8 +23,11 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
+  "files": [
+    "src/index.ts"
+  ],
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
