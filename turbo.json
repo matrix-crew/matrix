@@ -6,6 +6,7 @@
       "outputs": ["dist/**", "out/**", ".vite/**", "build/**"]
     },
     "dev": {
+      "dependsOn": ["build"],
       "cache": false,
       "persistent": true
     },
