@@ -72,7 +72,7 @@ This installs all workspace dependencies including:
 ### 3. Set Up Python Environment
 
 ```bash
-cd packages/python-core
+cd packages/core
 uv sync
 cd ../..
 ```
@@ -92,7 +92,7 @@ Expected output: All TypeScript files compile without errors.
 ### 5. Test Python Backend Standalone
 
 ```bash
-cd packages/python-core
+cd packages/core
 uv run python src/main.py
 ```
 
@@ -128,7 +128,7 @@ Send a JSON message directly:
 pnpm dev
 
 # Terminal 2: Send a test message (while app is running)
-echo '{"type":"ping"}' | uv run python packages/python-core/src/main.py
+echo '{"type":"ping"}' | uv run python packages/core/src/main.py
 ```
 
 Expected output: `{"success":true,"data":{"message":"pong"}}`
@@ -156,7 +156,7 @@ maxtix/
 │       └── electron.vite.config.ts
 │
 ├── packages/
-│   ├── python-core/          # Python backend
+│   ├── core/          # Python backend
 │   │   ├── src/
 │   │   │   ├── main.py       # Entry point with IPC processing
 │   │   │   └── ipc/
@@ -220,15 +220,15 @@ pnpm build
 
 ```bash
 # Run Python backend standalone
-cd packages/python-core
+cd packages/core
 uv run python src/main.py
 
 # Run tests
-cd packages/python-core
+cd packages/core
 uv run pytest
 
 # Lint Python code
-cd packages/python-core
+cd packages/core
 uv run ruff check src/
 ```
 
@@ -330,7 +330,7 @@ Ensures all TypeScript files compile correctly with strict mode enabled.
 ### Python Tests
 
 ```bash
-cd packages/python-core
+cd packages/core
 uv run pytest
 ```
 
@@ -381,7 +381,7 @@ cd apps/desktop
 
 ```bash
 # Ensure Python dependencies are synced
-cd packages/python-core
+cd packages/core
 uv sync
 cd ../..
 ```
@@ -411,7 +411,7 @@ pnpm type-check
 
 ### Adding a New IPC Handler
 
-1. **Python side** (`packages/python-core/src/ipc/handler.py`):
+1. **Python side** (`packages/core/src/ipc/handler.py`):
 
 ```python
 def handle_message(message: dict[str, Any]) -> dict[str, Any]:
