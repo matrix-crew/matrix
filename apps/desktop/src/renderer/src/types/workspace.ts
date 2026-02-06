@@ -218,7 +218,7 @@ export interface IssuesViewState {
 }
 
 // ============================================================================
-// Pull Request Types (for future use)
+// Pull Request Types
 // ============================================================================
 
 /**
@@ -298,6 +298,52 @@ export interface PullRequest {
   mergedAt?: Date;
   /** Close date (if closed without merge) */
   closedAt?: Date;
+}
+
+/**
+ * Pull request filter options
+ */
+export interface PRFilter {
+  /** Filter by repository */
+  repositoryId?: string;
+  /** Filter by PR state */
+  state?: PRState;
+  /** Filter by CI status */
+  ciStatus?: PRCIStatus;
+  /** Search query for PR title or body */
+  searchQuery?: string;
+  /** Filter by label name */
+  labelName?: string;
+  /** Show only PRs authored by current user */
+  authoredByMe?: boolean;
+  /** Show only PRs where current user is reviewer */
+  reviewRequestedFromMe?: boolean;
+  /** Show only draft PRs */
+  isDraft?: boolean;
+  /** Show only PRs with conflicts */
+  hasConflicts?: boolean;
+}
+
+/**
+ * Pull requests view state
+ */
+export interface PRsViewState {
+  /** All pull requests from matrix repositories */
+  pullRequests: PullRequest[];
+  /** All repositories in the matrix */
+  repositories: Repository[];
+  /** Currently selected repository filter */
+  selectedRepositoryId: string | null;
+  /** Current filter options */
+  filter: PRFilter;
+  /** Currently selected PR ID */
+  selectedPRId: string | null;
+  /** Whether data is loading */
+  isLoading: boolean;
+  /** Error message if any */
+  errorMessage: string | null;
+  /** Current user (for author/reviewer filtering) */
+  currentUser: string;
 }
 
 // ============================================================================
@@ -928,6 +974,451 @@ export function createInitialIssuesState(): IssuesViewState {
     selectedRepositoryId: null,
     filter: {},
     selectedIssueId: null,
+    isLoading: false,
+    errorMessage: null,
+    currentUser: 'theo',
+  };
+}
+
+// ============================================================================
+// Pull Request Helper Functions
+// ============================================================================
+
+/**
+ * Create a new pull request object
+ *
+ * @param title - PR title
+ * @param repository - Repository the PR belongs to
+ * @param options - Additional PR options
+ * @returns A new PullRequest object
+ */
+export function createPullRequest(
+  title: string,
+  repository: Repository,
+  options: Partial<Omit<PullRequest, 'id' | 'title' | 'repository'>> = {}
+): PullRequest {
+  return {
+    id: crypto.randomUUID(),
+    number: options.number ?? Math.floor(Math.random() * 1000) + 1,
+    title,
+    body: options.body ?? '',
+    repository,
+    state: options.state ?? 'open',
+    sourceBranch: options.sourceBranch ?? 'feature/branch',
+    targetBranch: options.targetBranch ?? repository.defaultBranch,
+    author: options.author ?? 'developer',
+    labels: options.labels ?? [],
+    reviewers: options.reviewers ?? [],
+    reviews: options.reviews ?? [],
+    ciStatus: options.ciStatus ?? 'pending',
+    isDraft: options.isDraft ?? false,
+    hasConflicts: options.hasConflicts ?? false,
+    commitCount: options.commitCount ?? 1,
+    filesChanged: options.filesChanged ?? 1,
+    additions: options.additions ?? 0,
+    deletions: options.deletions ?? 0,
+    createdAt: options.createdAt ?? new Date(),
+    updatedAt: options.updatedAt ?? new Date(),
+    mergedAt: options.mergedAt,
+    closedAt: options.closedAt,
+  };
+}
+
+/**
+ * Get PR state color class
+ *
+ * @param state - PR state
+ * @returns Tailwind CSS color class
+ */
+export function getPRStateColorClass(state: PRState): string {
+  switch (state) {
+    case 'open':
+      return 'text-green-500';
+    case 'merged':
+      return 'text-purple-500';
+    case 'closed':
+      return 'text-red-500';
+    default:
+      return 'text-gray-500';
+  }
+}
+
+/**
+ * Get PR state background class
+ *
+ * @param state - PR state
+ * @returns Tailwind CSS background color class
+ */
+export function getPRStateBgClass(state: PRState): string {
+  switch (state) {
+    case 'open':
+      return 'bg-green-100 dark:bg-green-900/30';
+    case 'merged':
+      return 'bg-purple-100 dark:bg-purple-900/30';
+    case 'closed':
+      return 'bg-red-100 dark:bg-red-900/30';
+    default:
+      return 'bg-gray-100 dark:bg-gray-700';
+  }
+}
+
+/**
+ * Get PR CI status color class
+ *
+ * @param status - CI status
+ * @returns Tailwind CSS color class
+ */
+export function getPRCIStatusColorClass(status: PRCIStatus): string {
+  switch (status) {
+    case 'success':
+      return 'text-green-500';
+    case 'failure':
+      return 'text-red-500';
+    case 'running':
+      return 'text-yellow-500';
+    case 'pending':
+      return 'text-gray-500';
+    case 'cancelled':
+      return 'text-gray-400';
+    default:
+      return 'text-gray-500';
+  }
+}
+
+/**
+ * Get PR CI status background class
+ *
+ * @param status - CI status
+ * @returns Tailwind CSS background color class
+ */
+export function getPRCIStatusBgClass(status: PRCIStatus): string {
+  switch (status) {
+    case 'success':
+      return 'bg-green-100 dark:bg-green-900/30';
+    case 'failure':
+      return 'bg-red-100 dark:bg-red-900/30';
+    case 'running':
+      return 'bg-yellow-100 dark:bg-yellow-900/30';
+    case 'pending':
+      return 'bg-gray-100 dark:bg-gray-700';
+    case 'cancelled':
+      return 'bg-gray-100 dark:bg-gray-700';
+    default:
+      return 'bg-gray-100 dark:bg-gray-700';
+  }
+}
+
+/**
+ * Get PR CI status text
+ *
+ * @param status - CI status
+ * @returns Human-readable status text
+ */
+export function getPRCIStatusText(status: PRCIStatus): string {
+  switch (status) {
+    case 'success':
+      return 'Passing';
+    case 'failure':
+      return 'Failing';
+    case 'running':
+      return 'Running';
+    case 'pending':
+      return 'Pending';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return 'Unknown';
+  }
+}
+
+/**
+ * Get PR review summary
+ *
+ * @param reviews - Array of reviews
+ * @returns Review summary object
+ */
+export function getPRReviewSummary(reviews: PRReview[]): {
+  approved: number;
+  changesRequested: number;
+  commented: number;
+  pending: number;
+} {
+  return reviews.reduce(
+    (acc, review) => {
+      switch (review.state) {
+        case 'approved':
+          acc.approved++;
+          break;
+        case 'changes_requested':
+          acc.changesRequested++;
+          break;
+        case 'commented':
+          acc.commented++;
+          break;
+        case 'pending':
+          acc.pending++;
+          break;
+      }
+      return acc;
+    },
+    { approved: 0, changesRequested: 0, commented: 0, pending: 0 }
+  );
+}
+
+/**
+ * Filter pull requests based on filter options
+ *
+ * @param pullRequests - Array of pull requests to filter
+ * @param filter - Filter options
+ * @param currentUser - Current user for author/reviewer filtering
+ * @returns Filtered pull requests
+ */
+export function filterPRs(
+  pullRequests: PullRequest[],
+  filter: PRFilter,
+  currentUser: string = ''
+): PullRequest[] {
+  return pullRequests.filter((pr) => {
+    if (filter.repositoryId && pr.repository.id !== filter.repositoryId) {
+      return false;
+    }
+    if (filter.state && pr.state !== filter.state) {
+      return false;
+    }
+    if (filter.ciStatus && pr.ciStatus !== filter.ciStatus) {
+      return false;
+    }
+    if (filter.searchQuery) {
+      const query = filter.searchQuery.toLowerCase();
+      if (
+        !pr.title.toLowerCase().includes(query) &&
+        !pr.body.toLowerCase().includes(query)
+      ) {
+        return false;
+      }
+    }
+    if (filter.labelName) {
+      const hasLabel = pr.labels.some(
+        (label) => label.name.toLowerCase() === filter.labelName?.toLowerCase()
+      );
+      if (!hasLabel) {
+        return false;
+      }
+    }
+    if (filter.authoredByMe && pr.author !== currentUser) {
+      return false;
+    }
+    if (filter.reviewRequestedFromMe && !pr.reviewers.includes(currentUser)) {
+      return false;
+    }
+    if (filter.isDraft !== undefined && pr.isDraft !== filter.isDraft) {
+      return false;
+    }
+    if (filter.hasConflicts && !pr.hasConflicts) {
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Group pull requests by repository
+ *
+ * @param pullRequests - Array of pull requests
+ * @returns Pull requests grouped by repository
+ */
+export function groupPRsByRepository(
+  pullRequests: PullRequest[]
+): Record<string, PullRequest[]> {
+  return pullRequests.reduce(
+    (acc, pr) => {
+      const repoId = pr.repository.id;
+      if (!acc[repoId]) {
+        acc[repoId] = [];
+      }
+      acc[repoId].push(pr);
+      return acc;
+    },
+    {} as Record<string, PullRequest[]>
+  );
+}
+
+/**
+ * Create initial pull requests view state with sample data
+ *
+ * @returns Initial PRsViewState with sample data
+ */
+export function createInitialPRsState(): PRsViewState {
+  // Sample repositories
+  const repositories: Repository[] = [
+    createRepository('matrix', 'theo'),
+    createRepository('desktop', 'theo'),
+    createRepository('shared', 'theo'),
+  ];
+
+  // Sample labels
+  const bugLabel: IssueLabel = { name: 'bug', color: '#d73a4a', description: 'Something is not working' };
+  const featureLabel: IssueLabel = { name: 'enhancement', color: '#a2eeef', description: 'New feature or request' };
+  const docsLabel: IssueLabel = { name: 'documentation', color: '#0075ca', description: 'Improvements to documentation' };
+  const reviewNeededLabel: IssueLabel = { name: 'review needed', color: '#fbca04', description: 'Needs review' };
+
+  // Sample pull requests for each repository
+  const pullRequests: PullRequest[] = [
+    // Matrix repo PRs
+    createPullRequest('feat: Add workspace tab navigation', repositories[0], {
+      number: 123,
+      body: 'This PR implements the workspace tab navigation feature, allowing users to switch between branches, issues, and PRs views.',
+      state: 'open',
+      sourceBranch: 'feature/workspace-tabs',
+      targetBranch: 'main',
+      author: 'developer',
+      labels: [featureLabel, reviewNeededLabel],
+      reviewers: ['theo', 'contributor'],
+      reviews: [
+        { reviewer: 'theo', state: 'approved', submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+      ],
+      ciStatus: 'success',
+      commitCount: 5,
+      filesChanged: 12,
+      additions: 450,
+      deletions: 23,
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+    }),
+    createPullRequest('fix: Resolve IPC timeout issue', repositories[0], {
+      number: 124,
+      body: 'Fixes the IPC timeout issue that was causing messages to be dropped under heavy load.',
+      state: 'open',
+      sourceBranch: 'fix/ipc-handler',
+      targetBranch: 'main',
+      author: 'contributor',
+      labels: [bugLabel],
+      reviewers: ['developer'],
+      reviews: [
+        { reviewer: 'developer', state: 'changes_requested', submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      ],
+      ciStatus: 'failure',
+      hasConflicts: true,
+      commitCount: 2,
+      filesChanged: 3,
+      additions: 45,
+      deletions: 12,
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    }),
+    createPullRequest('chore: Update dependencies to latest versions', repositories[0], {
+      number: 120,
+      body: 'Updates all dependencies to their latest versions.',
+      state: 'merged',
+      sourceBranch: 'chore/update-deps',
+      targetBranch: 'main',
+      author: 'theo',
+      labels: [],
+      reviewers: ['developer'],
+      reviews: [
+        { reviewer: 'developer', state: 'approved', submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+      ],
+      ciStatus: 'success',
+      commitCount: 1,
+      filesChanged: 2,
+      additions: 120,
+      deletions: 98,
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      mergedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    }),
+
+    // Desktop repo PRs
+    createPullRequest('feat: Implement dark mode toggle', repositories[1], {
+      number: 456,
+      body: 'Adds a toggle in the settings panel to switch between light and dark mode.',
+      state: 'open',
+      sourceBranch: 'feature/dark-mode',
+      targetBranch: 'main',
+      author: 'designer',
+      labels: [featureLabel],
+      reviewers: ['theo', 'developer'],
+      reviews: [],
+      ciStatus: 'running',
+      isDraft: true,
+      commitCount: 8,
+      filesChanged: 15,
+      additions: 320,
+      deletions: 45,
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+    }),
+    createPullRequest('refactor: Extract common components', repositories[1], {
+      number: 455,
+      body: 'Refactors the codebase to extract common UI components into a shared module.',
+      state: 'open',
+      sourceBranch: 'refactor/components',
+      targetBranch: 'main',
+      author: 'developer',
+      labels: [reviewNeededLabel],
+      reviewers: ['theo'],
+      reviews: [
+        { reviewer: 'theo', state: 'commented', submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+      ],
+      ciStatus: 'success',
+      commitCount: 12,
+      filesChanged: 28,
+      additions: 890,
+      deletions: 650,
+      createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    }),
+
+    // Shared repo PRs
+    createPullRequest('feat: Add utility functions for date formatting', repositories[2], {
+      number: 12,
+      body: 'Adds a comprehensive set of utility functions for consistent date formatting.',
+      state: 'open',
+      sourceBranch: 'feature/utils',
+      targetBranch: 'main',
+      author: 'developer',
+      labels: [featureLabel],
+      reviewers: ['theo'],
+      reviews: [
+        { reviewer: 'theo', state: 'approved', submittedAt: new Date(Date.now() - 4 * 60 * 60 * 1000) },
+      ],
+      ciStatus: 'success',
+      commitCount: 3,
+      filesChanged: 4,
+      additions: 156,
+      deletions: 0,
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+    }),
+    createPullRequest('docs: Update README with usage examples', repositories[2], {
+      number: 11,
+      body: 'Updates the README with comprehensive usage examples for all exported utilities.',
+      state: 'merged',
+      sourceBranch: 'docs/readme',
+      targetBranch: 'main',
+      author: 'theo',
+      labels: [docsLabel],
+      reviewers: ['developer'],
+      reviews: [
+        { reviewer: 'developer', state: 'approved', submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
+      ],
+      ciStatus: 'success',
+      commitCount: 1,
+      filesChanged: 1,
+      additions: 85,
+      deletions: 12,
+      createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      mergedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+    }),
+  ];
+
+  return {
+    pullRequests,
+    repositories,
+    selectedRepositoryId: null,
+    filter: {},
+    selectedPRId: null,
     isLoading: false,
     errorMessage: null,
     currentUser: 'theo',
