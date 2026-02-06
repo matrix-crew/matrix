@@ -30,11 +30,14 @@
   },
   "include": [
     "src/renderer/src/**/*",
-    "src/preload/index.d.ts"
+    "src/preload/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "out"
+  ],
+  "references": [
+    { "path": "./tsconfig.node.json" }
   ]
 }

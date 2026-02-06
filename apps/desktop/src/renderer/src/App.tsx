@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@maxtix/ui';
+import { Button } from '@/components/ui/button';
 import type { IPCResponse } from '@maxtix/shared';
 
 /**

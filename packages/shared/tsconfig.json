@@ -12,6 +12,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "composite": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -21,6 +23,9 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
+  "files": [
+    "src/index.ts"
+  ],
   "include": [
     "src/**/*.ts"
   ],

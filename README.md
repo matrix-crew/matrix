@@ -53,8 +53,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 1. Clone and Navigate to Project
 
 ```bash
-git clone https://github.com/matrix-crew/matrix
-cd matrix
+cd /Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-
 ```
 
 ### 2. Install Node Dependencies
@@ -73,7 +72,7 @@ This installs all workspace dependencies including:
 ### 3. Set Up Python Environment
 
 ```bash
-cd packages/core
+cd packages/python-core
 uv sync
 cd ../..
 ```
@@ -93,7 +92,7 @@ Expected output: All TypeScript files compile without errors.
 ### 5. Test Python Backend Standalone
 
 ```bash
-cd packages/core
+cd packages/python-core
 uv run python src/main.py
 ```
 
@@ -129,7 +128,7 @@ Send a JSON message directly:
 pnpm dev
 
 # Terminal 2: Send a test message (while app is running)
-echo '{"type":"ping"}' | uv run python packages/core/src/main.py
+echo '{"type":"ping"}' | uv run python packages/python-core/src/main.py
 ```
 
 Expected output: `{"success":true,"data":{"message":"pong"}}`
@@ -150,11 +149,14 @@ maxtix/
 │       │       └── src/
 │       │           ├── App.tsx
 │       │           ├── main.tsx
-│       │           └── index.css
+│       │           ├── index.css
+│       │           └── components/
+│       │               └── ui/
+│       │                   └── button.tsx
 │       └── electron.vite.config.ts
 │
 ├── packages/
-│   ├── core/                 # Python backend
+│   ├── python-core/          # Python backend
 │   │   ├── src/
 │   │   │   ├── main.py       # Entry point with IPC processing
 │   │   │   └── ipc/
@@ -162,21 +164,11 @@ maxtix/
 │   │   │       └── handler.py # Message routing & processing
 │   │   └── pyproject.toml
 │   │
-│   ├── shared/               # Shared TypeScript types
-│   │   ├── src/
-│   │   │   ├── index.ts      # Type exports
-│   │   │   └── types/
-│   │   │       └── ipc.ts    # IPCMessage, IPCResponse types
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   │
-│   └── ui/                   # Shared UI components
+│   └── shared/               # Shared types
 │       ├── src/
-│       │   ├── index.ts      # Component exports
-│       │   ├── components/   # React components
-│       │   │   └── ui/       # shadcn/ui components
-│       │   └── lib/
-│       │       └── utils.ts  # Utility functions (cn, etc.)
+│       │   ├── index.ts      # Type exports
+│       │   └── types/
+│       │       └── ipc.ts    # IPCMessage, IPCResponse types
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -201,8 +193,9 @@ pnpm dev
 # Type checking
 pnpm type-check
 
-# Linting
+# Linting and formatting
 pnpm lint
+pnpm format
 
 # Clean build artifacts
 pnpm clean
@@ -227,15 +220,15 @@ pnpm build
 
 ```bash
 # Run Python backend standalone
-cd packages/core
+cd packages/python-core
 uv run python src/main.py
 
 # Run tests
-cd packages/core
+cd packages/python-core
 uv run pytest
 
 # Lint Python code
-cd packages/core
+cd packages/python-core
 uv run ruff check src/
 ```
 
@@ -337,7 +330,7 @@ Ensures all TypeScript files compile correctly with strict mode enabled.
 ### Python Tests
 
 ```bash
-cd packages/core
+cd packages/python-core
 uv run pytest
 ```
 
@@ -388,7 +381,7 @@ cd apps/desktop
 
 ```bash
 # Ensure Python dependencies are synced
-cd packages/core
+cd packages/python-core
 uv sync
 cd ../..
 ```
@@ -418,7 +411,7 @@ pnpm type-check
 
 ### Adding a New IPC Handler
 
-1. **Python side** (`packages/core/src/ipc/handler.py`):
+1. **Python side** (`packages/python-core/src/ipc/handler.py`):
 
 ```python
 def handle_message(message: dict[str, Any]) -> dict[str, Any]:
@@ -492,6 +485,7 @@ NODE_ENV=development
 
 ### Code Style
 
+- Use Prettier for formatting: `pnpm format`
 - Use ESLint for linting: `pnpm lint`
 - Follow TypeScript strict mode
 - Add docstrings and JSDoc comments
