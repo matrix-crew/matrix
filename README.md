@@ -50,13 +50,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ## 🚀 Quick Start
 
-### 1. Clone and Navigate to Project
-
-```bash
-cd /Users/theo/theo_repo/matrix/.auto-claude/worktrees/tasks/001-
-```
-
-### 2. Install Node Dependencies
+### 1. Install Node Dependencies
 
 ```bash
 pnpm install
@@ -69,7 +63,7 @@ This installs all workspace dependencies including:
 - shadcn/ui components
 - And all development tools
 
-### 3. Set Up Python Environment
+### 2. Set Up Python Environment
 
 ```bash
 cd packages/core
@@ -81,7 +75,7 @@ This creates a Python virtual environment and installs dependencies:
 - pytest (testing framework)
 - ruff (linter)
 
-### 4. Verify Type Checking
+### 3. Verify Type Checking
 
 ```bash
 pnpm type-check
@@ -89,7 +83,7 @@ pnpm type-check
 
 Expected output: All TypeScript files compile without errors.
 
-### 5. Test Python Backend Standalone
+### 4. Test Python Backend Standalone
 
 ```bash
 cd packages/core
@@ -98,7 +92,7 @@ uv run python src/main.py
 
 Expected output: `OK`
 
-### 6. Start Development
+### 5. Start Development
 
 ```bash
 pnpm dev
