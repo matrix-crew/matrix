@@ -4,6 +4,7 @@ import { TabNavigation, type TabId } from '@/components/layout/TabNavigation';
 import { TabPanel } from '@/components/layout/TabPanel';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
+import { ConsoleManager } from '@/components/agent/ConsoleManager';
 import type { IPCResponse } from '@maxtix/shared';
 
 /**
@@ -60,21 +61,68 @@ const WorkflowTabContent: React.FC = () => {
 };
 
 /**
- * Placeholder component for Agent tab content
- * Will be replaced with Console and MCP Control components
+ * Agent sub-tab type
  */
-const AgentTabContent: React.FC = () => (
-  <div className="flex h-full items-center justify-center">
-    <div className="text-center">
-      <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-        Agent Tab
-      </h2>
-      <p className="mt-2 text-gray-600 dark:text-gray-400">
-        Console Terminal and MCP Control coming soon
-      </p>
+type AgentSubTab = 'console' | 'mcp';
+
+/**
+ * Agent tab content with Console terminal manager and MCP Control
+ * Users can switch between Console and MCP views using sub-tabs
+ */
+const AgentTabContent: React.FC = () => {
+  const [activeSubTab, setActiveSubTab] = useState<AgentSubTab>('console');
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Sub-tab navigation */}
+      <div className="mb-4 flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('console')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'console'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'console'}
+          role="tab"
+        >
+          Console
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('mcp')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'mcp'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'mcp'}
+          role="tab"
+        >
+          MCP Control
+        </button>
+      </div>
+
+      {/* Sub-tab content */}
+      <div className="flex-1 overflow-hidden">
+        {activeSubTab === 'console' && <ConsoleManager />}
+        {activeSubTab === 'mcp' && (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                MCP Control
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Visual MCP control interface coming soon
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * Placeholder component for Workspace tab content
