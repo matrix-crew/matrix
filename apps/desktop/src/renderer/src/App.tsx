@@ -6,6 +6,7 @@ import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import { ConsoleManager } from '@/components/agent/ConsoleManager';
 import { MCPControl } from '@/components/agent/MCPControl';
+import { BranchesView } from '@/components/workspace/BranchesView';
 import type { IPCResponse } from '@maxtix/shared';
 
 /**
@@ -115,48 +116,120 @@ const AgentTabContent: React.FC = () => {
 };
 
 /**
- * Placeholder component for Workspace tab content
- * Will be replaced with Branches, Issues, and PRs views
+ * Workspace sub-tab type
+ */
+type WorkspaceSubTab = 'branches' | 'issues' | 'prs';
+
+/**
+ * Workspace tab content with Branches, Issues, and PRs views
+ * Users can switch between views using sub-tabs
  */
 const WorkspaceTabContent: React.FC<{
   ipcResponse: IPCResponse | null;
   isLoading: boolean;
   onTestIPC: () => void;
-}> = ({ ipcResponse, isLoading, onTestIPC }) => (
-  <div className="flex h-full flex-col items-center justify-center">
-    <div className="text-center">
-      <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-        Workspace Tab
-      </h2>
-      <p className="mt-2 text-gray-600 dark:text-gray-400">
-        Branches, Issues, and PRs views coming soon
-      </p>
+}> = ({ ipcResponse, isLoading, onTestIPC }) => {
+  const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTab>('branches');
 
-      {/* IPC Test Section - temporary for development */}
-      <div className="mt-8 space-y-4">
-        <Button onClick={onTestIPC} disabled={isLoading}>
-          {isLoading ? 'Testing IPC...' : 'Test IPC Connection'}
-        </Button>
+  return (
+    <div className="flex h-full flex-col">
+      {/* Sub-tab navigation */}
+      <div className="mb-4 flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('branches')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'branches'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'branches'}
+          role="tab"
+        >
+          Branches
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('issues')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'issues'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'issues'}
+          role="tab"
+        >
+          Issues
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('prs')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'prs'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'prs'}
+          role="tab"
+        >
+          Pull Requests
+        </button>
+      </div>
 
-        {/* Display IPC Response */}
-        {ipcResponse && (
-          <div className="mx-auto max-w-md rounded-md border border-gray-200 bg-white p-4 text-left dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-2 font-semibold">
-              {ipcResponse.success ? (
-                <span className="text-green-600 dark:text-green-400">Success</span>
-              ) : (
-                <span className="text-red-600 dark:text-red-400">Error</span>
-              )}
+      {/* Sub-tab content */}
+      <div className="flex-1 overflow-hidden">
+        {activeSubTab === 'branches' && <BranchesView />}
+        {activeSubTab === 'issues' && (
+          <div className="flex h-full flex-col items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                Issues View
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Aggregated issues view coming soon
+              </p>
             </div>
-            <pre className="overflow-auto text-sm text-gray-700 dark:text-gray-300">
-              {JSON.stringify(ipcResponse, null, 2)}
-            </pre>
+          </div>
+        )}
+        {activeSubTab === 'prs' && (
+          <div className="flex h-full flex-col items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                Pull Requests View
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Aggregated PRs view coming soon
+              </p>
+
+              {/* IPC Test Section - temporary for development */}
+              <div className="mt-8 space-y-4">
+                <Button onClick={onTestIPC} disabled={isLoading}>
+                  {isLoading ? 'Testing IPC...' : 'Test IPC Connection'}
+                </Button>
+
+                {/* Display IPC Response */}
+                {ipcResponse && (
+                  <div className="mx-auto max-w-md rounded-md border border-gray-200 bg-white p-4 text-left dark:border-gray-700 dark:bg-gray-800">
+                    <div className="mb-2 font-semibold">
+                      {ipcResponse.success ? (
+                        <span className="text-green-600 dark:text-green-400">Success</span>
+                      ) : (
+                        <span className="text-red-600 dark:text-red-400">Error</span>
+                      )}
+                    </div>
+                    <pre className="overflow-auto text-sm text-gray-700 dark:text-gray-300">
+                      {JSON.stringify(ipcResponse, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * Main App component for Maxtix desktop application
