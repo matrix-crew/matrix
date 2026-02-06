@@ -13,7 +13,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

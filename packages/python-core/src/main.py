@@ -9,7 +9,7 @@ import json
 import sys
 from typing import Any
 
-from .ipc.handler import handle_message
+from ipc.handler import handle_message
 
 
 def main() -> None:
