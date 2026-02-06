@@ -5,6 +5,7 @@ import { TabPanel } from '@/components/layout/TabPanel';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import { ConsoleManager } from '@/components/agent/ConsoleManager';
+import { MCPControl } from '@/components/agent/MCPControl';
 import type { IPCResponse } from '@maxtix/shared';
 
 /**
@@ -107,18 +108,7 @@ const AgentTabContent: React.FC = () => {
       {/* Sub-tab content */}
       <div className="flex-1 overflow-hidden">
         {activeSubTab === 'console' && <ConsoleManager />}
-        {activeSubTab === 'mcp' && (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                MCP Control
-              </h2>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Visual MCP control interface coming soon
-              </p>
-            </div>
-          </div>
-        )}
+        {activeSubTab === 'mcp' && <MCPControl />}
       </div>
     </div>
   );
