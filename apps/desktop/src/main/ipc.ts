@@ -30,7 +30,7 @@ export function setupIPCHandlers(): void {
    * 3. Waits for Python response
    * 4. Returns IPCResponse back to renderer
    */
-  ipcMain.handle('ipc:send-to-python', async (_event: unknown, message: IPCMessage): Promise<IPCResponse> => {
+  ipcMain.handle('ipc:send-to-python', async (_event, message: IPCMessage): Promise<IPCResponse> => {
     try {
       // Validate message structure
       if (!message || typeof message.type !== 'string') {
@@ -69,16 +69,12 @@ export function setupIPCHandlers(): void {
  */
 async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
   return new Promise((resolve, reject) => {
-    // Determine Python script path
-    // __dirname is always /path/to/apps/desktop/out/main (even in dev mode with electron-vite)
-    const pythonScriptPath = join(__dirname, '../../../../packages/core/src')
-
     // Configure python-shell options
     const options = {
       mode: 'json' as const, // Parse stdin/stdout as JSON
-      pythonPath: 'uv', // Use uv package manager
-      pythonOptions: ['run', 'python', '-u'], // Run Python via uv with unbuffered output
-      scriptPath: pythonScriptPath
+      pythonPath: 'uv run python', // Full command to execute Python via uv (ensures correct venv)
+      pythonOptions: ['-u'], // Unbuffered output for real-time communication
+      scriptPath: join(__dirname, '../../packages/core/src')
     }
 
     // Create python shell instance
