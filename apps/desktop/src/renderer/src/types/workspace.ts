@@ -116,7 +116,7 @@ export interface BranchesViewState {
 }
 
 // ============================================================================
-// Issue Types (for future use)
+// Issue Types
 // ============================================================================
 
 /**
@@ -173,6 +173,48 @@ export interface Issue {
   closedAt?: Date;
   /** Number of comments */
   commentCount: number;
+}
+
+/**
+ * Issue filter options
+ */
+export interface IssueFilter {
+  /** Filter by repository */
+  repositoryId?: string;
+  /** Filter by issue state */
+  state?: IssueState;
+  /** Filter by priority */
+  priority?: IssuePriority;
+  /** Search query for issue title or body */
+  searchQuery?: string;
+  /** Filter by label name */
+  labelName?: string;
+  /** Show only issues assigned to current user */
+  assignedToMe?: boolean;
+  /** Show only issues created by current user */
+  createdByMe?: boolean;
+}
+
+/**
+ * Issues view state
+ */
+export interface IssuesViewState {
+  /** All issues from matrix repositories */
+  issues: Issue[];
+  /** All repositories in the matrix */
+  repositories: Repository[];
+  /** Currently selected repository filter */
+  selectedRepositoryId: string | null;
+  /** Current filter options */
+  filter: IssueFilter;
+  /** Currently selected issue ID */
+  selectedIssueId: string | null;
+  /** Whether data is loading */
+  isLoading: boolean;
+  /** Error message if any */
+  errorMessage: string | null;
+  /** Current user (for assignee filtering) */
+  currentUser: string;
 }
 
 // ============================================================================
@@ -532,5 +574,362 @@ export function createInitialBranchesState(): BranchesViewState {
     selectedBranchId: null,
     isLoading: false,
     errorMessage: null,
+  };
+}
+
+// ============================================================================
+// Issue Helper Functions
+// ============================================================================
+
+/**
+ * Create a new issue object
+ *
+ * @param title - Issue title
+ * @param repository - Repository the issue belongs to
+ * @param options - Additional issue options
+ * @returns A new Issue object
+ */
+export function createIssue(
+  title: string,
+  repository: Repository,
+  options: Partial<Omit<Issue, 'id' | 'title' | 'repository'>> = {}
+): Issue {
+  return {
+    id: crypto.randomUUID(),
+    number: options.number ?? Math.floor(Math.random() * 1000) + 1,
+    title,
+    body: options.body ?? '',
+    repository,
+    state: options.state ?? 'open',
+    priority: options.priority,
+    labels: options.labels ?? [],
+    author: options.author ?? 'developer',
+    assignees: options.assignees ?? [],
+    createdAt: options.createdAt ?? new Date(),
+    updatedAt: options.updatedAt ?? new Date(),
+    closedAt: options.closedAt,
+    commentCount: options.commentCount ?? 0,
+  };
+}
+
+/**
+ * Get issue state color class
+ *
+ * @param state - Issue state
+ * @returns Tailwind CSS color class
+ */
+export function getIssueStateColorClass(state: IssueState): string {
+  switch (state) {
+    case 'open':
+      return 'text-green-500';
+    case 'closed':
+      return 'text-purple-500';
+    default:
+      return 'text-gray-500';
+  }
+}
+
+/**
+ * Get issue state background class
+ *
+ * @param state - Issue state
+ * @returns Tailwind CSS background color class
+ */
+export function getIssueStateBgClass(state: IssueState): string {
+  switch (state) {
+    case 'open':
+      return 'bg-green-100 dark:bg-green-900/30';
+    case 'closed':
+      return 'bg-purple-100 dark:bg-purple-900/30';
+    default:
+      return 'bg-gray-100 dark:bg-gray-700';
+  }
+}
+
+/**
+ * Get issue priority color class
+ *
+ * @param priority - Issue priority
+ * @returns Tailwind CSS color class
+ */
+export function getIssuePriorityColorClass(priority: IssuePriority | undefined): string {
+  switch (priority) {
+    case 'critical':
+      return 'text-red-500';
+    case 'high':
+      return 'text-orange-500';
+    case 'medium':
+      return 'text-yellow-500';
+    case 'low':
+      return 'text-blue-500';
+    default:
+      return 'text-gray-500';
+  }
+}
+
+/**
+ * Get issue priority background class
+ *
+ * @param priority - Issue priority
+ * @returns Tailwind CSS background color class
+ */
+export function getIssuePriorityBgClass(priority: IssuePriority | undefined): string {
+  switch (priority) {
+    case 'critical':
+      return 'bg-red-100 dark:bg-red-900/30';
+    case 'high':
+      return 'bg-orange-100 dark:bg-orange-900/30';
+    case 'medium':
+      return 'bg-yellow-100 dark:bg-yellow-900/30';
+    case 'low':
+      return 'bg-blue-100 dark:bg-blue-900/30';
+    default:
+      return 'bg-gray-100 dark:bg-gray-700';
+  }
+}
+
+/**
+ * Get issue priority text
+ *
+ * @param priority - Issue priority
+ * @returns Human-readable priority text
+ */
+export function getIssuePriorityText(priority: IssuePriority | undefined): string {
+  switch (priority) {
+    case 'critical':
+      return 'Critical';
+    case 'high':
+      return 'High';
+    case 'medium':
+      return 'Medium';
+    case 'low':
+      return 'Low';
+    default:
+      return 'None';
+  }
+}
+
+/**
+ * Filter issues based on filter options
+ *
+ * @param issues - Array of issues to filter
+ * @param filter - Filter options
+ * @param currentUser - Current user for assignee filtering
+ * @returns Filtered issues
+ */
+export function filterIssues(
+  issues: Issue[],
+  filter: IssueFilter,
+  currentUser: string = ''
+): Issue[] {
+  return issues.filter((issue) => {
+    if (filter.repositoryId && issue.repository.id !== filter.repositoryId) {
+      return false;
+    }
+    if (filter.state && issue.state !== filter.state) {
+      return false;
+    }
+    if (filter.priority && issue.priority !== filter.priority) {
+      return false;
+    }
+    if (filter.searchQuery) {
+      const query = filter.searchQuery.toLowerCase();
+      if (
+        !issue.title.toLowerCase().includes(query) &&
+        !issue.body.toLowerCase().includes(query)
+      ) {
+        return false;
+      }
+    }
+    if (filter.labelName) {
+      const hasLabel = issue.labels.some(
+        (label) => label.name.toLowerCase() === filter.labelName?.toLowerCase()
+      );
+      if (!hasLabel) {
+        return false;
+      }
+    }
+    if (filter.assignedToMe && !issue.assignees.includes(currentUser)) {
+      return false;
+    }
+    if (filter.createdByMe && issue.author !== currentUser) {
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
+ * Group issues by repository
+ *
+ * @param issues - Array of issues
+ * @returns Issues grouped by repository
+ */
+export function groupIssuesByRepository(issues: Issue[]): Record<string, Issue[]> {
+  return issues.reduce(
+    (acc, issue) => {
+      const repoId = issue.repository.id;
+      if (!acc[repoId]) {
+        acc[repoId] = [];
+      }
+      acc[repoId].push(issue);
+      return acc;
+    },
+    {} as Record<string, Issue[]>
+  );
+}
+
+/**
+ * Get relative time string for a date
+ *
+ * @param date - Date to format
+ * @returns Human-readable relative time string
+ */
+export function getRelativeTimeString(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 30) {
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: diffDays > 365 ? 'numeric' : undefined,
+    });
+  } else if (diffDays > 0) {
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  } else if (diffHours > 0) {
+    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  } else if (diffMins > 0) {
+    return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+  } else {
+    return 'just now';
+  }
+}
+
+/**
+ * Create initial issues view state with sample data
+ *
+ * @returns Initial IssuesViewState with sample data
+ */
+export function createInitialIssuesState(): IssuesViewState {
+  // Sample repositories
+  const repositories: Repository[] = [
+    createRepository('matrix', 'theo'),
+    createRepository('desktop', 'theo'),
+    createRepository('shared', 'theo'),
+  ];
+
+  // Sample labels
+  const bugLabel: IssueLabel = { name: 'bug', color: '#d73a4a', description: 'Something is not working' };
+  const featureLabel: IssueLabel = { name: 'enhancement', color: '#a2eeef', description: 'New feature or request' };
+  const docsLabel: IssueLabel = { name: 'documentation', color: '#0075ca', description: 'Improvements to documentation' };
+  const helpWantedLabel: IssueLabel = { name: 'help wanted', color: '#008672', description: 'Extra attention is needed' };
+
+  // Sample issues for each repository
+  const issues: Issue[] = [
+    // Matrix repo issues
+    createIssue('Fix memory leak in IPC handler', repositories[0], {
+      number: 42,
+      body: 'There is a memory leak when processing large IPC messages. Need to investigate and fix.',
+      state: 'open',
+      priority: 'high',
+      labels: [bugLabel],
+      author: 'developer',
+      assignees: ['theo'],
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      commentCount: 5,
+    }),
+    createIssue('Add workspace tab navigation', repositories[0], {
+      number: 38,
+      body: 'Implement the workspace tab navigation feature for switching between branches, issues, and PRs.',
+      state: 'open',
+      priority: 'medium',
+      labels: [featureLabel],
+      author: 'theo',
+      assignees: ['developer'],
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      commentCount: 12,
+    }),
+    createIssue('Update README with installation instructions', repositories[0], {
+      number: 35,
+      body: 'The README needs updated installation instructions for the new build system.',
+      state: 'closed',
+      labels: [docsLabel],
+      author: 'contributor',
+      assignees: [],
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      closedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      commentCount: 3,
+    }),
+
+    // Desktop repo issues
+    createIssue('Implement dark mode toggle', repositories[1], {
+      number: 15,
+      body: 'Add a toggle in settings to switch between light and dark mode.',
+      state: 'open',
+      priority: 'low',
+      labels: [featureLabel],
+      author: 'designer',
+      assignees: ['designer', 'developer'],
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      commentCount: 8,
+    }),
+    createIssue('Window resize causes layout issues', repositories[1], {
+      number: 14,
+      body: 'When resizing the window quickly, the layout breaks and components overlap.',
+      state: 'open',
+      priority: 'critical',
+      labels: [bugLabel, helpWantedLabel],
+      author: 'tester',
+      assignees: ['theo'],
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      commentCount: 2,
+    }),
+
+    // Shared repo issues
+    createIssue('Add utility functions for date formatting', repositories[2], {
+      number: 8,
+      body: 'Create a set of utility functions for consistent date formatting across the app.',
+      state: 'open',
+      priority: 'medium',
+      labels: [featureLabel],
+      author: 'developer',
+      assignees: [],
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      commentCount: 0,
+    }),
+    createIssue('Export types from package', repositories[2], {
+      number: 7,
+      body: 'The shared types are not being exported correctly from the package.',
+      state: 'closed',
+      labels: [bugLabel],
+      author: 'theo',
+      assignees: ['developer'],
+      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+      closedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
+      commentCount: 4,
+    }),
+  ];
+
+  return {
+    issues,
+    repositories,
+    selectedRepositoryId: null,
+    filter: {},
+    selectedIssueId: null,
+    isLoading: false,
+    errorMessage: null,
+    currentUser: 'theo',
   };
 }
