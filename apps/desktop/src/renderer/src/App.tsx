@@ -3,17 +3,61 @@ import { Button } from '@/components/ui/button';
 import { TabNavigation, type TabId } from '@/components/layout/TabNavigation';
 import { TabPanel } from '@/components/layout/TabPanel';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
+import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import type { IPCResponse } from '@maxtix/shared';
 
 /**
- * Workflow tab content with Kanban board
- * Pipeline editor placeholder will be added in a future subtask
+ * Workflow sub-tab type
  */
-const WorkflowTabContent: React.FC = () => (
-  <div className="flex h-full flex-col">
-    <KanbanBoard />
-  </div>
-);
+type WorkflowSubTab = 'kanban' | 'pipeline';
+
+/**
+ * Workflow tab content with Kanban board and Pipeline editor
+ * Users can switch between Kanban and Pipeline views using sub-tabs
+ */
+const WorkflowTabContent: React.FC = () => {
+  const [activeSubTab, setActiveSubTab] = useState<WorkflowSubTab>('kanban');
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Sub-tab navigation */}
+      <div className="mb-4 flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('kanban')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'kanban'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'kanban'}
+          role="tab"
+        >
+          Kanban Board
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('pipeline')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeSubTab === 'pipeline'
+              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+          aria-selected={activeSubTab === 'pipeline'}
+          role="tab"
+        >
+          Pipeline Editor
+        </button>
+      </div>
+
+      {/* Sub-tab content */}
+      <div className="flex-1 overflow-hidden">
+        {activeSubTab === 'kanban' && <KanbanBoard />}
+        {activeSubTab === 'pipeline' && <PipelineEditor />}
+      </div>
+    </div>
+  );
+};
 
 /**
  * Placeholder component for Agent tab content
