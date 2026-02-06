@@ -2,22 +2,16 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TabNavigation, type TabId } from '@/components/layout/TabNavigation';
 import { TabPanel } from '@/components/layout/TabPanel';
+import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import type { IPCResponse } from '@maxtix/shared';
 
 /**
- * Placeholder component for Workflow tab content
- * Will be replaced with Kanban and Pipeline components
+ * Workflow tab content with Kanban board
+ * Pipeline editor placeholder will be added in a future subtask
  */
 const WorkflowTabContent: React.FC = () => (
-  <div className="flex h-full items-center justify-center">
-    <div className="text-center">
-      <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-        Workflow Tab
-      </h2>
-      <p className="mt-2 text-gray-600 dark:text-gray-400">
-        Kanban Board and Pipeline Editor coming soon
-      </p>
-    </div>
+  <div className="flex h-full flex-col">
+    <KanbanBoard />
   </div>
 );
 
