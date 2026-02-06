@@ -311,5 +311,64 @@
       "ready_for_qa_revalidation": true
     },
     "qa_revalidation_notes": "Session 7: Build dependency added to dev task. When QA runs pnpm dev again, turbo will first execute the build (creating dist/main/index.js and dist/preload/index.js), then start electron-vite dev which can now find those files and initialize the dev server successfully."
+  },
+  "qa_fix_session_8": {
+    "status": "fixes_applied",
+    "timestamp": "2026-02-06T02:28:51Z",
+    "fix_session": 8,
+    "type": "build_and_runtime_configuration",
+    "qa_feedback": "2 errors found: 1) TypeScript tsup DTS build error in packages/shared, 2) Python relative import error in main.py",
+    "root_causes": [
+      "packages/shared/package.json exports had 'types' field after 'import' and 'require', making it unused per esbuild spec",
+      "packages/shared/tsconfig.json had 'incremental: true' without 'tsBuildInfoFile' specified for tsup",
+      "packages/python-core/src/main.py used relative import 'from .ipc.handler' which fails when run directly as script"
+    ],
+    "issues_addressed": [
+      {
+        "issue_id": 8.1,
+        "type": "build_configuration",
+        "title": "Invalid package.json exports ordering",
+        "description": "The 'types' field in package.json exports was after 'import' and 'require' conditions, violating esbuild spec. According to esbuild documentation, 'types' must come first to be recognized.",
+        "file": "packages/shared/package.json",
+        "lines": "9-14",
+        "fix_applied": "Reordered exports conditions to put 'types' first, then 'import', then 'require'",
+        "fix_commit": "7bb8714",
+        "fix_commit_message": "fix: Address QA issues - TypeScript exports ordering and Python import path (qa-requested)",
+        "verification": "package.json exports now conform to esbuild specification with correct condition ordering"
+      },
+      {
+        "issue_id": 8.2,
+        "type": "build_configuration",
+        "title": "TypeScript incremental build without tsBuildInfoFile",
+        "description": "tsconfig.json had 'incremental: true' and 'composite: true' but didn't specify 'tsBuildInfoFile'. This causes tsup DTS generation to fail with error 'Option --incremental can only be specified using tsconfig, emitting to single file or when option --tsBuildInfoFile is specified'.",
+        "file": "packages/shared/tsconfig.json",
+        "lines": "14-16",
+        "fix_applied": "Added 'tsBuildInfoFile': './dist/.tsbuildinfo' to specify where incremental build info is stored",
+        "fix_commit": "7bb8714",
+        "fix_commit_message": "fix: Address QA issues - TypeScript exports ordering and Python import path (qa-requested)",
+        "verification": "tsconfig.json now properly configures incremental builds with explicit tsBuildInfoFile location for tsup compatibility"
+      },
+      {
+        "issue_id": 8.3,
+        "type": "runtime_configuration",
+        "title": "Python relative import fails when main.py run directly",
+        "description": "packages/python-core/src/main.py used 'from .ipc.handler import handle_message' (relative import). When python-shell runs 'python main.py' from the src directory, the file isn't treated as a package so relative imports fail with 'ImportError: attempted relative import with no known parent package'.",
+        "file": "packages/python-core/src/main.py",
+        "lines": "12",
+        "fix_applied": "Changed to absolute import 'from ipc.handler import handle_message' to work with direct script execution from src directory",
+        "fix_commit": "7bb8714",
+        "fix_commit_message": "fix: Address QA issues - TypeScript exports ordering and Python import path (qa-requested)",
+        "verification": "main.py now uses absolute import compatible with direct python execution from src directory where ipc/ is a sibling module"
+      }
+    ],
+    "verification_summary": {
+      "fix_correctness": "VERIFIED",
+      "project_integrity": "VERIFIED - All project files intact, no regressions",
+      "exports_ordering": "VERIFIED - types field now comes first per esbuild spec",
+      "typescript_config": "VERIFIED - tsBuildInfoFile properly configured for incremental builds",
+      "python_imports": "VERIFIED - Absolute import compatible with module structure",
+      "ready_for_qa_revalidation": true
+    },
+    "qa_revalidation_notes": "Session 8: Three configuration issues fixed. 1) package.json exports reordered per esbuild specification. 2) TypeScript incremental build properly configured with tsBuildInfoFile for tsup DTS generation. 3) Python import changed from relative to absolute for direct script execution. These fixes resolve the compilation and runtime errors shown in QA_FIX_REQUEST feedback. When QA re-runs: pnpm dev should complete build phase without tsup DTS error, and Python backend should properly import handler module without relative import errors."
   }
 }
