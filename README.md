@@ -50,14 +50,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ## 🚀 Quick Start
 
-### 1. Clone and Navigate to Project
-
-```bash
-git clone https://github.com/matrix-crew/matrix
-cd matrix
-```
-
-### 2. Install Node Dependencies
+### 1. Install Node Dependencies
 
 ```bash
 pnpm install
@@ -70,7 +63,7 @@ This installs all workspace dependencies including:
 - shadcn/ui components
 - And all development tools
 
-### 3. Set Up Python Environment
+### 2. Set Up Python Environment
 
 ```bash
 cd packages/core
@@ -82,7 +75,7 @@ This creates a Python virtual environment and installs dependencies:
 - pytest (testing framework)
 - ruff (linter)
 
-### 4. Verify Type Checking
+### 3. Verify Type Checking
 
 ```bash
 pnpm type-check
@@ -90,7 +83,7 @@ pnpm type-check
 
 Expected output: All TypeScript files compile without errors.
 
-### 5. Test Python Backend Standalone
+### 4. Test Python Backend Standalone
 
 ```bash
 cd packages/core
@@ -99,7 +92,7 @@ uv run python src/main.py
 
 Expected output: `OK`
 
-### 6. Start Development
+### 5. Start Development
 
 ```bash
 pnpm dev
@@ -150,11 +143,14 @@ maxtix/
 │       │       └── src/
 │       │           ├── App.tsx
 │       │           ├── main.tsx
-│       │           └── index.css
+│       │           ├── index.css
+│       │           └── components/
+│       │               └── ui/
+│       │                   └── button.tsx
 │       └── electron.vite.config.ts
 │
 ├── packages/
-│   ├── core/                 # Python backend
+│   ├── core/          # Python backend
 │   │   ├── src/
 │   │   │   ├── main.py       # Entry point with IPC processing
 │   │   │   └── ipc/
@@ -162,21 +158,11 @@ maxtix/
 │   │   │       └── handler.py # Message routing & processing
 │   │   └── pyproject.toml
 │   │
-│   ├── shared/               # Shared TypeScript types
-│   │   ├── src/
-│   │   │   ├── index.ts      # Type exports
-│   │   │   └── types/
-│   │   │       └── ipc.ts    # IPCMessage, IPCResponse types
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   │
-│   └── ui/                   # Shared UI components
+│   └── shared/               # Shared types
 │       ├── src/
-│       │   ├── index.ts      # Component exports
-│       │   ├── components/   # React components
-│       │   │   └── ui/       # shadcn/ui components
-│       │   └── lib/
-│       │       └── utils.ts  # Utility functions (cn, etc.)
+│       │   ├── index.ts      # Type exports
+│       │   └── types/
+│       │       └── ipc.ts    # IPCMessage, IPCResponse types
 │       ├── package.json
 │       └── tsconfig.json
 │
@@ -201,8 +187,9 @@ pnpm dev
 # Type checking
 pnpm type-check
 
-# Linting
+# Linting and formatting
 pnpm lint
+pnpm format
 
 # Clean build artifacts
 pnpm clean
@@ -492,6 +479,7 @@ NODE_ENV=development
 
 ### Code Style
 
+- Use Prettier for formatting: `pnpm format`
 - Use ESLint for linting: `pnpm lint`
 - Follow TypeScript strict mode
 - Add docstrings and JSDoc comments
