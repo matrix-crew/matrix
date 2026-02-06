@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { TabNavigation, type TabId } from '@/components/layout/TabNavigation';
 import { TabPanel } from '@/components/layout/TabPanel';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
@@ -7,7 +6,8 @@ import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import { ConsoleManager } from '@/components/agent/ConsoleManager';
 import { MCPControl } from '@/components/agent/MCPControl';
 import { BranchesView } from '@/components/workspace/BranchesView';
-import type { IPCResponse } from '@maxtix/shared';
+import { IssuesView } from '@/components/workspace/IssuesView';
+import { PRsView } from '@/components/workspace/PRsView';
 
 /**
  * Workflow sub-tab type
@@ -124,11 +124,7 @@ type WorkspaceSubTab = 'branches' | 'issues' | 'prs';
  * Workspace tab content with Branches, Issues, and PRs views
  * Users can switch between views using sub-tabs
  */
-const WorkspaceTabContent: React.FC<{
-  ipcResponse: IPCResponse | null;
-  isLoading: boolean;
-  onTestIPC: () => void;
-}> = ({ ipcResponse, isLoading, onTestIPC }) => {
+const WorkspaceTabContent: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTab>('branches');
 
   return (
@@ -179,53 +175,8 @@ const WorkspaceTabContent: React.FC<{
       {/* Sub-tab content */}
       <div className="flex-1 overflow-hidden">
         {activeSubTab === 'branches' && <BranchesView />}
-        {activeSubTab === 'issues' && (
-          <div className="flex h-full flex-col items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                Issues View
-              </h2>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Aggregated issues view coming soon
-              </p>
-            </div>
-          </div>
-        )}
-        {activeSubTab === 'prs' && (
-          <div className="flex h-full flex-col items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                Pull Requests View
-              </h2>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Aggregated PRs view coming soon
-              </p>
-
-              {/* IPC Test Section - temporary for development */}
-              <div className="mt-8 space-y-4">
-                <Button onClick={onTestIPC} disabled={isLoading}>
-                  {isLoading ? 'Testing IPC...' : 'Test IPC Connection'}
-                </Button>
-
-                {/* Display IPC Response */}
-                {ipcResponse && (
-                  <div className="mx-auto max-w-md rounded-md border border-gray-200 bg-white p-4 text-left dark:border-gray-700 dark:bg-gray-800">
-                    <div className="mb-2 font-semibold">
-                      {ipcResponse.success ? (
-                        <span className="text-green-600 dark:text-green-400">Success</span>
-                      ) : (
-                        <span className="text-red-600 dark:text-red-400">Error</span>
-                      )}
-                    </div>
-                    <pre className="overflow-auto text-sm text-gray-700 dark:text-gray-300">
-                      {JSON.stringify(ipcResponse, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {activeSubTab === 'issues' && <IssuesView />}
+        {activeSubTab === 'prs' && <PRsView />}
       </div>
     </div>
   );
@@ -240,31 +191,6 @@ const WorkspaceTabContent: React.FC<{
  */
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('workflow');
-  const [ipcResponse, setIpcResponse] = useState<IPCResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  /**
-   * Test IPC communication with Python backend
-   * Sends a ping message and displays the response
-   */
-  const handleTestIPC = async () => {
-    setIsLoading(true);
-    setIpcResponse(null);
-
-    try {
-      // Send ping message to Python backend via IPC bridge
-      const response = await window.api.sendMessage({ type: 'ping' });
-      setIpcResponse(response);
-    } catch (error) {
-      // Handle any errors during IPC communication
-      setIpcResponse({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="flex h-screen w-full flex-col bg-gray-50 dark:bg-gray-950">
@@ -287,11 +213,7 @@ const App: React.FC = () => {
         </TabPanel>
 
         <TabPanel id="workspace" activeTab={activeTab} className="p-4">
-          <WorkspaceTabContent
-            ipcResponse={ipcResponse}
-            isLoading={isLoading}
-            onTestIPC={handleTestIPC}
-          />
+          <WorkspaceTabContent />
         </TabPanel>
       </main>
     </div>
