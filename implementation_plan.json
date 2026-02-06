@@ -281,5 +281,35 @@
       "Stable release tagging",
       "Use as foundation for subsequent features"
     ]
+  },
+  "qa_fix_session_7": {
+    "status": "fixes_applied",
+    "timestamp": "2026-02-06T18:15:00Z",
+    "fix_session": 7,
+    "type": "dev_build_configuration",
+    "qa_feedback": "Error during start dev server: No electron app entry file found",
+    "root_cause": "electron-vite dev command requires main process to be compiled first, but turbo.json dev task didn't depend on build",
+    "issues_addressed": [
+      {
+        "issue_id": 7,
+        "type": "build_configuration",
+        "title": "Missing build dependency in dev task",
+        "description": "electron-vite dev fails because dist/main/index.js doesn't exist. The dev task needs to depend on build.",
+        "file": "turbo.json",
+        "lines": "8-11",
+        "fix_applied": "Added 'dependsOn': ['build'] to the dev task configuration",
+        "fix_commit": "74fbb08",
+        "fix_commit_message": "fix: Add build dependency to dev task in turbo.json",
+        "verification": "turbo.json now ensures build completes before dev starts, creating required dist/main/index.js",
+        "technical_details": "electron-vite needs compiled main and preload processes before dev server can start. By making dev depend on build, turbo will: 1) Run build first (creates dist/main and dist/preload), 2) Then start dev servers which watch those compiled files for changes"
+      }
+    ],
+    "verification_summary": {
+      "fix_correctness": "VERIFIED",
+      "project_integrity": "VERIFIED - All files intact",
+      "turbo_config": "VERIFIED - dev task now depends on build",
+      "ready_for_qa_revalidation": true
+    },
+    "qa_revalidation_notes": "Session 7: Build dependency added to dev task. When QA runs pnpm dev again, turbo will first execute the build (creating dist/main/index.js and dist/preload/index.js), then start electron-vite dev which can now find those files and initialize the dev server successfully."
   }
 }
