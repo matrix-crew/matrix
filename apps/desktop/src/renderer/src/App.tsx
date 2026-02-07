@@ -1,4 +1,14 @@
 import React, { useState } from 'react';
+import { SidebarNavigation, type NavigationSection } from '@maxtix/ui';
+import {
+  LayoutDashboard,
+  GitBranch,
+  Terminal,
+  Zap,
+  GitBranchPlus,
+  AlertCircle,
+  GitPullRequest,
+} from 'lucide-react';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import { ConsoleManager } from '@/components/agent/ConsoleManager';
@@ -20,37 +30,83 @@ type NavItemId =
   | 'prs';
 
 /**
- * Section type for sidebar
+ * Navigation sections configuration with icons and shortcuts
  */
-type SectionId = 'workflow' | 'agent' | 'workspace';
+const navigationSections: NavigationSection[] = [
+  {
+    id: 'workflow',
+    title: 'Workflow',
+    items: [
+      {
+        id: 'kanban',
+        label: 'Kanban Board',
+        shortcut: '⌘K',
+        icon: <LayoutDashboard className="size-5" />,
+      },
+      {
+        id: 'pipeline',
+        label: 'Pipeline',
+        shortcut: '⌘P',
+        icon: <GitBranch className="size-5" />,
+      },
+    ],
+    defaultExpanded: true,
+  },
+  {
+    id: 'agent',
+    title: 'Agent',
+    items: [
+      {
+        id: 'console',
+        label: 'Console',
+        shortcut: '⌘A',
+        icon: <Terminal className="size-5" />,
+      },
+      {
+        id: 'mcp',
+        label: 'MCP Control',
+        shortcut: '⌘M',
+        icon: <Zap className="size-5" />,
+      },
+    ],
+    defaultExpanded: true,
+  },
+  {
+    id: 'workspace',
+    title: 'Workspace',
+    items: [
+      {
+        id: 'branches',
+        label: 'Branches',
+        shortcut: '⌘B',
+        icon: <GitBranchPlus className="size-5" />,
+      },
+      {
+        id: 'issues',
+        label: 'Issues',
+        shortcut: '⌘I',
+        icon: <AlertCircle className="size-5" />,
+      },
+      {
+        id: 'prs',
+        label: 'Pull Requests',
+        shortcut: '⌘R',
+        icon: <GitPullRequest className="size-5" />,
+      },
+    ],
+    defaultExpanded: true,
+  },
+];
 
 /**
  * Main App component for Maxtix desktop application
  *
  * This is the root React component that renders the desktop UI.
  * It serves as the entry point for the renderer process UI hierarchy.
- * Implements sidebar navigation with collapsible sections for Workflow, Agent, and Workspace.
+ * Uses SidebarNavigation component from @maxtix/ui for hierarchical navigation.
  */
 const App: React.FC = () => {
-  const [expandedSections, setExpandedSections] = useState<Set<SectionId>>(
-    new Set(['workflow', 'agent', 'workspace'])
-  );
   const [activeItem, setActiveItem] = useState<NavItemId>('kanban');
-
-  /**
-   * Toggle a section's expanded/collapsed state
-   */
-  const toggleSection = (sectionId: SectionId) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
-      } else {
-        next.add(sectionId);
-      }
-      return next;
-    });
-  };
 
   /**
    * Render content based on active navigation item
@@ -78,186 +134,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950">
-      {/* Sidebar navigation */}
-      <aside className="flex w-64 flex-none flex-col border-r border-gray-200 bg-gray-900 dark:border-gray-800 dark:bg-gray-950">
-        {/* App title header */}
-        <div className="flex h-14 flex-none items-center border-b border-gray-700 px-4 dark:border-gray-800">
-          <h1 className="text-xl font-bold text-gray-100">Maxtix</h1>
-        </div>
-
-        {/* Navigation sections */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          {/* Workflow Section */}
-          <div className="mb-2">
-            <button
-              type="button"
-              onClick={() => toggleSection('workflow')}
-              className="flex w-full items-center justify-between px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800 hover:text-gray-100"
-              aria-expanded={expandedSections.has('workflow')}
-            >
-              <span>Workflow</span>
-              <svg
-                className={`h-4 w-4 transition-transform ${
-                  expandedSections.has('workflow') ? 'rotate-90' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-            {expandedSections.has('workflow') && (
-              <div className="mt-1 space-y-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('kanban')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'kanban'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  Kanban Board
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('pipeline')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'pipeline'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  Pipeline Editor
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Agent Section */}
-          <div className="mb-2">
-            <button
-              type="button"
-              onClick={() => toggleSection('agent')}
-              className="flex w-full items-center justify-between px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800 hover:text-gray-100"
-              aria-expanded={expandedSections.has('agent')}
-            >
-              <span>Agent</span>
-              <svg
-                className={`h-4 w-4 transition-transform ${
-                  expandedSections.has('agent') ? 'rotate-90' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-            {expandedSections.has('agent') && (
-              <div className="mt-1 space-y-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('console')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'console'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  Console
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('mcp')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'mcp'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  MCP Control
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Workspace Section */}
-          <div className="mb-2">
-            <button
-              type="button"
-              onClick={() => toggleSection('workspace')}
-              className="flex w-full items-center justify-between px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800 hover:text-gray-100"
-              aria-expanded={expandedSections.has('workspace')}
-            >
-              <span>Workspace</span>
-              <svg
-                className={`h-4 w-4 transition-transform ${
-                  expandedSections.has('workspace') ? 'rotate-90' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-            {expandedSections.has('workspace') && (
-              <div className="mt-1 space-y-1">
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('branches')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'branches'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  Branches
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('issues')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'issues'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  Issues
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveItem('prs')}
-                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
-                    activeItem === 'prs'
-                      ? 'bg-gray-800 text-blue-400'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
-                  }`}
-                >
-                  Pull Requests
-                </button>
-              </div>
-            )}
-          </div>
-        </nav>
-      </aside>
+      {/* Use SidebarNavigation from UI package */}
+      <SidebarNavigation
+        activeItemId={activeItem}
+        onItemSelect={(itemId) => setActiveItem(itemId as NavItemId)}
+        sections={navigationSections}
+      />
 
       {/* Main content area */}
       <main className="flex flex-1 flex-col overflow-hidden">
