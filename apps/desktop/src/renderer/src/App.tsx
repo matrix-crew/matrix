@@ -8,6 +8,7 @@ import { MCPControl } from '@/components/agent/MCPControl';
 import { BranchesView } from '@/components/workspace/BranchesView';
 import { IssuesView } from '@/components/workspace/IssuesView';
 import { PRsView } from '@/components/workspace/PRsView';
+import { SettingsPage } from '@/components/settings/SettingsPage';
 
 /**
  * Workflow sub-tab type
@@ -183,11 +184,19 @@ const WorkspaceTabContent: React.FC = () => {
 };
 
 /**
+ * Settings tab content with SettingsPage
+ * Displays the full settings page with sidebar navigation
+ */
+const SettingsTabContent: React.FC = () => {
+  return <SettingsPage />;
+};
+
+/**
  * Main App component for Maxtix desktop application
  *
  * This is the root React component that renders the desktop UI.
  * It serves as the entry point for the renderer process UI hierarchy.
- * Implements tab-based navigation with Workflow, Agent, and Workspace tabs.
+ * Implements tab-based navigation with Workflow, Agent, Workspace, and Settings tabs.
  */
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('workflow');
@@ -214,6 +223,10 @@ const App: React.FC = () => {
 
         <TabPanel id="workspace" activeTab={activeTab} className="p-4">
           <WorkspaceTabContent />
+        </TabPanel>
+
+        <TabPanel id="settings" activeTab={activeTab}>
+          <SettingsTabContent />
         </TabPanel>
       </main>
     </div>
