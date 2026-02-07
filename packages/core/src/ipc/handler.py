@@ -163,6 +163,56 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
 
         return {"success": True, "data": {"source": source.to_json()}}
 
+    if message_type == "matrix-add-source":
+        data = message.get("data", {})
+        matrix_id = data.get("matrixId", "")
+        source_id = data.get("sourceId", "")
+
+        if not matrix_id:
+            return {"success": False, "error": "Matrix ID is required"}
+
+        if not source_id:
+            return {"success": False, "error": "Source ID is required"}
+
+        storage = MatrixStorage()
+        matrix = storage.load_matrix(matrix_id)
+
+        if matrix is None:
+            return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+        # Add source if not already present
+        if source_id not in matrix.source_ids:
+            matrix.source_ids.append(source_id)
+            matrix.updated_at = datetime.now(timezone.utc).isoformat()
+            storage.save_matrix(matrix)
+
+        return {"success": True, "data": {"matrix": matrix.to_json()}}
+
+    if message_type == "matrix-remove-source":
+        data = message.get("data", {})
+        matrix_id = data.get("matrixId", "")
+        source_id = data.get("sourceId", "")
+
+        if not matrix_id:
+            return {"success": False, "error": "Matrix ID is required"}
+
+        if not source_id:
+            return {"success": False, "error": "Source ID is required"}
+
+        storage = MatrixStorage()
+        matrix = storage.load_matrix(matrix_id)
+
+        if matrix is None:
+            return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+        # Remove source if present
+        if source_id in matrix.source_ids:
+            matrix.source_ids.remove(source_id)
+            matrix.updated_at = datetime.now(timezone.utc).isoformat()
+            storage.save_matrix(matrix)
+
+        return {"success": True, "data": {"matrix": matrix.to_json()}}
+
     # Unknown message type
     return {
         "success": False,
