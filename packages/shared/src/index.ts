@@ -14,3 +14,15 @@ export type {
   IPCMessageTypes,
   IPCResponseTypes,
 } from "./types/ipc";
+
+// Export all Matrix and Source types
+export type {
+  Matrix,
+  Source,
+  MatrixCreateData,
+  MatrixIdData,
+  MatrixUpdateData,
+  SourceCreateData,
+  SourceIdData,
+  MatrixSourceData,
+} from "./types/matrix";
