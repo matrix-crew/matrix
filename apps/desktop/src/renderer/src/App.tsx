@@ -9,6 +9,7 @@ import {
   AlertCircle,
   GitPullRequest,
   Settings,
+  Grid3X3,
 } from 'lucide-react';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
@@ -18,6 +19,7 @@ import { BranchesView } from '@/components/workspace/BranchesView';
 import { IssuesView } from '@/components/workspace/IssuesView';
 import { PRsView } from '@/components/workspace/PRsView';
 import { SettingsPage } from '@/components/settings/SettingsPage';
+import { MatrixView } from '@/components/matrix/MatrixView';
 
 /**
  * Navigation item type for sidebar
@@ -25,6 +27,7 @@ import { SettingsPage } from '@/components/settings/SettingsPage';
 type NavItemId =
   | 'kanban'
   | 'pipeline'
+  | 'matrix'
   | 'console'
   | 'mcp'
   | 'branches'
@@ -51,6 +54,12 @@ const navigationSections: NavigationSection[] = [
         label: 'Pipeline',
         shortcut: '⌘P',
         icon: <GitBranch className="size-5" />,
+      },
+      {
+        id: 'matrix',
+        label: 'Matrix',
+        shortcut: '⌘X',
+        icon: <Grid3X3 className="size-5" />,
       },
     ],
     defaultExpanded: true,
@@ -141,6 +150,8 @@ const App: React.FC = () => {
         return <KanbanBoard />;
       case 'pipeline':
         return <PipelineEditor />;
+      case 'matrix':
+        return <MatrixView />;
       case 'console':
         return <ConsoleManager />;
       case 'mcp':
