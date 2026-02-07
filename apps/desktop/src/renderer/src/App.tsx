@@ -8,6 +8,7 @@ import {
   GitBranchPlus,
   AlertCircle,
   GitPullRequest,
+  Settings,
 } from 'lucide-react';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
@@ -16,6 +17,7 @@ import { MCPControl } from '@/components/agent/MCPControl';
 import { BranchesView } from '@/components/workspace/BranchesView';
 import { IssuesView } from '@/components/workspace/IssuesView';
 import { PRsView } from '@/components/workspace/PRsView';
+import { SettingsPage } from '@/components/settings/SettingsPage';
 
 /**
  * Navigation item type for sidebar
@@ -27,7 +29,8 @@ type NavItemId =
   | 'mcp'
   | 'branches'
   | 'issues'
-  | 'prs';
+  | 'prs'
+  | 'settings';
 
 /**
  * Navigation sections configuration with icons and shortcuts
@@ -96,7 +99,28 @@ const navigationSections: NavigationSection[] = [
     ],
     defaultExpanded: true,
   },
+  {
+    id: 'system',
+    title: 'System',
+    items: [
+      {
+        id: 'settings',
+        label: 'Settings',
+        shortcut: '⌘,',
+        icon: <Settings className="size-5" />,
+      },
+    ],
+    defaultExpanded: true,
+  },
 ];
+
+/**
+ * Settings tab content with SettingsPage
+ * Displays the full settings page with sidebar navigation
+ */
+const SettingsTabContent: React.FC = () => {
+  return <SettingsPage />;
+};
 
 /**
  * Main App component for Maxtix desktop application
@@ -127,6 +151,8 @@ const App: React.FC = () => {
         return <IssuesView />;
       case 'prs':
         return <PRsView />;
+      case 'settings':
+        return <SettingsTabContent />;
       default:
         return <KanbanBoard />;
     }

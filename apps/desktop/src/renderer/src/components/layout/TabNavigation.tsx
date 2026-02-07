@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 /**
  * Tab definition with label and unique identifier
  */
-export type TabId = 'workflow' | 'agent' | 'workspace';
+export type TabId = 'workflow' | 'agent' | 'workspace' | 'settings';
 
 export interface Tab {
   id: TabId;
@@ -20,6 +20,7 @@ export const TABS: Tab[] = [
   { id: 'workflow', label: 'Workflow' },
   { id: 'agent', label: 'Agent' },
   { id: 'workspace', label: 'Workspace' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 /**
