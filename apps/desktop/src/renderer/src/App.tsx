@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { TabNavigation, type TabId } from '@/components/layout/TabNavigation';
-import { TabPanel } from '@/components/layout/TabPanel';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import { ConsoleManager } from '@/components/agent/ConsoleManager';
@@ -10,211 +8,260 @@ import { IssuesView } from '@/components/workspace/IssuesView';
 import { PRsView } from '@/components/workspace/PRsView';
 
 /**
- * Workflow sub-tab type
+ * Navigation item type for sidebar
  */
-type WorkflowSubTab = 'kanban' | 'pipeline';
+type NavItemId =
+  | 'kanban'
+  | 'pipeline'
+  | 'console'
+  | 'mcp'
+  | 'branches'
+  | 'issues'
+  | 'prs';
 
 /**
- * Workflow tab content with Kanban board and Pipeline editor
- * Users can switch between Kanban and Pipeline views using sub-tabs
+ * Section type for sidebar
  */
-const WorkflowTabContent: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<WorkflowSubTab>('kanban');
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Sub-tab navigation */}
-      <div className="mb-4 flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('kanban')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'kanban'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'kanban'}
-          role="tab"
-        >
-          Kanban Board
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('pipeline')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'pipeline'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'pipeline'}
-          role="tab"
-        >
-          Pipeline Editor
-        </button>
-      </div>
-
-      {/* Sub-tab content */}
-      <div className="flex-1 overflow-hidden">
-        {activeSubTab === 'kanban' && <KanbanBoard />}
-        {activeSubTab === 'pipeline' && <PipelineEditor />}
-      </div>
-    </div>
-  );
-};
-
-/**
- * Agent sub-tab type
- */
-type AgentSubTab = 'console' | 'mcp';
-
-/**
- * Agent tab content with Console terminal manager and MCP Control
- * Users can switch between Console and MCP views using sub-tabs
- */
-const AgentTabContent: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<AgentSubTab>('console');
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Sub-tab navigation */}
-      <div className="mb-4 flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('console')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'console'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'console'}
-          role="tab"
-        >
-          Console
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('mcp')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'mcp'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'mcp'}
-          role="tab"
-        >
-          MCP Control
-        </button>
-      </div>
-
-      {/* Sub-tab content */}
-      <div className="flex-1 overflow-hidden">
-        {activeSubTab === 'console' && <ConsoleManager />}
-        {activeSubTab === 'mcp' && <MCPControl />}
-      </div>
-    </div>
-  );
-};
-
-/**
- * Workspace sub-tab type
- */
-type WorkspaceSubTab = 'branches' | 'issues' | 'prs';
-
-/**
- * Workspace tab content with Branches, Issues, and PRs views
- * Users can switch between views using sub-tabs
- */
-const WorkspaceTabContent: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTab>('branches');
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Sub-tab navigation */}
-      <div className="mb-4 flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('branches')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'branches'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'branches'}
-          role="tab"
-        >
-          Branches
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('issues')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'issues'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'issues'}
-          role="tab"
-        >
-          Issues
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('prs')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeSubTab === 'prs'
-              ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-          aria-selected={activeSubTab === 'prs'}
-          role="tab"
-        >
-          Pull Requests
-        </button>
-      </div>
-
-      {/* Sub-tab content */}
-      <div className="flex-1 overflow-hidden">
-        {activeSubTab === 'branches' && <BranchesView />}
-        {activeSubTab === 'issues' && <IssuesView />}
-        {activeSubTab === 'prs' && <PRsView />}
-      </div>
-    </div>
-  );
-};
+type SectionId = 'workflow' | 'agent' | 'workspace';
 
 /**
  * Main App component for Maxtix desktop application
  *
  * This is the root React component that renders the desktop UI.
  * It serves as the entry point for the renderer process UI hierarchy.
- * Implements tab-based navigation with Workflow, Agent, and Workspace tabs.
+ * Implements sidebar navigation with collapsible sections for Workflow, Agent, and Workspace.
  */
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabId>('workflow');
+  const [expandedSections, setExpandedSections] = useState<Set<SectionId>>(
+    new Set(['workflow', 'agent', 'workspace'])
+  );
+  const [activeItem, setActiveItem] = useState<NavItemId>('kanban');
+
+  /**
+   * Toggle a section's expanded/collapsed state
+   */
+  const toggleSection = (sectionId: SectionId) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Render content based on active navigation item
+   */
+  const renderContent = () => {
+    switch (activeItem) {
+      case 'kanban':
+        return <KanbanBoard />;
+      case 'pipeline':
+        return <PipelineEditor />;
+      case 'console':
+        return <ConsoleManager />;
+      case 'mcp':
+        return <MCPControl />;
+      case 'branches':
+        return <BranchesView />;
+      case 'issues':
+        return <IssuesView />;
+      case 'prs':
+        return <PRsView />;
+      default:
+        return <KanbanBoard />;
+    }
+  };
 
   return (
-    <div className="flex h-screen w-full flex-col bg-gray-50 dark:bg-gray-950">
-      {/* Header with app title and tab navigation */}
-      <header className="flex-none border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex h-14 items-center px-4">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Maxtix</h1>
+    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950">
+      {/* Sidebar navigation */}
+      <aside className="flex w-64 flex-none flex-col border-r border-gray-200 bg-gray-900 dark:border-gray-800 dark:bg-gray-950">
+        {/* App title header */}
+        <div className="flex h-14 flex-none items-center border-b border-gray-700 px-4 dark:border-gray-800">
+          <h1 className="text-xl font-bold text-gray-100">Maxtix</h1>
         </div>
-        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} className="px-4" />
-      </header>
 
-      {/* Main content area with tab panels */}
+        {/* Navigation sections */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          {/* Workflow Section */}
+          <div className="mb-2">
+            <button
+              type="button"
+              onClick={() => toggleSection('workflow')}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800 hover:text-gray-100"
+              aria-expanded={expandedSections.has('workflow')}
+            >
+              <span>Workflow</span>
+              <svg
+                className={`h-4 w-4 transition-transform ${
+                  expandedSections.has('workflow') ? 'rotate-90' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+            {expandedSections.has('workflow') && (
+              <div className="mt-1 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('kanban')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'kanban'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  Kanban Board
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('pipeline')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'pipeline'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  Pipeline Editor
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Agent Section */}
+          <div className="mb-2">
+            <button
+              type="button"
+              onClick={() => toggleSection('agent')}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800 hover:text-gray-100"
+              aria-expanded={expandedSections.has('agent')}
+            >
+              <span>Agent</span>
+              <svg
+                className={`h-4 w-4 transition-transform ${
+                  expandedSections.has('agent') ? 'rotate-90' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+            {expandedSections.has('agent') && (
+              <div className="mt-1 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('console')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'console'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  Console
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('mcp')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'mcp'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  MCP Control
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Workspace Section */}
+          <div className="mb-2">
+            <button
+              type="button"
+              onClick={() => toggleSection('workspace')}
+              className="flex w-full items-center justify-between px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-gray-800 hover:text-gray-100"
+              aria-expanded={expandedSections.has('workspace')}
+            >
+              <span>Workspace</span>
+              <svg
+                className={`h-4 w-4 transition-transform ${
+                  expandedSections.has('workspace') ? 'rotate-90' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+            {expandedSections.has('workspace') && (
+              <div className="mt-1 space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('branches')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'branches'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  Branches
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('issues')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'issues'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  Issues
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveItem('prs')}
+                  className={`block w-full px-8 py-2 text-left text-sm transition-colors ${
+                    activeItem === 'prs'
+                      ? 'bg-gray-800 text-blue-400'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  Pull Requests
+                </button>
+              </div>
+            )}
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main content area */}
       <main className="flex flex-1 flex-col overflow-hidden">
-        <TabPanel id="workflow" activeTab={activeTab} className="p-4">
-          <WorkflowTabContent />
-        </TabPanel>
-
-        <TabPanel id="agent" activeTab={activeTab} className="p-4">
-          <AgentTabContent />
-        </TabPanel>
-
-        <TabPanel id="workspace" activeTab={activeTab} className="p-4">
-          <WorkspaceTabContent />
-        </TabPanel>
+        <div className="flex-1 overflow-auto p-4">{renderContent()}</div>
       </main>
     </div>
   );
