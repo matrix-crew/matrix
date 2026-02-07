@@ -13,6 +13,7 @@ import {
   createInitialSourceListState,
 } from './SourceList';
 import { MatrixForm, type MatrixFormValues } from './MatrixForm';
+import { SourceForm, type SourceFormValues } from './SourceForm';
 
 // Declare window.api for TypeScript
 declare global {
@@ -41,6 +42,10 @@ export interface MatrixViewState {
   formMode: 'create' | 'edit';
   /** Matrix being edited (null for create mode) */
   editingMatrix: Matrix | null;
+  /** Whether the source form is open */
+  isSourceFormOpen: boolean;
+  /** All available sources (for adding to matrix) */
+  allSources: Source[];
   /** Whether data is loading */
   isLoading: boolean;
   /** Error message if any */
@@ -61,6 +66,8 @@ export function createInitialMatrixViewState(): MatrixViewState {
     isFormOpen: false,
     formMode: 'create',
     editingMatrix: null,
+    isSourceFormOpen: false,
+    allSources: [],
     isLoading: false,
     errorMessage: null,
   };
@@ -187,29 +194,86 @@ const MatrixView: React.FC<MatrixViewProps> = ({
   }, []);
 
   /**
+   * Fetch all sources from backend
+   */
+  const fetchAllSources = React.useCallback(async () => {
+    try {
+      const response = await window.api.sendMessage({ type: 'source-list' });
+      if (response.success && response.data) {
+        const sources = (response.data as { sources: Source[] }).sources || [];
+        setState((prevState) => ({
+          ...prevState,
+          allSources: sources,
+        }));
+        return sources;
+      }
+    } catch {
+      // Silently fail - not critical for initial load
+    }
+    return [];
+  }, []);
+
+  /**
+   * Fetch sources for a specific matrix
+   */
+  const fetchSourcesForMatrix = React.useCallback(async (matrix: Matrix): Promise<Source[]> => {
+    if (!matrix.source_ids || matrix.source_ids.length === 0) {
+      return [];
+    }
+
+    // Fetch all sources and filter by matrix source_ids
+    const allSources = await fetchAllSources();
+    return allSources.filter((source) => matrix.source_ids.includes(source.id));
+  }, [fetchAllSources]);
+
+  /**
    * Fetch matrices on mount
    */
   React.useEffect(() => {
     fetchMatrices();
+    fetchAllSources();
   }, []);
 
   /**
    * Handle matrix selection
    */
   const handleMatrixSelect = React.useCallback(
-    (matrix: Matrix | null) => {
-      updateState({
-        ...state,
+    async (matrix: Matrix | null) => {
+      if (!matrix) {
+        updateState({
+          ...state,
+          selectedMatrix: null,
+          selectedSource: null,
+          sourceListState: createInitialSourceListState(),
+        });
+        return;
+      }
+
+      // Set loading state
+      setState((prevState) => ({
+        ...prevState,
         selectedMatrix: matrix,
         selectedSource: null,
         sourceListState: {
           ...createInitialSourceListState(matrix),
-          // In a real app, you'd fetch sources for this matrix here
-          sources: [],
+          isLoading: true,
         },
-      });
+      }));
+
+      // Fetch sources for this matrix
+      const sources = await fetchSourcesForMatrix(matrix);
+
+      setState((prevState) => ({
+        ...prevState,
+        sourceListState: {
+          ...prevState.sourceListState,
+          sources,
+          matrix,
+          isLoading: false,
+        },
+      }));
     },
-    [state, updateState]
+    [state, updateState, fetchSourcesForMatrix]
   );
 
   /**
@@ -401,20 +465,147 @@ const MatrixView: React.FC<MatrixViewProps> = ({
   }, [state.selectedMatrix]);
 
   /**
-   * Handle add source to matrix
+   * Handle add source to matrix - opens the source form
    */
   const handleAddSource = React.useCallback(() => {
-    // In a real app, this would open a dialog to add a source
+    setState((prevState) => ({
+      ...prevState,
+      isSourceFormOpen: true,
+    }));
   }, []);
+
+  /**
+   * Handle close source form
+   */
+  const handleCloseSourceForm = React.useCallback(() => {
+    setState((prevState) => ({
+      ...prevState,
+      isSourceFormOpen: false,
+    }));
+  }, []);
+
+  /**
+   * Handle source form submit - create source and add to matrix
+   */
+  const handleSourceFormSubmit = React.useCallback(
+    async (values: SourceFormValues) => {
+      if (!state.selectedMatrix) {
+        throw new Error('No matrix selected');
+      }
+
+      try {
+        // Create the source
+        const createResponse = await window.api.sendMessage({
+          type: 'source-create',
+          data: {
+            name: values.name,
+            path: values.path,
+            url: values.url || undefined,
+          },
+        });
+
+        if (!createResponse.success || !createResponse.data) {
+          throw new Error(createResponse.error || 'Failed to create source');
+        }
+
+        const newSource = (createResponse.data as { source: Source }).source;
+
+        // Add the source to the matrix
+        const addResponse = await window.api.sendMessage({
+          type: 'matrix-add-source',
+          data: {
+            matrixId: state.selectedMatrix.id,
+            sourceId: newSource.id,
+          },
+        });
+
+        if (!addResponse.success || !addResponse.data) {
+          throw new Error(addResponse.error || 'Failed to add source to matrix');
+        }
+
+        const updatedMatrix = (addResponse.data as { matrix: Matrix }).matrix;
+
+        // Update state with new source and updated matrix
+        setState((prevState) => ({
+          ...prevState,
+          isSourceFormOpen: false,
+          selectedMatrix: updatedMatrix,
+          allSources: [...prevState.allSources, newSource],
+          sourceListState: {
+            ...prevState.sourceListState,
+            sources: [...prevState.sourceListState.sources, newSource],
+            matrix: updatedMatrix,
+          },
+          matrixListState: {
+            ...prevState.matrixListState,
+            matrices: prevState.matrixListState.matrices.map((m) =>
+              m.id === updatedMatrix.id ? updatedMatrix : m
+            ),
+          },
+        }));
+      } catch (error) {
+        // Re-throw for the form to handle
+        throw error;
+      }
+    },
+    [state.selectedMatrix]
+  );
 
   /**
    * Handle remove source from matrix
    */
   const handleRemoveSource = React.useCallback(
-    (source: Source) => {
-      // In a real app, this would call the IPC to remove the source from the matrix
+    async (source: Source) => {
+      if (!state.selectedMatrix) return;
+
+      // Confirm removal
+      const confirmed = window.confirm(
+        `Remove "${source.name}" from this matrix? The source will still exist but won't be part of this matrix.`
+      );
+      if (!confirmed) return;
+
+      try {
+        const response = await window.api.sendMessage({
+          type: 'matrix-remove-source',
+          data: {
+            matrixId: state.selectedMatrix.id,
+            sourceId: source.id,
+          },
+        });
+
+        if (!response.success || !response.data) {
+          throw new Error(response.error || 'Failed to remove source from matrix');
+        }
+
+        const updatedMatrix = (response.data as { matrix: Matrix }).matrix;
+
+        // Update state - remove source from list, update matrix
+        setState((prevState) => ({
+          ...prevState,
+          selectedMatrix: updatedMatrix,
+          selectedSource: prevState.selectedSource?.id === source.id ? null : prevState.selectedSource,
+          sourceListState: {
+            ...prevState.sourceListState,
+            sources: prevState.sourceListState.sources.filter((s) => s.id !== source.id),
+            matrix: updatedMatrix,
+            selectedSourceId: prevState.sourceListState.selectedSourceId === source.id ? null : prevState.sourceListState.selectedSourceId,
+          },
+          matrixListState: {
+            ...prevState.matrixListState,
+            matrices: prevState.matrixListState.matrices.map((m) =>
+              m.id === updatedMatrix.id ? updatedMatrix : m
+            ),
+          },
+        }));
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to remove source';
+        setState((prevState) => ({
+          ...prevState,
+          errorMessage: errorMsg,
+        }));
+      }
     },
-    []
+    [state.selectedMatrix]
   );
 
   /**
@@ -535,6 +726,14 @@ const MatrixView: React.FC<MatrixViewProps> = ({
           matrix={state.editingMatrix}
           onSubmit={handleFormSubmit}
           onCancel={handleCloseForm}
+        />
+      )}
+
+      {/* Source form modal */}
+      {state.isSourceFormOpen && (
+        <SourceFormModal
+          onSubmit={handleSourceFormSubmit}
+          onCancel={handleCloseSourceForm}
         />
       )}
     </div>
@@ -721,6 +920,35 @@ const FormModal: React.FC<FormModalProps> = ({ mode, matrix, onSubmit, onCancel 
       <MatrixForm
         mode={mode}
         matrix={matrix}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />
+    </div>
+  </div>
+);
+
+/**
+ * Source form modal component for adding sources
+ */
+interface SourceFormModalProps {
+  onSubmit: (values: SourceFormValues) => void | Promise<void>;
+  onCancel: () => void;
+}
+
+const SourceFormModal: React.FC<SourceFormModalProps> = ({ onSubmit, onCancel }) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="source-form-modal-title"
+    onClick={onCancel}
+  >
+    <div
+      className="w-full max-w-md"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <SourceForm
+        mode="create"
         onSubmit={onSubmit}
         onCancel={onCancel}
       />

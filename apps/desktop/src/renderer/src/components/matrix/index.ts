@@ -62,3 +62,17 @@ export {
   formatSourceDate,
   truncatePath,
 } from './SourceList';
+
+// Export SourceForm component with its variants
+export { SourceForm, sourceFormButtonVariants, sourceFormInputVariants } from './SourceForm';
+
+// Export SourceForm prop types
+export type {
+  SourceFormProps,
+  SourceFormMode,
+  SourceFormValues,
+  SourceFormState,
+} from './SourceForm';
+
+// Export SourceForm utility functions
+export { createInitialSourceFormState, validateSourceFormValues } from './SourceForm';
