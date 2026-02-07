@@ -4,6 +4,7 @@ This module provides the core message handling functionality for processing
 JSON-based IPC messages from the Electron frontend.
 """
 
+from datetime import datetime, timezone
 from typing import Any
 
 from src.models import Matrix
@@ -58,6 +59,66 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
             "success": True,
             "data": {"matrices": [m.to_json() for m in matrices]},
         }
+
+    if message_type == "matrix-get":
+        data = message.get("data", {})
+        matrix_id = data.get("id", "")
+
+        if not matrix_id:
+            return {"success": False, "error": "Matrix ID is required"}
+
+        storage = MatrixStorage()
+        matrix = storage.load_matrix(matrix_id)
+
+        if matrix is None:
+            return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+        return {"success": True, "data": {"matrix": matrix.to_json()}}
+
+    if message_type == "matrix-update":
+        data = message.get("data", {})
+        matrix_id = data.get("id", "")
+
+        if not matrix_id:
+            return {"success": False, "error": "Matrix ID is required"}
+
+        storage = MatrixStorage()
+        matrix = storage.load_matrix(matrix_id)
+
+        if matrix is None:
+            return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+        # Update allowed fields
+        if "name" in data:
+            name = data["name"]
+            if not name or not name.strip():
+                return {"success": False, "error": "Matrix name cannot be empty"}
+            matrix.name = name.strip()
+
+        if "source_ids" in data:
+            matrix.source_ids = data["source_ids"]
+
+        # Update the timestamp
+        matrix.updated_at = datetime.now(timezone.utc).isoformat()
+
+        storage.save_matrix(matrix)
+
+        return {"success": True, "data": {"matrix": matrix.to_json()}}
+
+    if message_type == "matrix-delete":
+        data = message.get("data", {})
+        matrix_id = data.get("id", "")
+
+        if not matrix_id:
+            return {"success": False, "error": "Matrix ID is required"}
+
+        storage = MatrixStorage()
+        deleted = storage.delete_matrix(matrix_id)
+
+        if not deleted:
+            return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+        return {"success": True, "data": {"deleted": True}}
 
     # Unknown message type
     return {
