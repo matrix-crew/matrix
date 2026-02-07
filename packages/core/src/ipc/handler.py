@@ -6,6 +6,9 @@ JSON-based IPC messages from the Electron frontend.
 
 from typing import Any
 
+from src.models import Matrix
+from src.persistence import MatrixStorage
+
 
 def handle_message(message: dict[str, Any]) -> dict[str, Any]:
     """Handle incoming IPC message from Electron frontend.
@@ -32,6 +35,21 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
     # Route to appropriate handler based on message type
     if message_type == "ping":
         return {"success": True, "data": {"message": "pong"}}
+
+    if message_type == "matrix-create":
+        data = message.get("data", {})
+        name = data.get("name", "")
+
+        # Validate name is not empty
+        if not name or not name.strip():
+            return {"success": False, "error": "Matrix name is required"}
+
+        # Create and save the matrix
+        matrix = Matrix.create(name.strip())
+        storage = MatrixStorage()
+        storage.save_matrix(matrix)
+
+        return {"success": True, "data": {"matrix": matrix.to_json()}}
 
     # Unknown message type
     return {
