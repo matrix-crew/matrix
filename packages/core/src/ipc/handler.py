@@ -7,7 +7,7 @@ JSON-based IPC messages from the Electron frontend.
 from datetime import datetime, timezone
 from typing import Any
 
-from src.models import Matrix
+from src.models import Matrix, Source
 from src.persistence import MatrixStorage
 
 
@@ -119,6 +119,49 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
             return {"success": False, "error": f"Matrix not found: {matrix_id}"}
 
         return {"success": True, "data": {"deleted": True}}
+
+    if message_type == "source-create":
+        data = message.get("data", {})
+        name = data.get("name", "")
+        path = data.get("path", "")
+        url = data.get("url")
+
+        # Validate required fields
+        if not name or not name.strip():
+            return {"success": False, "error": "Source name is required"}
+
+        if not path or not path.strip():
+            return {"success": False, "error": "Source path is required"}
+
+        # Create and save the source
+        source = Source.create(name.strip(), path.strip(), url)
+        storage = MatrixStorage()
+        storage.save_source(source)
+
+        return {"success": True, "data": {"source": source.to_json()}}
+
+    if message_type == "source-list":
+        storage = MatrixStorage()
+        sources = storage.list_sources()
+        return {
+            "success": True,
+            "data": {"sources": [s.to_json() for s in sources]},
+        }
+
+    if message_type == "source-get":
+        data = message.get("data", {})
+        source_id = data.get("id", "")
+
+        if not source_id:
+            return {"success": False, "error": "Source ID is required"}
+
+        storage = MatrixStorage()
+        source = storage.load_source(source_id)
+
+        if source is None:
+            return {"success": False, "error": f"Source not found: {source_id}"}
+
+        return {"success": True, "data": {"source": source.to_json()}}
 
     # Unknown message type
     return {
