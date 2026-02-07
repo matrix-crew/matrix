@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import type { Matrix, Source } from '@maxtix/shared';
+import type { Matrix, Source, IPCResponse } from '@maxtix/shared';
 import {
   MatrixList,
   type MatrixListState,
@@ -13,6 +13,15 @@ import {
   createInitialSourceListState,
 } from './SourceList';
 import { MatrixForm, type MatrixFormValues } from './MatrixForm';
+
+// Declare window.api for TypeScript
+declare global {
+  interface Window {
+    api: {
+      sendMessage: (message: { type: string; data?: unknown }) => Promise<IPCResponse>;
+    };
+  }
+}
 
 /**
  * Matrix view state
@@ -121,6 +130,70 @@ const MatrixView: React.FC<MatrixViewProps> = ({
   );
 
   /**
+   * Fetch matrices from backend on mount
+   */
+  const fetchMatrices = React.useCallback(async () => {
+    try {
+      updateState({
+        ...state,
+        isLoading: true,
+        errorMessage: null,
+        matrixListState: {
+          ...state.matrixListState,
+          isLoading: true,
+          errorMessage: null,
+        },
+      });
+
+      const response = await window.api.sendMessage({ type: 'matrix-list' });
+
+      if (response.success && response.data) {
+        const matrices = (response.data as { matrices: Matrix[] }).matrices || [];
+        setState((prevState) => ({
+          ...prevState,
+          isLoading: false,
+          matrixListState: {
+            ...prevState.matrixListState,
+            matrices,
+            isLoading: false,
+            errorMessage: null,
+          },
+        }));
+      } else {
+        setState((prevState) => ({
+          ...prevState,
+          isLoading: false,
+          errorMessage: response.error || 'Failed to load matrices',
+          matrixListState: {
+            ...prevState.matrixListState,
+            isLoading: false,
+            errorMessage: response.error || 'Failed to load matrices',
+          },
+        }));
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to load matrices';
+      setState((prevState) => ({
+        ...prevState,
+        isLoading: false,
+        errorMessage: errorMsg,
+        matrixListState: {
+          ...prevState.matrixListState,
+          isLoading: false,
+          errorMessage: errorMsg,
+        },
+      }));
+    }
+  }, []);
+
+  /**
+   * Fetch matrices on mount
+   */
+  React.useEffect(() => {
+    fetchMatrices();
+  }, []);
+
+  /**
    * Handle matrix selection
    */
   const handleMatrixSelect = React.useCallback(
@@ -216,31 +289,116 @@ const MatrixView: React.FC<MatrixViewProps> = ({
   }, [state, updateState]);
 
   /**
-   * Handle form submission
+   * Handle form submission - create or update matrix via IPC
    */
   const handleFormSubmit = React.useCallback(
     async (values: MatrixFormValues) => {
-      // In a real app, this would call the IPC to create/update the matrix
-      // For now, we just close the form
-      handleCloseForm();
+      try {
+        if (state.formMode === 'create') {
+          // Create new matrix
+          const response = await window.api.sendMessage({
+            type: 'matrix-create',
+            data: { name: values.name },
+          });
+
+          if (response.success && response.data) {
+            const newMatrix = (response.data as { matrix: Matrix }).matrix;
+            setState((prevState) => ({
+              ...prevState,
+              isFormOpen: false,
+              editingMatrix: null,
+              selectedMatrix: newMatrix,
+              matrixListState: {
+                ...prevState.matrixListState,
+                matrices: [...prevState.matrixListState.matrices, newMatrix],
+                selectedMatrixId: newMatrix.id,
+              },
+            }));
+          } else {
+            throw new Error(response.error || 'Failed to create matrix');
+          }
+        } else {
+          // Update existing matrix
+          if (!state.editingMatrix) {
+            throw new Error('No matrix to edit');
+          }
+
+          const response = await window.api.sendMessage({
+            type: 'matrix-update',
+            data: { id: state.editingMatrix.id, name: values.name },
+          });
+
+          if (response.success && response.data) {
+            const updatedMatrix = (response.data as { matrix: Matrix }).matrix;
+            setState((prevState) => ({
+              ...prevState,
+              isFormOpen: false,
+              editingMatrix: null,
+              selectedMatrix: updatedMatrix,
+              matrixListState: {
+                ...prevState.matrixListState,
+                matrices: prevState.matrixListState.matrices.map((m) =>
+                  m.id === updatedMatrix.id ? updatedMatrix : m
+                ),
+              },
+            }));
+          } else {
+            throw new Error(response.error || 'Failed to update matrix');
+          }
+        }
+      } catch (error) {
+        // Re-throw to let the form handle the error display
+        throw error;
+      }
     },
-    [handleCloseForm]
+    [state.formMode, state.editingMatrix]
   );
 
   /**
-   * Handle delete matrix
+   * Handle delete matrix via IPC
    */
-  const handleDeleteMatrix = React.useCallback(() => {
-    if (state.selectedMatrix) {
-      // In a real app, this would call the IPC to delete the matrix
-      // For now, we just clear the selection
-      updateState({
-        ...state,
-        selectedMatrix: null,
-        selectedSource: null,
+  const handleDeleteMatrix = React.useCallback(async () => {
+    if (!state.selectedMatrix) return;
+
+    // Confirm deletion
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${state.selectedMatrix.name}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const response = await window.api.sendMessage({
+        type: 'matrix-delete',
+        data: { id: state.selectedMatrix.id },
       });
+
+      if (response.success) {
+        setState((prevState) => ({
+          ...prevState,
+          selectedMatrix: null,
+          selectedSource: null,
+          matrixListState: {
+            ...prevState.matrixListState,
+            matrices: prevState.matrixListState.matrices.filter(
+              (m) => m.id !== prevState.selectedMatrix?.id
+            ),
+            selectedMatrixId: null,
+          },
+        }));
+      } else {
+        setState((prevState) => ({
+          ...prevState,
+          errorMessage: response.error || 'Failed to delete matrix',
+        }));
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to delete matrix';
+      setState((prevState) => ({
+        ...prevState,
+        errorMessage: errorMsg,
+      }));
     }
-  }, [state, updateState]);
+  }, [state.selectedMatrix]);
 
   /**
    * Handle add source to matrix
