@@ -93,8 +93,6 @@ export function createKanbanCard(overrides: Partial<KanbanCard> & { title: strin
   const now = new Date();
   return {
     id: crypto.randomUUID(),
-    title: overrides.title,
-    columnId: overrides.columnId,
     createdAt: now,
     updatedAt: now,
     order: overrides.order ?? 0,

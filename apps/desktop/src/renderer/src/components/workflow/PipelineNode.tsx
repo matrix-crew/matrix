@@ -3,7 +3,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import type {
   PipelineNode as PipelineNodeType,
-  PipelineNodeStatus,
   PipelineNodeType as NodeType,
 } from '@/types/pipeline';
 
