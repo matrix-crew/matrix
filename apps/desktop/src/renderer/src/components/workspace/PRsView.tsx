@@ -879,8 +879,6 @@ interface PRDetailsPanelProps {
 }
 
 const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
-  const reviewSummary = getPRReviewSummary(pr.reviews);
-
   return (
     <div className="flex w-80 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       {/* Header */}

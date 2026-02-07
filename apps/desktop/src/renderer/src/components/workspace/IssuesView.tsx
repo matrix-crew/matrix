@@ -7,7 +7,6 @@ import {
   type Repository,
   type IssueFilter,
   type IssueState,
-  type IssuePriority,
   createInitialIssuesState,
   filterIssues,
   groupIssuesByRepository,

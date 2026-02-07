@@ -236,13 +236,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     [handleSectionChange]
   );
 
-  /**
-   * Get current section info for the content area header
-   */
-  const currentSection = React.useMemo(() => {
-    return getSettingsSection(activeSection);
-  }, [activeSection]);
-
   return (
     <div
       className={cn('flex h-full overflow-hidden', className)}
