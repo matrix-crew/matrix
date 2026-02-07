@@ -27,6 +27,8 @@ const collapsibleHeaderVariants = cva(
       variant: {
         default:
           'text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+        borderless:
+          'text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
       },
     },
     defaultVariants: {
