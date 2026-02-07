@@ -167,3 +167,87 @@ class MatrixStorage:
             os.remove(file_path)
             return True
         return False
+
+    def _get_source_path(self, source_id: str) -> str:
+        """Get the file path for a Source by ID.
+
+        Args:
+            source_id: The UUID of the Source
+
+        Returns:
+            The absolute path to the Source JSON file
+        """
+        return os.path.join(self._sources_path, f"{source_id}.json")
+
+    def save_source(self, source: Source) -> None:
+        """Save a Source to the filesystem.
+
+        Creates the necessary directories if they don't exist, then writes
+        the Source as JSON to the sources subdirectory.
+
+        Args:
+            source: The Source instance to save
+        """
+        self._ensure_directories()
+        file_path = self._get_source_path(source.id)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(source.to_json(), f, indent=2)
+
+    def load_source(self, source_id: str) -> Optional[Source]:
+        """Load a Source from the filesystem by ID.
+
+        Args:
+            source_id: The UUID of the Source to load
+
+        Returns:
+            The Source instance if found, None otherwise
+        """
+        file_path = self._get_source_path(source_id)
+        if not os.path.exists(file_path):
+            return None
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return Source.from_json(data)
+        except (json.JSONDecodeError, KeyError):
+            return None
+
+    def list_sources(self) -> list[Source]:
+        """List all Sources from the filesystem.
+
+        Reads all JSON files in the sources subdirectory and returns
+        them as Source instances. Skips any files that cannot be parsed.
+
+        Returns:
+            A list of all valid Source instances
+        """
+        sources: list[Source] = []
+        if not os.path.exists(self._sources_path):
+            return sources
+
+        for filename in os.listdir(self._sources_path):
+            if filename.endswith(".json"):
+                file_path = os.path.join(self._sources_path, filename)
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        sources.append(Source.from_json(data))
+                except (json.JSONDecodeError, KeyError):
+                    # Skip corrupted files
+                    continue
+        return sources
+
+    def delete_source(self, source_id: str) -> bool:
+        """Delete a Source from the filesystem.
+
+        Args:
+            source_id: The UUID of the Source to delete
+
+        Returns:
+            True if the Source was deleted, False if it didn't exist
+        """
+        file_path = self._get_source_path(source_id)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return True
+        return False
