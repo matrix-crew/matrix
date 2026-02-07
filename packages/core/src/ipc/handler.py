@@ -51,6 +51,14 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
 
         return {"success": True, "data": {"matrix": matrix.to_json()}}
 
+    if message_type == "matrix-list":
+        storage = MatrixStorage()
+        matrices = storage.list_matrices()
+        return {
+            "success": True,
+            "data": {"matrices": [m.to_json() for m in matrices]},
+        }
+
     # Unknown message type
     return {
         "success": False,
