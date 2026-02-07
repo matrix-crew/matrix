@@ -27,3 +27,9 @@ export type {
   NavigationItem,
   NavigationSection,
 } from './components/sidebar-navigation';
+
+export { TabNavigation, tabNavigationVariants } from './components/tab-navigation';
+export type { Tab, TabNavigationProps } from './components/tab-navigation';
+
+export { TabPanel, tabPanelVariants } from './components/tab-panel';
+export type { TabPanelProps } from './components/tab-panel';

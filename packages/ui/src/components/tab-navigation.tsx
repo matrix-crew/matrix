@@ -1,35 +1,23 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 /**
- * Tab definition with label and unique identifier
+ * Generic Tab definition with label and unique identifier
  */
-export type TabId = 'workflow' | 'agent' | 'workspace' | 'settings';
-
-export interface Tab {
-  id: TabId;
+export interface Tab<T extends string = string> {
+  id: T;
   label: string;
   icon?: React.ReactNode;
 }
 
 /**
- * Pre-defined tabs for the Maxtix application
- */
-export const TABS: Tab[] = [
-  { id: 'workflow', label: 'Workflow' },
-  { id: 'agent', label: 'Agent' },
-  { id: 'workspace', label: 'Workspace' },
-  { id: 'settings', label: 'Settings' },
-];
-
-/**
  * Tab button variants using class-variance-authority
  *
  * Defines visual styles for tab buttons in active and inactive states.
- * Uses Tailwind CSS classes with proper composition and responsive design.
+ * Uses Tailwind CSS classes with proper dark mode support.
  */
-const tabButtonVariants = cva(
+const tabNavigationVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
@@ -45,30 +33,45 @@ const tabButtonVariants = cva(
   }
 );
 
-export interface TabNavigationProps extends VariantProps<typeof tabButtonVariants> {
+export interface TabNavigationProps<T extends string = string>
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'onChange'>,
+    VariantProps<typeof tabNavigationVariants> {
+  /** Array of tabs to display */
+  tabs: Tab<T>[];
   /** Currently active tab ID */
-  activeTab: TabId;
+  activeTab: T;
   /** Callback when a tab is selected */
-  onTabChange: (tabId: TabId) => void;
-  /** Additional CSS classes for the navigation container */
-  className?: string;
+  onTabChange: (tabId: T) => void;
+  /** Accessible label for the navigation */
+  ariaLabel?: string;
 }
 
 /**
  * TabNavigation component
  *
- * Main navigation component for switching between Workflow, Agent, and Workspace tabs.
- * Provides keyboard navigation and accessibility features.
+ * A generic tab navigation component that accepts tabs as props.
+ * Provides keyboard navigation (arrow keys, Home, End) and full accessibility support.
  *
  * @example
- * const [activeTab, setActiveTab] = useState<TabId>('workflow');
- * <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+ * type MyTabId = 'workflow' | 'agent' | 'settings';
+ *
+ * const tabs: Tab<MyTabId>[] = [
+ *   { id: 'workflow', label: 'Workflow' },
+ *   { id: 'agent', label: 'Agent' },
+ *   { id: 'settings', label: 'Settings' },
+ * ];
+ *
+ * const [activeTab, setActiveTab] = useState<MyTabId>('workflow');
+ * <TabNavigation tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
  */
-const TabNavigation: React.FC<TabNavigationProps> = ({
+function TabNavigation<T extends string = string>({
+  tabs,
   activeTab,
   onTabChange,
   className,
-}) => {
+  ariaLabel = 'Tab navigation',
+  ...props
+}: TabNavigationProps<T>): React.ReactElement {
   /**
    * Handle keyboard navigation between tabs
    */
@@ -76,47 +79,53 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     let newIndex = currentIndex;
 
     if (event.key === 'ArrowLeft') {
-      newIndex = currentIndex === 0 ? TABS.length - 1 : currentIndex - 1;
+      newIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
     } else if (event.key === 'ArrowRight') {
-      newIndex = currentIndex === TABS.length - 1 ? 0 : currentIndex + 1;
+      newIndex = currentIndex === tabs.length - 1 ? 0 : currentIndex + 1;
     } else if (event.key === 'Home') {
       newIndex = 0;
     } else if (event.key === 'End') {
-      newIndex = TABS.length - 1;
+      newIndex = tabs.length - 1;
     } else {
       return;
     }
 
     event.preventDefault();
-    onTabChange(TABS[newIndex].id);
+    onTabChange(tabs[newIndex].id);
   };
 
   return (
     <nav
       className={cn('flex border-b border-gray-200 dark:border-gray-800', className)}
       role="tablist"
-      aria-label="Main navigation"
+      aria-label={ariaLabel}
+      {...props}
     >
-      {TABS.map((tab, index) => (
+      {tabs.map((tab, index) => (
         <button
           key={tab.id}
+          type="button"
           role="tab"
           aria-selected={activeTab === tab.id}
           aria-controls={`tabpanel-${tab.id}`}
           id={`tab-${tab.id}`}
           tabIndex={activeTab === tab.id ? 0 : -1}
-          className={cn(tabButtonVariants({ active: activeTab === tab.id }))}
+          className={cn(tabNavigationVariants({ active: activeTab === tab.id }))}
           onClick={() => onTabChange(tab.id)}
           onKeyDown={(e) => handleKeyDown(e, index)}
         >
-          {tab.icon && <span className="mr-2">{tab.icon}</span>}
+          {tab.icon && (
+            <span className="mr-2 [&_svg]:size-4 [&_svg]:pointer-events-none" aria-hidden="true">
+              {tab.icon}
+            </span>
+          )}
           {tab.label}
         </button>
       ))}
     </nav>
   );
-};
+}
 
 TabNavigation.displayName = 'TabNavigation';
 
-export { TabNavigation, tabButtonVariants };
+export { TabNavigation, tabNavigationVariants };
