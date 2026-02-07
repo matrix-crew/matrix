@@ -165,6 +165,28 @@ Each IPC call spawns a new Python process via `python-shell`. The Python process
 3. Writes one JSON response to stdout
 4. Exits
 
+### Data Structure
+
+All service data is implemented as Python objects with JSON serialization for persistence:
+
+**Design Pattern:**
+- **Runtime**: Python objects in `packages/core`
+- **Storage**: JSON format for all user-created objects
+
+**User Object Types:**
+- `Matrix` - Core matrix objects
+- `Kanban` - Kanban boards
+- `Task` - Individual tasks
+- `Agent` - AI agents
+- (Extensible for future object types)
+
+**Serialization Flow:**
+```
+Python Object (Runtime) ↔ JSON (Storage/Transfer)
+```
+
+All user objects must implement `to_json()` and `from_json()` methods for bidirectional conversion.
+
 ### Monorepo Structure
 
 This is a **Turborepo** monorepo with **pnpm workspaces**:
