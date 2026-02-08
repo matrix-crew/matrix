@@ -4,10 +4,10 @@ This module defines the Matrix entity which represents a collection of
 Sources that can be grouped and organized together.
 """
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Optional
 import uuid
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 
 @dataclass
@@ -32,7 +32,7 @@ class Matrix:
     updated_at: str
 
     @classmethod
-    def create(cls, name: str, source_ids: Optional[list[str]] = None) -> "Matrix":
+    def create(cls, name: str, source_ids: list[str] | None = None) -> "Matrix":
         """Create a new Matrix with auto-generated id and timestamps.
 
         Args:
@@ -42,7 +42,7 @@ class Matrix:
         Returns:
             A new Matrix instance with generated UUID and current timestamps
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         return cls(
             id=str(uuid.uuid4()),
             name=name,
