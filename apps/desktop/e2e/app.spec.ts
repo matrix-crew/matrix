@@ -7,7 +7,10 @@ let page: Page;
 
 test.beforeAll(async () => {
   electronApp = await electron.launch({
-    args: [path.join(__dirname, '../out/main/index.js')],
+    args: [
+      ...(process.env.CI ? ['--no-sandbox'] : []),
+      path.join(__dirname, '../out/main/index.js'),
+    ],
     env: {
       ...process.env,
       NODE_ENV: 'test',
