@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Matrix, IPCResponse } from '@maxtix/shared';
+import type { Matrix } from '@maxtix/shared';
 import { MatrixTabBar } from '@/components/layout/MatrixTabBar';
 import { ContextSidebar, type ContextItemId } from '@/components/layout/ContextSidebar';
 import { OnboardingView } from '@/components/layout/OnboardingView';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { MatrixView } from '@/components/matrix/MatrixView';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
@@ -10,15 +11,6 @@ import { ConsoleManager } from '@/components/agent/ConsoleManager';
 import { MCPControl } from '@/components/agent/MCPControl';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
-
-// Declare window.api for TypeScript
-declare global {
-  interface Window {
-    api: {
-      sendMessage: (message: { type: string; data?: unknown }) => Promise<IPCResponse>;
-    };
-  }
-}
 
 /**
  * Main App component for Maxtix desktop application
@@ -32,9 +24,10 @@ const App: React.FC = () => {
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null); // null = checking
 
   /**
-   * Fetch matrices from backend on mount
+   * Fetch matrices from backend
    */
   const fetchMatrices = useCallback(async () => {
     try {
@@ -43,9 +36,8 @@ const App: React.FC = () => {
       if (response.success && response.data) {
         const loaded = (response.data as { matrices: Matrix[] }).matrices || [];
         setMatrices(loaded);
-        // Auto-select first matrix if none selected
-        if (loaded.length > 0 && !activeMatrixId) {
-          setActiveMatrixId(loaded[0].id);
+        if (loaded.length > 0) {
+          setActiveMatrixId((prev) => prev ?? loaded[0].id);
         }
       }
     } catch {
@@ -55,9 +47,36 @@ const App: React.FC = () => {
     }
   }, []);
 
+  /**
+   * Initialize app: check onboarding and fetch matrices in parallel
+   * Both IPC calls fire simultaneously to minimize startup time.
+   */
   useEffect(() => {
-    fetchMatrices();
-  }, [fetchMatrices]);
+    const init = async () => {
+      const configPromise = window.api.readConfig().catch(() => ({ onboarding_completed: false }));
+      const matricesPromise = window.api.sendMessage({ type: 'matrix-list' }).catch(() => null);
+
+      const config = await configPromise;
+      const needsOnboarding = !config.onboarding_completed;
+      setShowOnboarding(needsOnboarding);
+
+      if (!needsOnboarding) {
+        // Matrices request is already in-flight; just await the result
+        const response = await matricesPromise;
+        if (response?.success && response.data) {
+          const loaded = (response.data as { matrices: Matrix[] }).matrices || [];
+          setMatrices(loaded);
+          if (loaded.length > 0) {
+            setActiveMatrixId(loaded[0].id);
+          }
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    init();
+  }, []);
 
   /**
    * Select a matrix tab
@@ -154,8 +173,8 @@ const App: React.FC = () => {
     }
   };
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading only during initial onboarding check (fast file read)
+  if (showOnboarding === null) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-base-900">
         <div className="text-sm text-text-muted">Loading...</div>
@@ -163,7 +182,19 @@ const App: React.FC = () => {
     );
   }
 
-  // No matrices - show onboarding
+  // Show onboarding wizard on first run
+  if (showOnboarding) {
+    return (
+      <OnboardingWizard
+        onComplete={() => {
+          setShowOnboarding(false);
+          fetchMatrices();
+        }}
+      />
+    );
+  }
+
+  // No matrices - show loading or empty state
   if (matrices.length === 0 && !isFormOpen) {
     return (
       <div className="flex h-screen w-full flex-col bg-base-900">
@@ -175,10 +206,12 @@ const App: React.FC = () => {
           onCreateMatrix={handleOpenCreateForm}
           onCloseMatrix={() => {}}
         />
-        <OnboardingView onCreateMatrix={handleOpenCreateForm} />
-
-        {isFormOpen && (
-          <FormModal onSubmit={handleCreateMatrix} onCancel={() => setIsFormOpen(false)} />
+        {isLoading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-sm text-text-muted animate-pulse">Loading matrices...</div>
+          </div>
+        ) : (
+          <OnboardingView onCreateMatrix={handleOpenCreateForm} />
         )}
       </div>
     );

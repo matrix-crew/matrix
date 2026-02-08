@@ -3,6 +3,7 @@ import { mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { setupIPCHandlers } from './ipc';
+import { setupSystemCheckHandlers } from './system-check';
 
 const MATRIX_WORKSPACE_DIR = '.matrix';
 
@@ -81,6 +82,9 @@ app.whenReady().then(() => {
 
   // Initialize IPC handlers for Python backend communication
   setupIPCHandlers();
+
+  // Initialize system check handlers for onboarding & config
+  setupSystemCheckHandlers();
 
   createWindow();
 
