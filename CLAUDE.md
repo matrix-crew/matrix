@@ -132,6 +132,89 @@ cd packages/shared
 pnpm dev
 ```
 
+## Testing
+
+### Test Requirement
+
+**All new features and IPC handlers MUST include corresponding tests.** Pull requests without tests for new functionality will not pass CI.
+
+### Test Stack
+
+| Layer                     | Tool                           | Location                        |
+| ------------------------- | ------------------------------ | ------------------------------- |
+| TypeScript Unit/Component | Vitest + React Testing Library | `*.test.ts(x)` alongside source |
+| Python Unit               | pytest                         | `packages/core/tests/`          |
+| E2E (Electron)            | Playwright                     | `apps/desktop/e2e/`             |
+
+### Running Tests
+
+```bash
+# Run ALL TypeScript tests (via Turborepo)
+pnpm test
+
+# Run tests for a specific package
+cd apps/desktop && pnpm test        # Desktop app (14 tests)
+cd packages/ui && pnpm test         # UI components (13 tests)
+cd packages/shared && pnpm test     # Shared types (16 tests)
+
+# Watch mode (re-runs on file changes)
+cd apps/desktop && pnpm test:watch
+cd packages/ui && pnpm test:watch
+
+# Run Python tests
+cd packages/core && uv run pytest -v
+
+# Run E2E tests (requires built app)
+cd apps/desktop && pnpm build && pnpm test:e2e
+```
+
+### Writing Tests for New Features
+
+When adding a new feature, tests are required at every layer it touches:
+
+1. **New IPC handler** (Python): Add tests in `packages/core/tests/` that call `handle_message()` directly with an in-memory SQLite database. Test success, error, and edge cases.
+
+2. **New React component**: Add a `ComponentName.test.tsx` file next to the component. Mock `window.api.sendMessage` using `vi.mocked()` for IPC calls. Use `@testing-library/react` for rendering and assertions.
+
+3. **New shared types**: Add type contract tests in `packages/shared/src/types/` that verify message structure satisfies the interfaces.
+
+4. **New UI component**: Add a test file in `packages/ui/src/components/` using React Testing Library. Test all variants, states, and interactions.
+
+### Test Patterns
+
+**Mocking IPC in React tests:**
+
+```typescript
+vi.mocked(window.api.sendMessage).mockImplementation(async (msg) => {
+  if (msg.type === 'my-handler') {
+    return { success: true, data: { result: 'value' } };
+  }
+  return { success: true, data: {} };
+});
+```
+
+**Python handler tests with in-memory DB:**
+
+```python
+@pytest.fixture(autouse=True)
+def use_memory_db():
+    engine = get_engine(":memory:")
+    init_db(engine)
+    with patch("src.ipc.handler.get_engine", return_value=engine), \
+         patch("src.ipc.handler.init_db"):
+        yield
+```
+
+### CI/CD
+
+GitHub Actions runs automatically on pushes to `main` and on all pull requests:
+
+- **test-typescript**: Install → Build → Lint → Type-check → Test (all TS packages)
+- **test-python**: Install → Ruff lint → Ruff format check → pytest
+- **e2e**: (after both above pass) Build → Playwright install → E2E tests
+
+CI config: [.github/workflows/ci.yml](.github/workflows/ci.yml)
+
 ## Architecture
 
 ### IPC Communication Flow
@@ -188,6 +271,11 @@ const response = await window.api.sendMessage({ type: 'my-handler', data: { some
 ```bash
 cd packages/shared && pnpm build
 ```
+
+5. **Write tests** (required):
+   - Add Python handler tests in `packages/core/tests/` covering success, error, and edge cases
+   - Add type contract tests in `packages/shared/src/types/ipc.test.ts` for the new message type
+   - Add React component tests if a UI component consumes the new handler
 
 ### Security Architecture
 
@@ -323,6 +411,8 @@ pnpm dev
 echo '{"type":"ping"}' | uv run python packages/core/src/main.py
 # Expected: {"success":true,"data":{"message":"pong"}}
 ```
+
+For automated IPC testing, see the [Testing](#testing) section above.
 
 ## Environment Variables
 
