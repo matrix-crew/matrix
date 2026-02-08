@@ -34,6 +34,6 @@
     "electron-vite": "^2.3.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "vite": "^5.4.0"
   }
 }
