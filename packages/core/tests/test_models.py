@@ -1,7 +1,7 @@
 """Unit tests for Matrix and Source models."""
 
-import pytest
-from src.models import Matrix, Source
+from src.matrix import Matrix
+from src.source import Source
 
 
 class TestMatrix:
