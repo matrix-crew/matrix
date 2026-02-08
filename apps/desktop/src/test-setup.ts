@@ -23,6 +23,8 @@ const mockApi = {
     close: vi.fn(),
     onData: vi.fn().mockReturnValue(() => {}),
     onExit: vi.fn().mockReturnValue(() => {}),
+    saveState: vi.fn().mockResolvedValue({ success: true }),
+    loadState: vi.fn().mockResolvedValue({ success: true, data: null }),
   },
 };
 

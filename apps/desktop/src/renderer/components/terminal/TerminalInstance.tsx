@@ -48,6 +48,8 @@ const TerminalInstance = React.forwardRef<TerminalInstanceHandle, TerminalInstan
     const terminalRef = React.useRef<Terminal | null>(null);
     const fitAddonRef = React.useRef<FitAddon | null>(null);
     const initializedRef = React.useRef(false);
+    const onExitRef = React.useRef(onExit);
+    onExitRef.current = onExit;
 
     // Expose scrollback capture/restore methods to parent
     React.useImperativeHandle(
@@ -122,7 +124,7 @@ const TerminalInstance = React.forwardRef<TerminalInstanceHandle, TerminalInstan
       // Handle PTY exit
       const cleanupExit = terminalService.onTerminalExit(sessionId, (exitCode) => {
         terminal.write(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m\r\n`);
-        onExit?.(exitCode);
+        onExitRef.current?.(exitCode);
       });
 
       return () => {
@@ -134,7 +136,7 @@ const TerminalInstance = React.forwardRef<TerminalInstanceHandle, TerminalInstan
         fitAddonRef.current = null;
         initializedRef.current = false;
       };
-    }, [sessionId, onExit]);
+    }, [sessionId]);
 
     /**
      * Fit terminal when it becomes active (tab switch)
