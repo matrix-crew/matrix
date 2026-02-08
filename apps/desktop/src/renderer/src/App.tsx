@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Matrix, IPCResponse } from '@maxtix/shared';
+import type { Matrix } from '@maxtix/shared';
 import { MatrixTabBar } from '@/components/layout/MatrixTabBar';
 import { ContextSidebar, type ContextItemId } from '@/components/layout/ContextSidebar';
 import { OnboardingView } from '@/components/layout/OnboardingView';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { MatrixView } from '@/components/matrix/MatrixView';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
@@ -11,15 +12,6 @@ import { MCPControl } from '@/components/agent/MCPControl';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
 
-// Declare window.api for TypeScript
-declare global {
-  interface Window {
-    api: {
-      sendMessage: (message: { type: string; data?: unknown }) => Promise<IPCResponse>;
-    };
-  }
-}
-
 /**
  * Main App component for Maxtix desktop application
  *
@@ -27,6 +19,7 @@ declare global {
  * Each matrix is a tab; selecting a tab shows its contextual sidebar.
  */
 const App: React.FC = () => {
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [activeMatrixId, setActiveMatrixId] = useState<string | null>(null);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
@@ -55,7 +48,33 @@ const App: React.FC = () => {
     }
   }, []);
 
+  /**
+   * Initialize app: check onboarding status, then fetch matrices
+   */
   useEffect(() => {
+    const init = async () => {
+      try {
+        const config = await window.api.readConfig().catch(() => ({ onboarding_completed: false }));
+        const needsOnboarding = !config.onboarding_completed;
+        setShowOnboarding(needsOnboarding);
+
+        if (!needsOnboarding) {
+          fetchMatrices();
+        }
+      } catch {
+        // If config check fails, skip onboarding and go to app
+        setShowOnboarding(false);
+        fetchMatrices();
+      }
+    };
+    init();
+  }, [fetchMatrices]);
+
+  /**
+   * Handle onboarding completion
+   */
+  const handleOnboardingComplete = useCallback(() => {
+    setShowOnboarding(false);
     fetchMatrices();
   }, [fetchMatrices]);
 
@@ -154,7 +173,21 @@ const App: React.FC = () => {
     }
   };
 
-  // Show loading state
+  // Show loading while checking onboarding status
+  if (showOnboarding === null) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-base-900">
+        <div className="text-sm text-text-muted">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show onboarding wizard
+  if (showOnboarding) {
+    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
+  }
+
+  // Show loading while fetching matrices
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-base-900">

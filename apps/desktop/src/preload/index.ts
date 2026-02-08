@@ -40,4 +40,56 @@ contextBridge.exposeInMainWorld('api', {
   off: (channel: string, callback: (...args: unknown[]) => void) => {
     ipcRenderer.removeListener(channel, callback);
   },
+
+  // ── System Check APIs (Onboarding) ──────────────────────────────────
+
+  /**
+   * Check if a CLI command exists on the system
+   * @param command - Command name to check (e.g., 'claude', 'git')
+   * @returns Detection result with path and version info
+   */
+  checkCommand: (
+    command: string
+  ): Promise<{ exists: boolean; path?: string; version?: string }> => {
+    return ipcRenderer.invoke('system:check-command', command);
+  },
+
+  /**
+   * Detect installed terminal emulators on the system
+   * @returns Array of detected terminals with name, id, path, and isDefault flag
+   */
+  detectTerminals: (): Promise<
+    Array<{ id: string; name: string; path: string; isDefault: boolean }>
+  > => {
+    return ipcRenderer.invoke('system:detect-terminals');
+  },
+
+  /**
+   * Detect installed IDEs / code editors on the system
+   * @returns Array of detected IDEs with id, name, and path
+   */
+  detectIDEs: (): Promise<Array<{ id: string; name: string; path: string }>> => {
+    return ipcRenderer.invoke('system:detect-ides');
+  },
+
+  /**
+   * Read application config from ~/.matrix/config.json
+   */
+  readConfig: (): Promise<Record<string, unknown>> => {
+    return ipcRenderer.invoke('config:read');
+  },
+
+  /**
+   * Write application config to ~/.matrix/config.json
+   */
+  writeConfig: (config: Record<string, unknown>): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('config:write', config);
+  },
+
+  /**
+   * Open a URL in the default browser
+   */
+  openExternal: (url: string): Promise<void> => {
+    return ipcRenderer.invoke('shell:open-external', url);
+  },
 });

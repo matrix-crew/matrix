@@ -1,19 +1,10 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@maxtix/ui';
-import type { Matrix, Source, IPCResponse } from '@maxtix/shared';
+import type { Matrix, Source } from '@maxtix/shared';
 import { SourceList, type SourceListState, createInitialSourceListState } from './SourceList';
 import { MatrixForm, type MatrixFormValues } from './MatrixForm';
 import { SourceForm, type SourceFormValues } from './SourceForm';
-
-// Declare window.api for TypeScript
-declare global {
-  interface Window {
-    api: {
-      sendMessage: (message: { type: string; data?: unknown }) => Promise<IPCResponse>;
-    };
-  }
-}
 
 /**
  * Action button variants using class-variance-authority
