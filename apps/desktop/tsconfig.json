@@ -28,13 +28,6 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true
   },
-  "include": [
-    "src/renderer/src/**/*",
-    "src/preload/index.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out"
-  ]
+  "include": ["src/renderer/src/**/*", "src/preload/index.d.ts"],
+  "exclude": ["node_modules", "dist", "out"]
 }

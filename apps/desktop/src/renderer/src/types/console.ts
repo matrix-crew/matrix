@@ -131,7 +131,10 @@ export function createTerminalSession(name?: string, cwd?: string): TerminalSess
     name: name ?? `Terminal ${id.slice(0, 4)}`,
     status: 'idle',
     output: [
-      createOutputLine('Terminal session started. Type commands to interact with agents.', 'system'),
+      createOutputLine(
+        'Terminal session started. Type commands to interact with agents.',
+        'system'
+      ),
     ],
     commandHistory: [],
     historyIndex: -1,

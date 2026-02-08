@@ -219,11 +219,7 @@ interface PathInputProps {
 const PathInput: React.FC<PathInputProps> = ({ config, icon }) => (
   <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-850">
     <div className="flex items-start gap-3">
-      {icon && (
-        <div className="mt-0.5 flex-shrink-0">
-          {icon}
-        </div>
-      )}
+      {icon && <div className="mt-0.5 flex-shrink-0">{icon}</div>}
       <div className="flex-1 min-w-0">
         <label
           htmlFor={`path-${config.id}`}
@@ -231,9 +227,7 @@ const PathInput: React.FC<PathInputProps> = ({ config, icon }) => (
         >
           {config.label}
         </label>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-          {config.description}
-        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{config.description}</p>
         <div className="flex gap-2">
           <input
             id={`path-${config.id}`}
@@ -268,33 +262,25 @@ const PathInput: React.FC<PathInputProps> = ({ config, icon }) => (
  */
 const PathsSection: React.FC<PathsSectionProps> = ({ className }) => {
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Paths Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Paths Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Paths
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Paths</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure paths to CLI tools and framework directories
         </p>
       </div>
 
       {/* CLI Tools Paths */}
-      <SettingsGroup
-        title="CLI Tools"
-        description="Specify custom paths for command-line tools"
-      >
+      <SettingsGroup title="CLI Tools" description="Specify custom paths for command-line tools">
         <div className="space-y-3">
           {CLI_PATHS.map((config) => (
             <PathInput key={config.id} config={config} icon={config.icon} />
           ))}
         </div>
         <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-          Leave empty to use the system default path. Custom paths will be available in a future update.
+          Leave empty to use the system default path. Custom paths will be available in a future
+          update.
         </p>
       </SettingsGroup>
 

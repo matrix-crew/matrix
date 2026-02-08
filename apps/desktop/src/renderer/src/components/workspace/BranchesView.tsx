@@ -22,7 +22,8 @@ const repoItemVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -34,25 +35,23 @@ const repoItemVariants = cva(
 /**
  * Branch card variants using class-variance-authority
  */
-const branchCardVariants = cva(
-  'rounded-lg border p-3 transition-all cursor-pointer',
-  {
-    variants: {
-      selected: {
-        true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
-      },
-      isCurrent: {
-        true: 'ring-2 ring-green-400 dark:ring-green-500',
-        false: '',
-      },
+const branchCardVariants = cva('rounded-lg border p-3 transition-all cursor-pointer', {
+  variants: {
+    selected: {
+      true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
+      false:
+        'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
     },
-    defaultVariants: {
-      selected: false,
-      isCurrent: false,
+    isCurrent: {
+      true: 'ring-2 ring-green-400 dark:ring-green-500',
+      false: '',
     },
-  }
-);
+  },
+  defaultVariants: {
+    selected: false,
+    isCurrent: false,
+  },
+});
 
 export interface BranchesViewProps extends VariantProps<typeof repoItemVariants> {
   /** Initial state for the branches view */
@@ -75,11 +74,7 @@ export interface BranchesViewProps extends VariantProps<typeof repoItemVariants>
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const BranchesView: React.FC<BranchesViewProps> = ({
-  initialState,
-  onStateChange,
-  className,
-}) => {
+const BranchesView: React.FC<BranchesViewProps> = ({ initialState, onStateChange, className }) => {
   const [state, setState] = React.useState<BranchesViewState>(() => {
     return initialState ?? createInitialBranchesState();
   });
@@ -105,7 +100,8 @@ const BranchesView: React.FC<BranchesViewProps> = ({
         selectedRepositoryId: repositoryId === state.selectedRepositoryId ? null : repositoryId,
         filter: {
           ...state.filter,
-          repositoryId: repositoryId === state.selectedRepositoryId ? undefined : repositoryId ?? undefined,
+          repositoryId:
+            repositoryId === state.selectedRepositoryId ? undefined : (repositoryId ?? undefined),
         },
       });
     },
@@ -197,9 +193,7 @@ const BranchesView: React.FC<BranchesViewProps> = ({
       {/* Left panel - Repository list */}
       <div className="flex w-64 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
         <div className="border-b border-gray-200 p-3 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Repositories
-          </h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repositories</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {state.repositories.length} repos in matrix
           </p>
@@ -416,10 +410,7 @@ const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
   <button
     type="button"
     onClick={onClick}
-    className={cn(
-      repoItemVariants({ selected }),
-      'w-full border text-left'
-    )}
+    className={cn(repoItemVariants({ selected }), 'w-full border text-left')}
     aria-selected={selected}
     role="option"
   >
@@ -480,17 +471,8 @@ interface BranchCardProps {
   onClick: () => void;
 }
 
-const BranchCard: React.FC<BranchCardProps> = ({
-  branch,
-  selected,
-  showRepository,
-  onClick,
-}) => {
-  const statusText = getBranchStatusText(
-    branch.status,
-    branch.commitsAhead,
-    branch.commitsBehind
-  );
+const BranchCard: React.FC<BranchCardProps> = ({ branch, selected, showRepository, onClick }) => {
+  const statusText = getBranchStatusText(branch.status, branch.commitsAhead, branch.commitsBehind);
 
   return (
     <button
@@ -616,9 +598,7 @@ const BranchDetailsPanel: React.FC<BranchDetailsPanelProps> = ({ branch, onClose
         <h3 className="truncate font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
           {branch.name}
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          {branch.repository.fullName}
-        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{branch.repository.fullName}</p>
       </div>
       <button
         type="button"
@@ -751,12 +731,7 @@ interface DetailRowProps {
 const DetailRow: React.FC<DetailRowProps> = ({ label, value, mono }) => (
   <div className="flex items-center justify-between gap-2">
     <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-    <span
-      className={cn(
-        'text-sm text-gray-900 dark:text-gray-100',
-        mono && 'font-mono text-xs'
-      )}
-    >
+    <span className={cn('text-sm text-gray-900 dark:text-gray-100', mono && 'font-mono text-xs')}>
       {value}
     </span>
   </div>

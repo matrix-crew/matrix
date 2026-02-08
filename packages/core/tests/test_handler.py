@@ -34,29 +34,20 @@ class TestMatrixHandlers:
 
     def test_matrix_create(self):
         """Test matrix-create handler."""
-        response = handle_message({
-            "type": "matrix-create",
-            "data": {"name": "Test Matrix"}
-        })
+        response = handle_message({"type": "matrix-create", "data": {"name": "Test Matrix"}})
         assert response["success"] is True
         assert "matrix" in response["data"]
         assert response["data"]["matrix"]["name"] == "Test Matrix"
 
     def test_matrix_create_empty_name(self):
         """Test matrix-create rejects empty name."""
-        response = handle_message({
-            "type": "matrix-create",
-            "data": {"name": ""}
-        })
+        response = handle_message({"type": "matrix-create", "data": {"name": ""}})
         assert response["success"] is False
         assert "required" in response["error"].lower()
 
     def test_matrix_create_whitespace_name(self):
         """Test matrix-create rejects whitespace-only name."""
-        response = handle_message({
-            "type": "matrix-create",
-            "data": {"name": "   "}
-        })
+        response = handle_message({"type": "matrix-create", "data": {"name": "   "}})
         assert response["success"] is False
         assert "required" in response["error"].lower()
 
@@ -69,54 +60,40 @@ class TestMatrixHandlers:
 
     def test_matrix_get_not_found(self):
         """Test matrix-get with non-existent ID."""
-        response = handle_message({
-            "type": "matrix-get",
-            "data": {"id": "nonexistent-id"}
-        })
+        response = handle_message({"type": "matrix-get", "data": {"id": "nonexistent-id"}})
         assert response["success"] is False
         assert "not found" in response["error"].lower()
 
     def test_matrix_update_not_found(self):
         """Test matrix-update with non-existent ID."""
-        response = handle_message({
-            "type": "matrix-update",
-            "data": {"id": "nonexistent-id", "name": "New Name"}
-        })
+        response = handle_message(
+            {"type": "matrix-update", "data": {"id": "nonexistent-id", "name": "New Name"}}
+        )
         assert response["success"] is False
         assert "not found" in response["error"].lower()
 
     def test_matrix_delete_not_found(self):
         """Test matrix-delete with non-existent ID."""
-        response = handle_message({
-            "type": "matrix-delete",
-            "data": {"id": "nonexistent-id"}
-        })
+        response = handle_message({"type": "matrix-delete", "data": {"id": "nonexistent-id"}})
         assert response["success"] is False
         assert "not found" in response["error"].lower()
 
     def test_matrix_crud_flow(self):
         """Test full Matrix CRUD flow."""
         # Create
-        create_response = handle_message({
-            "type": "matrix-create",
-            "data": {"name": "CRUD Test"}
-        })
+        create_response = handle_message({"type": "matrix-create", "data": {"name": "CRUD Test"}})
         assert create_response["success"] is True
         matrix_id = create_response["data"]["matrix"]["id"]
 
         # Get
-        get_response = handle_message({
-            "type": "matrix-get",
-            "data": {"id": matrix_id}
-        })
+        get_response = handle_message({"type": "matrix-get", "data": {"id": matrix_id}})
         assert get_response["success"] is True
         assert get_response["data"]["matrix"]["name"] == "CRUD Test"
 
         # Update
-        update_response = handle_message({
-            "type": "matrix-update",
-            "data": {"id": matrix_id, "name": "Updated Name"}
-        })
+        update_response = handle_message(
+            {"type": "matrix-update", "data": {"id": matrix_id, "name": "Updated Name"}}
+        )
         assert update_response["success"] is True
         assert update_response["data"]["matrix"]["name"] == "Updated Name"
 
@@ -126,18 +103,12 @@ class TestMatrixHandlers:
         assert len(list_response["data"]["matrices"]) >= 1
 
         # Delete
-        delete_response = handle_message({
-            "type": "matrix-delete",
-            "data": {"id": matrix_id}
-        })
+        delete_response = handle_message({"type": "matrix-delete", "data": {"id": matrix_id}})
         assert delete_response["success"] is True
         assert delete_response["data"]["deleted"] is True
 
         # Verify deleted
-        get_response2 = handle_message({
-            "type": "matrix-get",
-            "data": {"id": matrix_id}
-        })
+        get_response2 = handle_message({"type": "matrix-get", "data": {"id": matrix_id}})
         assert get_response2["success"] is False
 
 
@@ -146,28 +117,21 @@ class TestSourceHandlers:
 
     def test_source_create(self):
         """Test source-create handler."""
-        response = handle_message({
-            "type": "source-create",
-            "data": {"name": "my-repo", "path": "/path/to/repo"}
-        })
+        response = handle_message(
+            {"type": "source-create", "data": {"name": "my-repo", "path": "/path/to/repo"}}
+        )
         assert response["success"] is True
         assert "source" in response["data"]
         assert response["data"]["source"]["name"] == "my-repo"
 
     def test_source_create_empty_name(self):
         """Test source-create rejects empty name."""
-        response = handle_message({
-            "type": "source-create",
-            "data": {"name": "", "path": "/path"}
-        })
+        response = handle_message({"type": "source-create", "data": {"name": "", "path": "/path"}})
         assert response["success"] is False
 
     def test_source_create_empty_path(self):
         """Test source-create rejects empty path."""
-        response = handle_message({
-            "type": "source-create",
-            "data": {"name": "repo", "path": ""}
-        })
+        response = handle_message({"type": "source-create", "data": {"name": "repo", "path": ""}})
         assert response["success"] is False
 
     def test_source_list(self):

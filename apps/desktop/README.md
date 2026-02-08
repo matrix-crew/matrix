@@ -31,6 +31,7 @@ pnpm dev
 ```
 
 This will:
+
 1. Start the Vite dev server for the renderer process
 2. Launch Electron with hot reload enabled
 3. Watch for file changes and rebuild automatically
@@ -53,6 +54,7 @@ pnpm preview
 ```
 
 The build output is located in:
+
 - `out/main/` - Main process
 - `out/preload/` - Preload script
 - `out/renderer/` - Renderer process
@@ -143,7 +145,7 @@ export function setupIPCHandlers() {
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
-  myMethod: (data: any) => ipcRenderer.invoke('ipc:my-method', data)
+  myMethod: (data: any) => ipcRenderer.invoke('ipc:my-method', data),
 });
 ```
 
@@ -271,8 +273,8 @@ const mainWindow = new BrowserWindow({
     preload: join(__dirname, '../preload/index.js'),
     sandbox: false,
     contextIsolation: true,
-    nodeIntegration: false
-  }
+    nodeIntegration: false,
+  },
 });
 ```
 
@@ -360,7 +362,7 @@ const pythonShell = new PythonShell('main.py', {
   mode: 'json',
   pythonPath: 'uv',
   pythonOptions: ['run', 'python'],
-  scriptPath: join(__dirname, '../../packages/core/src')
+  scriptPath: join(__dirname, '../../packages/core/src'),
 });
 ```
 

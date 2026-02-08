@@ -11,7 +11,8 @@ const ideCardVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
       },
     },
     defaultVariants: {
@@ -209,9 +210,7 @@ const IDECard: React.FC<IDECardProps> = ({ config, selected, onClick }) => (
     aria-checked={selected}
   >
     {config.icon}
-    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-      {config.label}
-    </span>
+    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{config.label}</span>
     <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
       {config.description}
     </span>
@@ -257,16 +256,10 @@ const DeveloperToolsSection: React.FC<DeveloperToolsSectionProps> = ({ className
   const [selectedTerminal, setSelectedTerminal] = React.useState<TerminalOption>('default');
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Developer Tools Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Developer Tools Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Developer Tools
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Developer Tools</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure your preferred IDE and terminal settings
         </p>
@@ -277,11 +270,7 @@ const DeveloperToolsSection: React.FC<DeveloperToolsSectionProps> = ({ className
         title="Default IDE"
         description="Choose which editor to open files in by default"
       >
-        <div
-          className="flex flex-wrap gap-4"
-          role="radiogroup"
-          aria-label="IDE selection"
-        >
+        <div className="flex flex-wrap gap-4" role="radiogroup" aria-label="IDE selection">
           {IDE_OPTIONS.map((config) => (
             <IDECard
               key={config.id}
@@ -324,9 +313,7 @@ const DeveloperToolsSection: React.FC<DeveloperToolsSectionProps> = ({ className
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {config.label}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {config.description}
-                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
               </div>
             </label>
           ))}
@@ -431,7 +418,10 @@ const DeveloperToolsSection: React.FC<DeveloperToolsSectionProps> = ({ className
               className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500 placeholder-gray-400 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:placeholder-gray-500"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Available variables: <code className="text-gray-600 dark:text-gray-300">{'${file}'}</code>, <code className="text-gray-600 dark:text-gray-300">{'${line}'}</code>, <code className="text-gray-600 dark:text-gray-300">{'${column}'}</code>
+              Available variables:{' '}
+              <code className="text-gray-600 dark:text-gray-300">{'${file}'}</code>,{' '}
+              <code className="text-gray-600 dark:text-gray-300">{'${line}'}</code>,{' '}
+              <code className="text-gray-600 dark:text-gray-300">{'${column}'}</code>
             </p>
           </div>
         </div>

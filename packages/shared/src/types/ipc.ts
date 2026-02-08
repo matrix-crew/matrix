@@ -14,7 +14,7 @@ import type {
   SourceCreateData,
   SourceIdData,
   MatrixSourceData,
-} from "./matrix";
+} from './matrix';
 
 /**
  * Base structure for all IPC messages sent from frontend to backend
@@ -42,7 +42,7 @@ export interface IPCResponse<T = unknown> {
  * Ping message for testing IPC connectivity
  */
 export interface PingMessage extends IPCMessage {
-  type: "ping";
+  type: 'ping';
 }
 
 /**
@@ -51,7 +51,7 @@ export interface PingMessage extends IPCMessage {
 export interface PongResponse extends IPCResponse<{ message: string }> {
   success: true;
   data: {
-    message: "pong";
+    message: 'pong';
   };
 }
 
@@ -63,7 +63,7 @@ export interface PongResponse extends IPCResponse<{ message: string }> {
  * Message to create a new Matrix
  */
 export interface MatrixCreateMessage extends IPCMessage<MatrixCreateData> {
-  type: "matrix-create";
+  type: 'matrix-create';
   data: MatrixCreateData;
 }
 
@@ -81,7 +81,7 @@ export interface MatrixCreateResponse extends IPCResponse<{ matrix: Matrix }> {
  * Message to list all Matrices
  */
 export interface MatrixListMessage extends IPCMessage {
-  type: "matrix-list";
+  type: 'matrix-list';
 }
 
 /**
@@ -98,7 +98,7 @@ export interface MatrixListResponse extends IPCResponse<{ matrices: Matrix[] }> 
  * Message to get a single Matrix by ID
  */
 export interface MatrixGetMessage extends IPCMessage<MatrixIdData> {
-  type: "matrix-get";
+  type: 'matrix-get';
   data: MatrixIdData;
 }
 
@@ -116,7 +116,7 @@ export interface MatrixGetResponse extends IPCResponse<{ matrix: Matrix }> {
  * Message to update an existing Matrix
  */
 export interface MatrixUpdateMessage extends IPCMessage<MatrixUpdateData> {
-  type: "matrix-update";
+  type: 'matrix-update';
   data: MatrixUpdateData;
 }
 
@@ -134,7 +134,7 @@ export interface MatrixUpdateResponse extends IPCResponse<{ matrix: Matrix }> {
  * Message to delete a Matrix
  */
 export interface MatrixDeleteMessage extends IPCMessage<MatrixIdData> {
-  type: "matrix-delete";
+  type: 'matrix-delete';
   data: MatrixIdData;
 }
 
@@ -156,7 +156,7 @@ export interface MatrixDeleteResponse extends IPCResponse<{ deleted: true }> {
  * Message to create a new Source
  */
 export interface SourceCreateMessage extends IPCMessage<SourceCreateData> {
-  type: "source-create";
+  type: 'source-create';
   data: SourceCreateData;
 }
 
@@ -174,7 +174,7 @@ export interface SourceCreateResponse extends IPCResponse<{ source: Source }> {
  * Message to list all Sources
  */
 export interface SourceListMessage extends IPCMessage {
-  type: "source-list";
+  type: 'source-list';
 }
 
 /**
@@ -191,7 +191,7 @@ export interface SourceListResponse extends IPCResponse<{ sources: Source[] }> {
  * Message to get a single Source by ID
  */
 export interface SourceGetMessage extends IPCMessage<SourceIdData> {
-  type: "source-get";
+  type: 'source-get';
   data: SourceIdData;
 }
 
@@ -213,7 +213,7 @@ export interface SourceGetResponse extends IPCResponse<{ source: Source }> {
  * Message to add a Source to a Matrix
  */
 export interface MatrixAddSourceMessage extends IPCMessage<MatrixSourceData> {
-  type: "matrix-add-source";
+  type: 'matrix-add-source';
   data: MatrixSourceData;
 }
 
@@ -231,7 +231,7 @@ export interface MatrixAddSourceResponse extends IPCResponse<{ matrix: Matrix }>
  * Message to remove a Source from a Matrix
  */
 export interface MatrixRemoveSourceMessage extends IPCMessage<MatrixSourceData> {
-  type: "matrix-remove-source";
+  type: 'matrix-remove-source';
   data: MatrixSourceData;
 }
 

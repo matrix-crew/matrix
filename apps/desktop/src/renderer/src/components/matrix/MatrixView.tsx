@@ -2,16 +2,8 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@maxtix/ui';
 import type { Matrix, Source, IPCResponse } from '@maxtix/shared';
-import {
-  MatrixList,
-  type MatrixListState,
-  createInitialMatrixListState,
-} from './MatrixList';
-import {
-  SourceList,
-  type SourceListState,
-  createInitialSourceListState,
-} from './SourceList';
+import { MatrixList, type MatrixListState, createInitialMatrixListState } from './MatrixList';
+import { SourceList, type SourceListState, createInitialSourceListState } from './SourceList';
 import { MatrixForm, type MatrixFormValues } from './MatrixForm';
 import { SourceForm, type SourceFormValues } from './SourceForm';
 
@@ -81,9 +73,12 @@ const actionButtonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
-        secondary: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
-        danger: 'text-red-600 hover:bg-red-50 hover:text-red-700 focus:ring-red-500 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300',
+        primary:
+          'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
+        secondary:
+          'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
+        danger:
+          'text-red-600 hover:bg-red-50 hover:text-red-700 focus:ring-red-500 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300',
       },
     },
     defaultVariants: {
@@ -116,11 +111,7 @@ export interface MatrixViewProps extends VariantProps<typeof actionButtonVariant
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const MatrixView: React.FC<MatrixViewProps> = ({
-  initialState,
-  onStateChange,
-  className,
-}) => {
+const MatrixView: React.FC<MatrixViewProps> = ({ initialState, onStateChange, className }) => {
   const [state, setState] = React.useState<MatrixViewState>(() => {
     return initialState ?? createInitialMatrixViewState();
   });
@@ -216,15 +207,18 @@ const MatrixView: React.FC<MatrixViewProps> = ({
   /**
    * Fetch sources for a specific matrix
    */
-  const fetchSourcesForMatrix = React.useCallback(async (matrix: Matrix): Promise<Source[]> => {
-    if (!matrix.source_ids || matrix.source_ids.length === 0) {
-      return [];
-    }
+  const fetchSourcesForMatrix = React.useCallback(
+    async (matrix: Matrix): Promise<Source[]> => {
+      if (!matrix.source_ids || matrix.source_ids.length === 0) {
+        return [];
+      }
 
-    // Fetch all sources and filter by matrix source_ids
-    const allSources = await fetchAllSources();
-    return allSources.filter((source) => matrix.source_ids.includes(source.id));
-  }, [fetchAllSources]);
+      // Fetch all sources and filter by matrix source_ids
+      const allSources = await fetchAllSources();
+      return allSources.filter((source) => matrix.source_ids.includes(source.id));
+    },
+    [fetchAllSources]
+  );
 
   /**
    * Fetch matrices on mount
@@ -357,62 +351,57 @@ const MatrixView: React.FC<MatrixViewProps> = ({
    */
   const handleFormSubmit = React.useCallback(
     async (values: MatrixFormValues) => {
-      try {
-        if (state.formMode === 'create') {
-          // Create new matrix
-          const response = await window.api.sendMessage({
-            type: 'matrix-create',
-            data: { name: values.name },
-          });
+      if (state.formMode === 'create') {
+        // Create new matrix
+        const response = await window.api.sendMessage({
+          type: 'matrix-create',
+          data: { name: values.name },
+        });
 
-          if (response.success && response.data) {
-            const newMatrix = (response.data as { matrix: Matrix }).matrix;
-            setState((prevState) => ({
-              ...prevState,
-              isFormOpen: false,
-              editingMatrix: null,
-              selectedMatrix: newMatrix,
-              matrixListState: {
-                ...prevState.matrixListState,
-                matrices: [...prevState.matrixListState.matrices, newMatrix],
-                selectedMatrixId: newMatrix.id,
-              },
-            }));
-          } else {
-            throw new Error(response.error || 'Failed to create matrix');
-          }
+        if (response.success && response.data) {
+          const newMatrix = (response.data as { matrix: Matrix }).matrix;
+          setState((prevState) => ({
+            ...prevState,
+            isFormOpen: false,
+            editingMatrix: null,
+            selectedMatrix: newMatrix,
+            matrixListState: {
+              ...prevState.matrixListState,
+              matrices: [...prevState.matrixListState.matrices, newMatrix],
+              selectedMatrixId: newMatrix.id,
+            },
+          }));
         } else {
-          // Update existing matrix
-          if (!state.editingMatrix) {
-            throw new Error('No matrix to edit');
-          }
-
-          const response = await window.api.sendMessage({
-            type: 'matrix-update',
-            data: { id: state.editingMatrix.id, name: values.name },
-          });
-
-          if (response.success && response.data) {
-            const updatedMatrix = (response.data as { matrix: Matrix }).matrix;
-            setState((prevState) => ({
-              ...prevState,
-              isFormOpen: false,
-              editingMatrix: null,
-              selectedMatrix: updatedMatrix,
-              matrixListState: {
-                ...prevState.matrixListState,
-                matrices: prevState.matrixListState.matrices.map((m) =>
-                  m.id === updatedMatrix.id ? updatedMatrix : m
-                ),
-              },
-            }));
-          } else {
-            throw new Error(response.error || 'Failed to update matrix');
-          }
+          throw new Error(response.error || 'Failed to create matrix');
         }
-      } catch (error) {
-        // Re-throw to let the form handle the error display
-        throw error;
+      } else {
+        // Update existing matrix
+        if (!state.editingMatrix) {
+          throw new Error('No matrix to edit');
+        }
+
+        const response = await window.api.sendMessage({
+          type: 'matrix-update',
+          data: { id: state.editingMatrix.id, name: values.name },
+        });
+
+        if (response.success && response.data) {
+          const updatedMatrix = (response.data as { matrix: Matrix }).matrix;
+          setState((prevState) => ({
+            ...prevState,
+            isFormOpen: false,
+            editingMatrix: null,
+            selectedMatrix: updatedMatrix,
+            matrixListState: {
+              ...prevState.matrixListState,
+              matrices: prevState.matrixListState.matrices.map((m) =>
+                m.id === updatedMatrix.id ? updatedMatrix : m
+              ),
+            },
+          }));
+        } else {
+          throw new Error(response.error || 'Failed to update matrix');
+        }
       }
     },
     [state.formMode, state.editingMatrix]
@@ -493,60 +482,55 @@ const MatrixView: React.FC<MatrixViewProps> = ({
         throw new Error('No matrix selected');
       }
 
-      try {
-        // Create the source
-        const createResponse = await window.api.sendMessage({
-          type: 'source-create',
-          data: {
-            name: values.name,
-            path: values.path,
-            url: values.url || undefined,
-          },
-        });
+      // Create the source
+      const createResponse = await window.api.sendMessage({
+        type: 'source-create',
+        data: {
+          name: values.name,
+          path: values.path,
+          url: values.url || undefined,
+        },
+      });
 
-        if (!createResponse.success || !createResponse.data) {
-          throw new Error(createResponse.error || 'Failed to create source');
-        }
-
-        const newSource = (createResponse.data as { source: Source }).source;
-
-        // Add the source to the matrix
-        const addResponse = await window.api.sendMessage({
-          type: 'matrix-add-source',
-          data: {
-            matrixId: state.selectedMatrix.id,
-            sourceId: newSource.id,
-          },
-        });
-
-        if (!addResponse.success || !addResponse.data) {
-          throw new Error(addResponse.error || 'Failed to add source to matrix');
-        }
-
-        const updatedMatrix = (addResponse.data as { matrix: Matrix }).matrix;
-
-        // Update state with new source and updated matrix
-        setState((prevState) => ({
-          ...prevState,
-          isSourceFormOpen: false,
-          selectedMatrix: updatedMatrix,
-          allSources: [...prevState.allSources, newSource],
-          sourceListState: {
-            ...prevState.sourceListState,
-            sources: [...prevState.sourceListState.sources, newSource],
-            matrix: updatedMatrix,
-          },
-          matrixListState: {
-            ...prevState.matrixListState,
-            matrices: prevState.matrixListState.matrices.map((m) =>
-              m.id === updatedMatrix.id ? updatedMatrix : m
-            ),
-          },
-        }));
-      } catch (error) {
-        // Re-throw for the form to handle
-        throw error;
+      if (!createResponse.success || !createResponse.data) {
+        throw new Error(createResponse.error || 'Failed to create source');
       }
+
+      const newSource = (createResponse.data as { source: Source }).source;
+
+      // Add the source to the matrix
+      const addResponse = await window.api.sendMessage({
+        type: 'matrix-add-source',
+        data: {
+          matrixId: state.selectedMatrix.id,
+          sourceId: newSource.id,
+        },
+      });
+
+      if (!addResponse.success || !addResponse.data) {
+        throw new Error(addResponse.error || 'Failed to add source to matrix');
+      }
+
+      const updatedMatrix = (addResponse.data as { matrix: Matrix }).matrix;
+
+      // Update state with new source and updated matrix
+      setState((prevState) => ({
+        ...prevState,
+        isSourceFormOpen: false,
+        selectedMatrix: updatedMatrix,
+        allSources: [...prevState.allSources, newSource],
+        sourceListState: {
+          ...prevState.sourceListState,
+          sources: [...prevState.sourceListState.sources, newSource],
+          matrix: updatedMatrix,
+        },
+        matrixListState: {
+          ...prevState.matrixListState,
+          matrices: prevState.matrixListState.matrices.map((m) =>
+            m.id === updatedMatrix.id ? updatedMatrix : m
+          ),
+        },
+      }));
     },
     [state.selectedMatrix]
   );
@@ -583,12 +567,16 @@ const MatrixView: React.FC<MatrixViewProps> = ({
         setState((prevState) => ({
           ...prevState,
           selectedMatrix: updatedMatrix,
-          selectedSource: prevState.selectedSource?.id === source.id ? null : prevState.selectedSource,
+          selectedSource:
+            prevState.selectedSource?.id === source.id ? null : prevState.selectedSource,
           sourceListState: {
             ...prevState.sourceListState,
             sources: prevState.sourceListState.sources.filter((s) => s.id !== source.id),
             matrix: updatedMatrix,
-            selectedSourceId: prevState.sourceListState.selectedSourceId === source.id ? null : prevState.sourceListState.selectedSourceId,
+            selectedSourceId:
+              prevState.sourceListState.selectedSourceId === source.id
+                ? null
+                : prevState.sourceListState.selectedSourceId,
           },
           matrixListState: {
             ...prevState.matrixListState,
@@ -647,8 +635,7 @@ const MatrixView: React.FC<MatrixViewProps> = ({
                 </h2>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   {state.selectedMatrix.source_ids.length} source
-                  {state.selectedMatrix.source_ids.length !== 1 ? 's' : ''} •
-                  Created{' '}
+                  {state.selectedMatrix.source_ids.length !== 1 ? 's' : ''} • Created{' '}
                   {new Date(state.selectedMatrix.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -713,10 +700,7 @@ const MatrixView: React.FC<MatrixViewProps> = ({
 
       {/* Right panel - Source details (conditional) */}
       {state.selectedSource && (
-        <SourceDetailsPanel
-          source={state.selectedSource}
-          onClose={handleCloseSourceDetails}
-        />
+        <SourceDetailsPanel source={state.selectedSource} onClose={handleCloseSourceDetails} />
       )}
 
       {/* Matrix form modal */}
@@ -731,10 +715,7 @@ const MatrixView: React.FC<MatrixViewProps> = ({
 
       {/* Source form modal */}
       {state.isSourceFormOpen && (
-        <SourceFormModal
-          onSubmit={handleSourceFormSubmit}
-          onCancel={handleCloseSourceForm}
-        />
+        <SourceFormModal onSubmit={handleSourceFormSubmit} onCancel={handleCloseSourceForm} />
       )}
     </div>
   );
@@ -757,9 +738,7 @@ const EmptyStatePanel: React.FC<EmptyStatePanelProps> = ({ onCreateMatrix }) => 
     >
       <path d="M5.566 4.657A4.505 4.505 0 0 1 6.75 4.5h10.5c.41 0 .806.055 1.183.157A3 3 0 0 0 15.75 3h-7.5a3 3 0 0 0-2.684 1.657ZM2.25 12a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3v-6ZM5.25 7.5c-.41 0-.806.055-1.184.157A3 3 0 0 1 6.75 6h10.5a3 3 0 0 1 2.683 1.657A4.505 4.505 0 0 0 18.75 7.5H5.25Z" />
     </svg>
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-      No Matrix Selected
-    </h3>
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No Matrix Selected</h3>
     <p className="mt-2 max-w-sm text-center text-sm text-gray-500 dark:text-gray-400">
       Select a matrix from the list to view its sources, or create a new matrix to get started.
     </p>
@@ -913,16 +892,8 @@ const FormModal: React.FC<FormModalProps> = ({ mode, matrix, onSubmit, onCancel 
     aria-labelledby="form-modal-title"
     onClick={onCancel}
   >
-    <div
-      className="w-full max-w-md"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <MatrixForm
-        mode={mode}
-        matrix={matrix}
-        onSubmit={onSubmit}
-        onCancel={onCancel}
-      />
+    <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+      <MatrixForm mode={mode} matrix={matrix} onSubmit={onSubmit} onCancel={onCancel} />
     </div>
   </div>
 );
@@ -943,15 +914,8 @@ const SourceFormModal: React.FC<SourceFormModalProps> = ({ onSubmit, onCancel })
     aria-labelledby="source-form-modal-title"
     onClick={onCancel}
   >
-    <div
-      className="w-full max-w-md"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <SourceForm
-        mode="create"
-        onSubmit={onSubmit}
-        onCancel={onCancel}
-      />
+    <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+      <SourceForm mode="create" onSubmit={onSubmit} onCancel={onCancel} />
     </div>
   </div>
 );

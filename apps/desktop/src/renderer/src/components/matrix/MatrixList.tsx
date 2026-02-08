@@ -12,7 +12,8 @@ const matrixItemVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -161,7 +162,7 @@ const MatrixList: React.FC<MatrixListProps> = ({
     (matrixId: string | null) => {
       const newSelectedId = matrixId === state.selectedMatrixId ? null : matrixId;
       const selectedMatrix = newSelectedId
-        ? state.matrices.find((m) => m.id === newSelectedId) ?? null
+        ? (state.matrices.find((m) => m.id === newSelectedId) ?? null)
         : null;
 
       updateState({
@@ -206,7 +207,10 @@ const MatrixList: React.FC<MatrixListProps> = ({
 
   return (
     <div
-      className={cn('flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900', className)}
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900',
+        className
+      )}
       role="region"
       aria-label="Matrix List"
     >
@@ -214,9 +218,7 @@ const MatrixList: React.FC<MatrixListProps> = ({
       <div className="border-b border-gray-200 p-3 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Matrices
-            </h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Matrices</h2>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {state.matrices.length} matrix{state.matrices.length !== 1 ? 'es' : ''} total
             </p>
@@ -332,7 +334,10 @@ const MatrixList: React.FC<MatrixListProps> = ({
       {selectedMatrix && (
         <div className="border-t border-gray-200 p-3 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Selected: <span className="font-medium text-gray-700 dark:text-gray-300">{selectedMatrix.name}</span>
+            Selected:{' '}
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              {selectedMatrix.name}
+            </span>
           </p>
         </div>
       )}
@@ -349,11 +354,7 @@ interface MatrixListItemProps {
   onClick: () => void;
 }
 
-const MatrixListItem: React.FC<MatrixListItemProps> = ({
-  matrix,
-  selected,
-  onClick,
-}) => {
+const MatrixListItem: React.FC<MatrixListItemProps> = ({ matrix, selected, onClick }) => {
   const sourceCount = getMatrixSourceCount(matrix);
   const formattedDate = formatMatrixDate(matrix.updated_at);
 

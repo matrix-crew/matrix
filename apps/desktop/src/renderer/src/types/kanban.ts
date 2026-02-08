@@ -89,7 +89,9 @@ export const DEFAULT_COLUMNS: Omit<KanbanColumn, 'cards'>[] = [
  * @param overrides - Partial card properties to override defaults
  * @returns A new KanbanCard object
  */
-export function createKanbanCard(overrides: Partial<KanbanCard> & { title: string; columnId: string }): KanbanCard {
+export function createKanbanCard(
+  overrides: Partial<KanbanCard> & { title: string; columnId: string }
+): KanbanCard {
   const now = new Date();
   return {
     id: crypto.randomUUID(),

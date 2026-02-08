@@ -206,13 +206,12 @@ const PipelineEditor: React.FC<PipelineEditorProps> = ({
         setConnectingFrom({ nodeId, portId, portType });
       } else {
         // Complete connection
-        if (
-          connectingFrom.nodeId !== nodeId &&
-          connectingFrom.portType !== portType
-        ) {
+        if (connectingFrom.nodeId !== nodeId && connectingFrom.portType !== portType) {
           // Create new connection
-          const sourceNodeId = connectingFrom.portType === 'output' ? connectingFrom.nodeId : nodeId;
-          const sourcePortId = connectingFrom.portType === 'output' ? connectingFrom.portId : portId;
+          const sourceNodeId =
+            connectingFrom.portType === 'output' ? connectingFrom.nodeId : nodeId;
+          const sourcePortId =
+            connectingFrom.portType === 'output' ? connectingFrom.portId : portId;
           const targetNodeId = connectingFrom.portType === 'input' ? connectingFrom.nodeId : nodeId;
           const targetPortId = connectingFrom.portType === 'input' ? connectingFrom.portId : portId;
 
@@ -371,11 +370,7 @@ const PipelineEditor: React.FC<PipelineEditorProps> = ({
               refY="3.5"
               orient="auto"
             >
-              <polygon
-                points="0 0, 10 3.5, 0 7"
-                fill="currentColor"
-                className="text-blue-500"
-              />
+              <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" className="text-blue-500" />
             </marker>
             {/* Gradient for connection lines */}
             <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">

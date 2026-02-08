@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import type { IPCMessage, IPCResponse } from '@maxtix/shared'
+import { contextBridge, ipcRenderer } from 'electron';
+import type { IPCMessage, IPCResponse } from '@maxtix/shared';
 
 /**
  * Preload script for Electron renderer process
@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('api', {
    * @returns Promise that resolves with the response from Python backend
    */
   sendMessage: async (message: IPCMessage): Promise<IPCResponse> => {
-    return ipcRenderer.invoke('ipc:send-to-python', message)
+    return ipcRenderer.invoke('ipc:send-to-python', message);
   },
 
   /**
@@ -29,7 +29,7 @@ contextBridge.exposeInMainWorld('api', {
    * @param callback - Function to call when event is received
    */
   on: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
+    ipcRenderer.on(channel, (_event, ...args) => callback(...args));
   },
 
   /**
@@ -38,6 +38,6 @@ contextBridge.exposeInMainWorld('api', {
    * @param callback - The callback function to remove
    */
   off: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.removeListener(channel, callback)
-  }
-})
+    ipcRenderer.removeListener(channel, callback);
+  },
+});

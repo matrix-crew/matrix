@@ -251,9 +251,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       >
         {/* Settings Header */}
         <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Settings
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Configure Matrix preferences
           </p>
@@ -284,9 +282,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         aria-labelledby={`settings-tab-${activeSection}`}
         tabIndex={0}
       >
-        <div className="mx-auto max-w-2xl">
-          {getSectionComponent(activeSection)}
-        </div>
+        <div className="mx-auto max-w-2xl">{getSectionComponent(activeSection)}</div>
       </main>
     </div>
   );

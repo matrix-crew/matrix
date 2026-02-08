@@ -32,7 +32,8 @@ const cardVariants = cva(
     variants: {
       isDragging: {
         true: 'rotate-2 scale-105 border-blue-500 shadow-lg ring-2 ring-blue-500/20',
-        false: 'border-gray-200 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:hover:border-gray-600',
+        false:
+          'border-gray-200 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:hover:border-gray-600',
       },
     },
     defaultVariants: {
@@ -130,9 +131,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
       aria-label={`Task: ${card.title}`}
     >
       {/* Card header with title */}
-      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-        {card.title}
-      </h4>
+      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">{card.title}</h4>
 
       {/* Card description */}
       {card.description && (
@@ -163,9 +162,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
 
           {/* Due date */}
           {card.dueDate && (
-            <span className="text-gray-500 dark:text-gray-400">
-              Due {formatDate(card.dueDate)}
-            </span>
+            <span className="text-gray-500 dark:text-gray-400">Due {formatDate(card.dueDate)}</span>
           )}
         </div>
 
@@ -188,12 +185,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
           viewBox="0 0 24 24"
           stroke="currentColor"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 8h16M4 16h16"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
         </svg>
       </div>
     </div>

@@ -26,7 +26,8 @@ const repoItemVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -38,26 +39,24 @@ const repoItemVariants = cva(
 /**
  * PR card variants using class-variance-authority
  */
-const prCardVariants = cva(
-  'rounded-lg border p-3 transition-all cursor-pointer',
-  {
-    variants: {
-      selected: {
-        true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
-      },
-      state: {
-        open: '',
-        merged: 'opacity-75',
-        closed: 'opacity-60',
-      },
+const prCardVariants = cva('rounded-lg border p-3 transition-all cursor-pointer', {
+  variants: {
+    selected: {
+      true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
+      false:
+        'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
     },
-    defaultVariants: {
-      selected: false,
-      state: 'open',
+    state: {
+      open: '',
+      merged: 'opacity-75',
+      closed: 'opacity-60',
     },
-  }
-);
+  },
+  defaultVariants: {
+    selected: false,
+    state: 'open',
+  },
+});
 
 export interface PRsViewProps extends VariantProps<typeof repoItemVariants> {
   /** Initial state for the PRs view */
@@ -80,11 +79,7 @@ export interface PRsViewProps extends VariantProps<typeof repoItemVariants> {
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const PRsView: React.FC<PRsViewProps> = ({
-  initialState,
-  onStateChange,
-  className,
-}) => {
+const PRsView: React.FC<PRsViewProps> = ({ initialState, onStateChange, className }) => {
   const [state, setState] = React.useState<PRsViewState>(() => {
     return initialState ?? createInitialPRsState();
   });
@@ -110,7 +105,8 @@ const PRsView: React.FC<PRsViewProps> = ({
         selectedRepositoryId: repositoryId === state.selectedRepositoryId ? null : repositoryId,
         filter: {
           ...state.filter,
-          repositoryId: repositoryId === state.selectedRepositoryId ? undefined : repositoryId ?? undefined,
+          repositoryId:
+            repositoryId === state.selectedRepositoryId ? undefined : (repositoryId ?? undefined),
         },
       });
     },
@@ -228,9 +224,7 @@ const PRsView: React.FC<PRsViewProps> = ({
       {/* Left panel - Repository list */}
       <div className="flex w-64 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
         <div className="border-b border-gray-200 p-3 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Repositories
-          </h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repositories</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {state.repositories.length} repos in matrix
           </p>
@@ -273,7 +267,11 @@ const PRsView: React.FC<PRsViewProps> = ({
                 key={repo.id}
                 repository={repo}
                 prCount={state.pullRequests.filter((pr) => pr.repository.id === repo.id).length}
-                openCount={state.pullRequests.filter((pr) => pr.repository.id === repo.id && pr.state === 'open').length}
+                openCount={
+                  state.pullRequests.filter(
+                    (pr) => pr.repository.id === repo.id && pr.state === 'open'
+                  ).length
+                }
                 selected={repo.id === state.selectedRepositoryId}
                 onClick={() => handleSelectRepository(repo.id)}
               />
@@ -429,10 +427,7 @@ const PRsView: React.FC<PRsViewProps> = ({
 
       {/* Right panel - PR details */}
       {selectedPR && (
-        <PRDetailsPanel
-          pr={selectedPR}
-          onClose={() => handleSelectPR(selectedPR.id)}
-        />
+        <PRDetailsPanel pr={selectedPR} onClose={() => handleSelectPR(selectedPR.id)} />
       )}
     </div>
   );
@@ -459,10 +454,7 @@ const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
   <button
     type="button"
     onClick={onClick}
-    className={cn(
-      repoItemVariants({ selected }),
-      'w-full border text-left'
-    )}
+    className={cn(repoItemVariants({ selected }), 'w-full border text-left')}
     aria-selected={selected}
     role="option"
   >
@@ -609,12 +601,7 @@ interface PRCardProps {
   onClick: () => void;
 }
 
-const PRCard: React.FC<PRCardProps> = ({
-  pr,
-  selected,
-  showRepository,
-  onClick,
-}) => {
+const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }) => {
   const relativeTime = getRelativeTimeString(pr.updatedAt);
   const reviewSummary = getPRReviewSummary(pr.reviews);
 
@@ -622,10 +609,7 @@ const PRCard: React.FC<PRCardProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        prCardVariants({ selected, state: pr.state }),
-        'w-full text-left'
-      )}
+      className={cn(prCardVariants({ selected, state: pr.state }), 'w-full text-left')}
       aria-selected={selected}
       role="option"
     >
@@ -641,9 +625,7 @@ const PRCard: React.FC<PRCardProps> = ({
               <PRClosedIcon className="h-4 w-4 flex-shrink-0 text-red-500" />
             )}
 
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {pr.title}
-            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{pr.title}</span>
 
             {/* Draft badge */}
             {pr.isDraft && (
@@ -707,8 +689,7 @@ const PRCard: React.FC<PRCardProps> = ({
 
           {/* Meta info */}
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            #{pr.number} opened by{' '}
-            <span className="font-medium">{pr.author}</span>
+            #{pr.number} opened by <span className="font-medium">{pr.author}</span>
             {' \u2022 '}
             {relativeTime}
             {pr.commitCount > 0 && (
@@ -886,29 +867,35 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {pr.state === 'open' ? (
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                getPRStateBgClass(pr.state),
-                'text-green-700 dark:text-green-400'
-              )}>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                  getPRStateBgClass(pr.state),
+                  'text-green-700 dark:text-green-400'
+                )}
+              >
                 <PROpenIcon className="h-3 w-3" />
                 Open
               </span>
             ) : pr.state === 'merged' ? (
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                getPRStateBgClass(pr.state),
-                'text-purple-700 dark:text-purple-400'
-              )}>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                  getPRStateBgClass(pr.state),
+                  'text-purple-700 dark:text-purple-400'
+                )}
+              >
                 <PRMergedIcon className="h-3 w-3" />
                 Merged
               </span>
             ) : (
-              <span className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                getPRStateBgClass(pr.state),
-                'text-red-700 dark:text-red-400'
-              )}>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                  getPRStateBgClass(pr.state),
+                  'text-red-700 dark:text-red-400'
+                )}
+              >
                 <PRClosedIcon className="h-3 w-3" />
                 Closed
               </span>
@@ -1045,17 +1032,12 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
                 {pr.reviewers.map((reviewer) => {
                   const review = pr.reviews.find((r) => r.reviewer === reviewer);
                   return (
-                    <div
-                      key={reviewer}
-                      className="flex items-center justify-between"
-                    >
+                    <div key={reviewer} className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-300">
                           {reviewer[0].toUpperCase()}
                         </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {reviewer}
-                        </span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{reviewer}</span>
                       </div>
                       {review && (
                         <span
@@ -1094,15 +1076,9 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
               Changes
             </h4>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-600 dark:text-gray-400">
-                {pr.filesChanged} files
-              </span>
-              <span className="text-green-600 dark:text-green-400">
-                +{pr.additions}
-              </span>
-              <span className="text-red-600 dark:text-red-400">
-                -{pr.deletions}
-              </span>
+              <span className="text-gray-600 dark:text-gray-400">{pr.filesChanged} files</span>
+              <span className="text-green-600 dark:text-green-400">+{pr.additions}</span>
+              <span className="text-red-600 dark:text-red-400">-{pr.deletions}</span>
             </div>
           </div>
 
@@ -1122,10 +1098,7 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
                   day: 'numeric',
                 })}
               />
-              <DetailRow
-                label="Updated"
-                value={getRelativeTimeString(pr.updatedAt)}
-              />
+              <DetailRow label="Updated" value={getRelativeTimeString(pr.updatedAt)} />
               {pr.mergedAt && (
                 <DetailRow
                   label="Merged"
@@ -1186,12 +1159,7 @@ interface DetailRowProps {
 const DetailRow: React.FC<DetailRowProps> = ({ label, value, mono }) => (
   <div className="flex items-center justify-between gap-2">
     <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-    <span
-      className={cn(
-        'text-sm text-gray-900 dark:text-gray-100',
-        mono && 'font-mono text-xs'
-      )}
-    >
+    <span className={cn('text-sm text-gray-900 dark:text-gray-100', mono && 'font-mono text-xs')}>
       {value}
     </span>
   </div>
