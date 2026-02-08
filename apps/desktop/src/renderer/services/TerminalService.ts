@@ -5,10 +5,15 @@
  * Manages terminal session lifecycle, data routing, and event subscriptions.
  */
 
-import type { TerminalSessionInfo, TerminalSessionStatus } from '@maxtix/shared';
+import type {
+  TerminalSessionInfo,
+  TerminalSessionStatus,
+  SavedTerminalState,
+  SavedTerminalSession,
+} from '@maxtix/shared';
 
 /** Maximum concurrent terminal sessions */
-export const MAX_TERMINAL_SESSIONS = 10;
+export const MAX_TERMINAL_SESSIONS = 12;
 
 /** Callbacks for terminal events, keyed by sessionId */
 type DataHandler = (data: string) => void;
@@ -209,6 +214,68 @@ class TerminalServiceImpl {
    */
   getSessionCount(): number {
     return this.sessions.size;
+  }
+
+  /**
+   * Close all terminal sessions (used during Matrix switch)
+   */
+  closeAllTerminals(): void {
+    for (const [sessionId] of this.sessions) {
+      window.api.terminal.close(sessionId);
+    }
+    this.sessions.clear();
+    this.dataHandlers.clear();
+    this.exitHandlers.clear();
+  }
+
+  /**
+   * Save current terminal state to a workspace path.
+   * @param workspacePath - Absolute path to the Matrix workspace
+   * @param getScrollback - Callback to get scrollback content for a session ID
+   */
+  async saveState(
+    workspacePath: string,
+    getScrollback: (sessionId: string) => string
+  ): Promise<void> {
+    const sessions = this.getAllSessions();
+    if (sessions.length === 0) return;
+
+    const savedSessions: SavedTerminalSession[] = sessions.map((s) => ({
+      id: s.id,
+      name: s.name,
+      shell: s.shell,
+      cwd: s.cwd,
+    }));
+
+    const state: SavedTerminalState = {
+      sessions: savedSessions,
+      savedAt: new Date().toISOString(),
+    };
+
+    const scrollbacks = sessions.map((s) => ({
+      sessionId: s.id,
+      content: getScrollback(s.id),
+    }));
+
+    const result = await window.api.terminal.saveState(workspacePath, state, scrollbacks);
+    if (!result.success) {
+      console.error('[TerminalService] Failed to save state:', result.error);
+    }
+  }
+
+  /**
+   * Load terminal state from a workspace path.
+   * @returns Saved state and scrollback data, or null if none exists
+   */
+  async loadState(
+    workspacePath: string
+  ): Promise<{ state: SavedTerminalState; scrollbacks: Record<string, string> } | null> {
+    const result = await window.api.terminal.loadState(workspacePath);
+    if (!result.success) {
+      console.error('[TerminalService] Failed to load state:', result.error);
+      return null;
+    }
+    return result.data ?? null;
   }
 }
 

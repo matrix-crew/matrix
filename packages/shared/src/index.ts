@@ -34,6 +34,8 @@ export type {
   TerminalCreateResult,
   TerminalSessionStatus,
   TerminalSessionInfo,
+  SavedTerminalSession,
+  SavedTerminalState,
   DetectedShell,
 } from './types/terminal';
 

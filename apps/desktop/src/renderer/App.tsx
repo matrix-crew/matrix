@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { cn } from '@maxtix/ui';
 import type { Matrix } from '@maxtix/shared';
 import { MatrixTabBar } from '@/components/layout/MatrixTabBar';
 import { ContextSidebar, type ContextItemId } from '@/components/layout/ContextSidebar';
@@ -184,7 +185,8 @@ const App: React.FC = () => {
       case 'pipeline':
         return <PipelineEditor />;
       case 'console':
-        return <TerminalManager />;
+        // Terminal is rendered separately (always mounted) — return null here
+        return null;
       case 'mcp':
         return <MCPControl />;
       case 'settings':
@@ -261,9 +263,30 @@ const App: React.FC = () => {
           <ContextSidebar activeItem={activeContextItem} onItemSelect={setActiveContextItem} />
         )}
 
-        <main className={`flex-1 overflow-auto animate-fade-in${showSidebar ? ' p-4' : ''}`}>
-          {renderContent()}
-        </main>
+        {/* Content area — relative container for stacking main + terminal */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Regular content (non-terminal views, or Home view) */}
+          {(isHomeActive || activeContextItem !== 'console') && (
+            <main className={`h-full overflow-auto animate-fade-in${showSidebar ? ' p-4' : ''}`}>
+              {renderContent()}
+            </main>
+          )}
+
+          {/* Terminal — always mounted, uses visibility instead of display
+              to preserve container dimensions and avoid ResizeObserver flicker */}
+          {activeMatrixId && (
+            <div
+              className={cn(
+                'absolute inset-0 overflow-hidden',
+                (isHomeActive || activeContextItem !== 'console') && 'invisible pointer-events-none'
+              )}
+            >
+              <TerminalManager
+                workspacePath={matrices.find((m) => m.id === activeMatrixId)?.workspace_path}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Create matrix form modal */}
