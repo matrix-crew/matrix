@@ -4,7 +4,7 @@
  * Handles system-level operations for the onboarding wizard:
  * - CLI command detection (which + --version)
  * - Terminal emulator detection (cross-platform)
- * - Application config read/write (~/.matrix/config.json)
+ * - Application config read/write (~/.matrix/.matrix.json)
  * - External URL opening
  *
  * Runs in the Electron main process only.
@@ -18,7 +18,7 @@ import { join } from 'path';
 import { homedir, platform } from 'os';
 
 const CONFIG_DIR = join(homedir(), '.matrix');
-const CONFIG_PATH = join(CONFIG_DIR, 'config.json');
+const CONFIG_PATH = join(CONFIG_DIR, '.matrix.json');
 
 /** Commands allowed for detection (security whitelist) */
 const ALLOWED_COMMANDS = new Set([
@@ -515,7 +515,7 @@ async function detectIDEs(): Promise<IDEInfo[]> {
 // ── Config Management ───────────────────────────────────────────────────
 
 /**
- * Read application config from ~/.matrix/config.json
+ * Read application config from ~/.matrix/.matrix.json
  */
 async function readConfig(): Promise<Record<string, unknown>> {
   try {
@@ -527,7 +527,7 @@ async function readConfig(): Promise<Record<string, unknown>> {
 }
 
 /**
- * Write application config to ~/.matrix/config.json (merge with existing)
+ * Write application config to ~/.matrix/.matrix.json (merge with existing)
  */
 async function writeConfig(config: Record<string, unknown>): Promise<void> {
   if (!existsSync(CONFIG_DIR)) {
