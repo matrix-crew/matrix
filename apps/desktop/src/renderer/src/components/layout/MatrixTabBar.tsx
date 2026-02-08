@@ -23,7 +23,7 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
   return (
     <div
       className={cn(
-        'drag-region flex h-10 items-center gap-0.5 border-b border-border-default bg-base-800 px-2',
+        'drag-region flex h-10 items-center gap-0.5 border-b border-border-default bg-base-800 pl-20 pr-2',
         className
       )}
     >
