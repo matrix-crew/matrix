@@ -1,12 +1,14 @@
 import React from 'react';
 import { cn } from '@maxtix/ui';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Home } from 'lucide-react';
 import type { Matrix } from '@maxtix/shared';
 
 export interface MatrixTabBarProps {
   matrices: Matrix[];
   activeMatrixId: string | null;
+  isHomeActive?: boolean;
   onSelectMatrix: (id: string) => void;
+  onSelectHome?: () => void;
   onCreateMatrix: () => void;
   onCloseMatrix: (id: string) => void;
   className?: string;
@@ -15,7 +17,9 @@ export interface MatrixTabBarProps {
 export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
   matrices,
   activeMatrixId,
+  isHomeActive = false,
   onSelectMatrix,
+  onSelectHome,
   onCreateMatrix,
   onCloseMatrix,
   className,
@@ -29,6 +33,21 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
     >
       {/* Tabs */}
       <div className="no-drag flex items-center gap-0.5 overflow-x-auto">
+        {/* Home tab - always first, icon only, no close button */}
+        <button
+          type="button"
+          onClick={onSelectHome}
+          className={cn(
+            'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+            isHomeActive
+              ? 'bg-base-600 text-text-primary'
+              : 'text-text-muted hover:bg-base-700 hover:text-text-secondary'
+          )}
+          aria-label="Home"
+        >
+          <Home className="size-4" />
+        </button>
+
         {matrices.map((matrix) => {
           const isActive = matrix.id === activeMatrixId;
           return (
