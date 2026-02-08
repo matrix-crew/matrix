@@ -60,12 +60,12 @@ export interface ElectronAPI {
   detectIDEs: () => Promise<Array<{ id: string; name: string; path: string }>>;
 
   /**
-   * Read application config from ~/.matrix/config.json
+   * Read application config from ~/.matrix/.matrix.json
    */
   readConfig: () => Promise<Record<string, unknown>>;
 
   /**
-   * Write application config to ~/.matrix/config.json (merges with existing)
+   * Write application config to ~/.matrix/.matrix.json (merges with existing)
    */
   writeConfig: (config: Record<string, unknown>) => Promise<{ success: boolean }>;
 

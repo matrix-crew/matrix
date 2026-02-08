@@ -35,11 +35,17 @@
   --color-surface-raised: #14141f;
   --color-surface-overlay: #1a1a28;
 
-  /* Accent colors */
-  --color-accent-cyan: #22d3ee;
-  --color-accent-cyan-dim: #0e7490;
-  --color-accent-lime: #a3e635;
-  --color-accent-lime-dim: #65a30d;
+  /* Accent colors (themed via ThemeProvider) */
+  --color-accent-primary: #22d3ee;
+  --color-accent-primary-dim: #0e7490;
+  --color-accent-secondary: #a3e635;
+  --color-accent-secondary-dim: #65a30d;
+
+  /* Backwards-compatible aliases */
+  --color-accent-cyan: var(--color-accent-primary);
+  --color-accent-cyan-dim: var(--color-accent-primary-dim);
+  --color-accent-lime: var(--color-accent-secondary);
+  --color-accent-lime-dim: var(--color-accent-secondary-dim);
 
   /* Text colors */
   --color-text-primary: #e2e8f0;
@@ -88,6 +94,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-base-900);
   color: var(--color-text-primary);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+/* Smooth theme transitions – scoped to avoid breaking keyframe animations */
+[data-theme-transition] *:not([class*='animate-']) {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 code {

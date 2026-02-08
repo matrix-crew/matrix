@@ -1,16 +1,18 @@
 import React from 'react';
 import { cn } from '@maxtix/ui';
-import { Plus, X, Home } from 'lucide-react';
+import { Plus, X, Home, Settings } from 'lucide-react';
 import type { Matrix } from '@maxtix/shared';
 
 export interface MatrixTabBarProps {
   matrices: Matrix[];
   activeMatrixId: string | null;
   isHomeActive?: boolean;
+  isSettingsActive?: boolean;
   onSelectMatrix: (id: string) => void;
   onSelectHome?: () => void;
   onCreateMatrix: () => void;
   onCloseMatrix: (id: string) => void;
+  onOpenSettings?: () => void;
   className?: string;
 }
 
@@ -18,10 +20,12 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
   matrices,
   activeMatrixId,
   isHomeActive = false,
+  isSettingsActive = false,
   onSelectMatrix,
   onSelectHome,
   onCreateMatrix,
   onCloseMatrix,
+  onOpenSettings,
   className,
 }) => {
   return (
@@ -100,6 +104,26 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
       >
         <Plus className="size-3.5" />
       </button>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Settings button (always visible) */}
+      {onOpenSettings && (
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className={cn(
+            'no-drag flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+            isSettingsActive
+              ? 'bg-base-600 text-text-primary'
+              : 'text-text-muted hover:bg-base-700 hover:text-text-secondary'
+          )}
+          aria-label="Settings"
+        >
+          <Settings className="size-3.5" />
+        </button>
+      )}
     </div>
   );
 };

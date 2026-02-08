@@ -27,8 +27,8 @@ const sidebarItemVariants = cva(
   {
     variants: {
       active: {
-        true: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-        false: 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
+        true: 'bg-accent-cyan/10 text-accent-cyan',
+        false: 'text-text-secondary hover:bg-base-700 hover:text-text-primary',
       },
     },
     defaultVariants: {
@@ -41,11 +41,8 @@ const sidebarItemVariants = cva(
  * Props for the SettingsPage component
  */
 export interface SettingsPageProps {
-  /** Initial active section ID */
   initialSection?: SettingsSectionId;
-  /** Callback when section changes */
   onSectionChange?: (sectionId: SettingsSectionId) => void;
-  /** Additional CSS classes for the container */
   className?: string;
 }
 
@@ -85,7 +82,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   >
     <div className="flex flex-col items-start">
       <span className="font-medium">{label}</span>
-      <span className="text-xs text-gray-500 dark:text-gray-400">{description}</span>
+      <span className="text-xs text-text-muted">{description}</span>
     </div>
   </button>
 );
@@ -112,7 +109,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({
   onKeyDown,
 }) => (
   <div className="space-y-1">
-    <h3 className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <h3 className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
       {label}
     </h3>
     <div className="space-y-1">
@@ -161,21 +158,6 @@ const getSectionComponent = (sectionId: SettingsSectionId): React.ReactNode => {
   }
 };
 
-/**
- * SettingsPage component
- *
- * Main settings page with sidebar navigation and content area.
- * Displays 8 settings sections organized into 3 groups:
- * - General: Appearance, Display, Language, Notifications
- * - Development: Developer Tools, Agent Settings, Paths
- * - Advanced: Debug & Logs
- *
- * @example
- * <SettingsPage
- *   initialSection="appearance"
- *   onSectionChange={(section) => console.log('Section changed:', section)}
- * />
- */
 const SettingsPage: React.FC<SettingsPageProps> = ({
   initialSection,
   onSectionChange,
@@ -185,9 +167,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     () => initialSection ?? getDefaultSectionId()
   );
 
-  /**
-   * Handle section change
-   */
   const handleSectionChange = React.useCallback(
     (sectionId: SettingsSectionId) => {
       setActiveSection(sectionId);
@@ -196,9 +175,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     [onSectionChange]
   );
 
-  /**
-   * Handle keyboard navigation between sections
-   */
   const handleKeyDown = React.useCallback(
     (event: React.KeyboardEvent, currentSectionId: SettingsSectionId) => {
       const allSectionIds = SETTINGS_SECTIONS.map((s) => s.id);
@@ -228,7 +204,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
       if (nextIndex !== null) {
         const nextSectionId = allSectionIds[nextIndex];
         handleSectionChange(nextSectionId);
-        // Focus the next item
         const nextElement = document.getElementById(`settings-tab-${nextSectionId}`);
         nextElement?.focus();
       }
@@ -244,17 +219,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     >
       {/* Sidebar Navigation */}
       <nav
-        className="flex w-64 flex-shrink-0 flex-col border-r border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+        className="flex w-64 flex-shrink-0 flex-col border-r border-border-default bg-base-800"
         role="tablist"
         aria-orientation="vertical"
         aria-label="Settings sections"
       >
         {/* Settings Header */}
-        <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Configure Matrix preferences
-          </p>
+        <div className="border-b border-border-default p-4">
+          <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
+          <p className="mt-1 text-xs text-text-muted">Configure Matrix preferences</p>
         </div>
 
         {/* Sidebar Sections */}
@@ -276,7 +249,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
       {/* Content Area */}
       <main
-        className="flex-1 overflow-y-auto bg-white p-6 dark:bg-gray-950"
+        className="flex-1 overflow-y-auto bg-base-900 p-6"
         role="tabpanel"
         id={`settings-panel-${activeSection}`}
         aria-labelledby={`settings-tab-${activeSection}`}

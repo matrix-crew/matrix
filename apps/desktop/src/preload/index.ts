@@ -83,14 +83,14 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
-   * Read application config from ~/.matrix/config.json
+   * Read application config from ~/.matrix/.matrix.json
    */
   readConfig: (): Promise<Record<string, unknown>> => {
     return ipcRenderer.invoke('config:read');
   },
 
   /**
-   * Write application config to ~/.matrix/config.json
+   * Write application config to ~/.matrix/.matrix.json
    */
   writeConfig: (config: Record<string, unknown>): Promise<{ success: boolean }> => {
     return ipcRenderer.invoke('config:write', config);

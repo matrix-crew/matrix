@@ -21,7 +21,6 @@ export {
   NotificationsSection,
   PathsSection,
   modelCardVariants,
-  themeCardVariants,
   ideCardVariants,
   sizeCardVariants,
   languageCardVariants,

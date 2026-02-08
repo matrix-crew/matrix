@@ -6,7 +6,7 @@
 
 // Export section components with their variants
 export { AgentSettingsSection, modelCardVariants } from './AgentSettingsSection';
-export { AppearanceSection, themeCardVariants } from './AppearanceSection';
+export { AppearanceSection } from './AppearanceSection';
 export { DebugLogsSection } from './DebugLogsSection';
 export { DeveloperToolsSection, ideCardVariants } from './DeveloperToolsSection';
 export { DisplaySection, sizeCardVariants } from './DisplaySection';

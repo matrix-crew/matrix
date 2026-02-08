@@ -39,3 +39,13 @@ export type {
 
 // Export xterm.js theme
 export { matrixXtermTheme, matrixXtermOptions } from './theme/xterm-theme';
+
+// Export color theme system
+export type { ColorTheme, PaletteColors, AppearanceMode } from './theme/palettes';
+export {
+  COLOR_THEMES,
+  DEFAULT_THEME_ID,
+  DEFAULT_APPEARANCE_MODE,
+  getThemeById,
+} from './theme/palettes';
+export { paletteToCSSVars, paletteToXtermTheme } from './theme/utils';

@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [activeMatrixId, setActiveMatrixId] = useState<string | null>(null);
   const [isHomeActive, setIsHomeActive] = useState(false);
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,6 +86,7 @@ const App: React.FC = () => {
   const handleSelectHome = useCallback(() => {
     setActiveMatrixId(null);
     setIsHomeActive(true);
+    setShowGlobalSettings(false);
   }, []);
 
   /**
@@ -93,6 +95,14 @@ const App: React.FC = () => {
   const handleSelectMatrix = useCallback((id: string) => {
     setActiveMatrixId(id);
     setIsHomeActive(false);
+    setShowGlobalSettings(false);
+  }, []);
+
+  /**
+   * Open global settings (accessible from any view)
+   */
+  const handleOpenSettings = useCallback(() => {
+    setShowGlobalSettings(true);
   }, []);
 
   /**
@@ -163,6 +173,11 @@ const App: React.FC = () => {
    * Render content based on active context item
    */
   const renderContent = () => {
+    // Global settings (accessible from any view)
+    if (showGlobalSettings) {
+      return <SettingsPage initialSection="appearance" />;
+    }
+
     // Home view: full-width grid, no sidebar
     if (isHomeActive && !activeMatrixId) {
       return (
@@ -226,10 +241,12 @@ const App: React.FC = () => {
           matrices={[]}
           activeMatrixId={null}
           isHomeActive={isHomeActive}
+          isSettingsActive={showGlobalSettings}
           onSelectMatrix={() => {}}
           onSelectHome={handleSelectHome}
           onCreateMatrix={handleOpenCreateForm}
           onCloseMatrix={() => {}}
+          onOpenSettings={handleOpenSettings}
         />
         <OnboardingView onCreateMatrix={handleOpenCreateForm} />
 
@@ -240,7 +257,7 @@ const App: React.FC = () => {
     );
   }
 
-  const showSidebar = activeMatrixId !== null && !isHomeActive;
+  const showSidebar = activeMatrixId !== null && !isHomeActive && !showGlobalSettings;
 
   return (
     <div className="flex h-screen w-full flex-col bg-base-900">
@@ -248,11 +265,13 @@ const App: React.FC = () => {
       <MatrixTabBar
         matrices={matrices}
         activeMatrixId={activeMatrixId}
-        isHomeActive={isHomeActive}
+        isHomeActive={isHomeActive && !showGlobalSettings}
+        isSettingsActive={showGlobalSettings}
         onSelectMatrix={handleSelectMatrix}
         onSelectHome={handleSelectHome}
         onCreateMatrix={handleOpenCreateForm}
         onCloseMatrix={handleCloseMatrix}
+        onOpenSettings={handleOpenSettings}
       />
 
       {/* Sidebar + Content */}
