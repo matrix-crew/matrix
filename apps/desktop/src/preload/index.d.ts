@@ -30,16 +30,40 @@ export interface ElectronAPI {
 
   // ── System Check APIs (Onboarding) ──────────────────────────────────
 
-  /** Check if a CLI command exists on the system */
+  /**
+   * Check if a CLI command exists on the system
+   * @param command - Command name to check (e.g., 'claude', 'git')
+   * @returns Detection result with path and version info
+   */
   checkCommand: (command: string) => Promise<{ exists: boolean; path?: string; version?: string }>;
 
-  /** Read application config from ~/.matrix/config.json */
+  /**
+   * Detect installed terminal emulators on the system
+   * @returns Array of detected terminals with name, id, path, and isDefault flag
+   */
+  detectTerminals: () => Promise<
+    Array<{ id: string; name: string; path: string; isDefault: boolean }>
+  >;
+
+  /**
+   * Detect installed IDEs / code editors on the system
+   * @returns Array of detected IDEs with id, name, and path
+   */
+  detectIDEs: () => Promise<Array<{ id: string; name: string; path: string }>>;
+
+  /**
+   * Read application config from ~/.matrix/config.json
+   */
   readConfig: () => Promise<Record<string, unknown>>;
 
-  /** Write application config to ~/.matrix/config.json */
+  /**
+   * Write application config to ~/.matrix/config.json (merges with existing)
+   */
   writeConfig: (config: Record<string, unknown>) => Promise<{ success: boolean }>;
 
-  /** Open a URL in the default browser */
+  /**
+   * Open a URL in the default browser
+   */
   openExternal: (url: string) => Promise<void>;
 }
 

@@ -55,6 +55,24 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Detect installed terminal emulators on the system
+   * @returns Array of detected terminals with name, id, path, and isDefault flag
+   */
+  detectTerminals: (): Promise<
+    Array<{ id: string; name: string; path: string; isDefault: boolean }>
+  > => {
+    return ipcRenderer.invoke('system:detect-terminals');
+  },
+
+  /**
+   * Detect installed IDEs / code editors on the system
+   * @returns Array of detected IDEs with id, name, and path
+   */
+  detectIDEs: (): Promise<Array<{ id: string; name: string; path: string }>> => {
+    return ipcRenderer.invoke('system:detect-ides');
+  },
+
+  /**
    * Read application config from ~/.matrix/config.json
    */
   readConfig: (): Promise<Record<string, unknown>> => {
