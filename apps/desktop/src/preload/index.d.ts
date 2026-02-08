@@ -1,4 +1,4 @@
-import type { IPCMessage, IPCResponse } from '@maxtix/shared';
+import type { IPCMessage, IPCResponse, SavedTerminalState } from '@maxtix/shared';
 
 /**
  * Type definitions for the Electron preload API exposed to renderer
@@ -97,6 +97,23 @@ export interface ElectronAPI {
 
     /** Subscribe to terminal exit events */
     onExit: (callback: (sessionId: string, exitCode: number) => void) => () => void;
+
+    /** Save terminal state to a Matrix workspace */
+    saveState: (
+      workspacePath: string,
+      state: SavedTerminalState,
+      scrollbacks: Array<{ sessionId: string; content: string }>
+    ) => Promise<{ success: boolean; error?: string }>;
+
+    /** Load terminal state from a Matrix workspace */
+    loadState: (workspacePath: string) => Promise<{
+      success: boolean;
+      data?: {
+        state: SavedTerminalState;
+        scrollbacks: Record<string, string>;
+      } | null;
+      error?: string;
+    }>;
   };
 }
 

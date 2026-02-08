@@ -17,7 +17,13 @@
 import { app, ipcMain, BrowserWindow } from 'electron';
 import * as pty from 'node-pty';
 import { platform, homedir } from 'os';
-import type { TerminalCreateOptions, TerminalCreateResult } from '@maxtix/shared';
+import { join } from 'path';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from 'fs';
+import type {
+  TerminalCreateOptions,
+  TerminalCreateResult,
+  SavedTerminalState,
+} from '@maxtix/shared';
 
 interface ActiveSession {
   process: pty.IPty;
@@ -169,6 +175,88 @@ function closeAllSessions(): void {
   }
 }
 
+// ── Persistence ────────────────────────────────────────────────────────
+
+const TERMINALS_DIR = 'terminals';
+const SESSIONS_FILE = 'sessions.json';
+
+/**
+ * Get the terminals directory for a workspace path, creating it if needed
+ */
+function getTerminalsDir(workspacePath: string): string {
+  const dir = join(workspacePath, TERMINALS_DIR);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
+/**
+ * Save terminal state to a Matrix workspace
+ */
+function saveTerminalState(
+  workspacePath: string,
+  state: SavedTerminalState,
+  scrollbacks: Array<{ sessionId: string; content: string }>
+): void {
+  const dir = getTerminalsDir(workspacePath);
+
+  // Write sessions.json
+  writeFileSync(join(dir, SESSIONS_FILE), JSON.stringify(state, null, 2), 'utf-8');
+
+  // Write scrollback files
+  for (const { sessionId, content } of scrollbacks) {
+    writeFileSync(join(dir, `${sessionId}.scrollback`), content, 'utf-8');
+  }
+
+  // Clean up scrollback files for sessions that no longer exist
+  const validIds = new Set(state.sessions.map((s) => s.id));
+  try {
+    for (const file of readdirSync(dir)) {
+      if (file.endsWith('.scrollback')) {
+        const id = file.replace('.scrollback', '');
+        if (!validIds.has(id)) {
+          unlinkSync(join(dir, file));
+        }
+      }
+    }
+  } catch {
+    // Non-critical cleanup
+  }
+}
+
+/**
+ * Load terminal state from a Matrix workspace
+ */
+function loadTerminalState(
+  workspacePath: string
+): { state: SavedTerminalState; scrollbacks: Map<string, string> } | null {
+  const dir = join(workspacePath, TERMINALS_DIR);
+  const sessionsPath = join(dir, SESSIONS_FILE);
+
+  if (!existsSync(sessionsPath)) {
+    return null;
+  }
+
+  try {
+    const raw = readFileSync(sessionsPath, 'utf-8');
+    const state: SavedTerminalState = JSON.parse(raw);
+
+    // Load scrollback files
+    const scrollbacks = new Map<string, string>();
+    for (const session of state.sessions) {
+      const scrollbackPath = join(dir, `${session.id}.scrollback`);
+      if (existsSync(scrollbackPath)) {
+        scrollbacks.set(session.id, readFileSync(scrollbackPath, 'utf-8'));
+      }
+    }
+
+    return { state, scrollbacks };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Register IPC handlers for terminal management
  *
@@ -205,6 +293,49 @@ export function setupTerminalHandlers(): void {
   // Close a terminal session (fire-and-forget)
   ipcMain.on('terminal:close', (_event, sessionId: string) => {
     closeSession(sessionId);
+  });
+
+  // ── Persistence IPC ──────────────────────────────────────────────
+
+  // Save terminal state to a Matrix workspace
+  ipcMain.handle(
+    'terminal:save-state',
+    async (
+      _event,
+      workspacePath: string,
+      state: SavedTerminalState,
+      scrollbacks: Array<{ sessionId: string; content: string }>
+    ) => {
+      try {
+        saveTerminalState(workspacePath, state, scrollbacks);
+        return { success: true };
+      } catch (error) {
+        console.error('[terminal] Failed to save state:', error);
+        const message = error instanceof Error ? error.message : 'Failed to save terminal state';
+        return { success: false, error: message };
+      }
+    }
+  );
+
+  // Load terminal state from a Matrix workspace
+  ipcMain.handle('terminal:load-state', async (_event, workspacePath: string) => {
+    try {
+      const result = loadTerminalState(workspacePath);
+      if (!result) {
+        return { success: true, data: null };
+      }
+      return {
+        success: true,
+        data: {
+          state: result.state,
+          scrollbacks: Object.fromEntries(result.scrollbacks),
+        },
+      };
+    } catch (error) {
+      console.error('[terminal] Failed to load state:', error);
+      const message = error instanceof Error ? error.message : 'Failed to load terminal state';
+      return { success: false, error: message };
+    }
   });
 
   // Cleanup all sessions on app quit

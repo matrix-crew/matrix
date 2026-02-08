@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TerminalManager } from './TerminalManager';
@@ -17,6 +18,7 @@ vi.mock('@/services/TerminalService', () => ({
       createdAt: new Date(),
     }),
     closeTerminal: vi.fn(),
+    closeAllTerminals: vi.fn(),
     getAllSessions: vi.fn().mockReturnValue([]),
     writeInput: vi.fn(),
     resizeTerminal: vi.fn(),
@@ -24,14 +26,18 @@ vi.mock('@/services/TerminalService', () => ({
     onTerminalExit: vi.fn().mockReturnValue(() => {}),
     canCreateSession: vi.fn().mockReturnValue(true),
     getSessionCount: vi.fn().mockReturnValue(0),
+    saveState: vi.fn().mockResolvedValue(undefined),
+    loadState: vi.fn().mockResolvedValue(null),
   },
   MAX_TERMINAL_SESSIONS: 12,
 }));
 
 // Mock TerminalInstance since it requires xterm.js / canvas
 vi.mock('./TerminalInstance', () => ({
-  TerminalInstance: ({ sessionId }: { sessionId: string }) => (
-    <div data-testid={`terminal-instance-${sessionId}`}>Terminal Instance</div>
+  TerminalInstance: React.forwardRef(
+    ({ sessionId }: { sessionId: string }, _ref: React.Ref<unknown>) => (
+      <div data-testid={`terminal-instance-${sessionId}`}>Terminal Instance</div>
+    )
   ),
 }));
 

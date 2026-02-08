@@ -72,6 +72,30 @@ export interface TerminalSessionInfo {
 }
 
 /**
+ * Serialized terminal session for persistence (no runtime-only fields)
+ */
+export interface SavedTerminalSession {
+  /** Unique session identifier */
+  id: string;
+  /** Display name for the terminal */
+  name: string;
+  /** Shell executable used */
+  shell: string;
+  /** Working directory */
+  cwd: string;
+}
+
+/**
+ * Persisted terminal state for a Matrix workspace
+ */
+export interface SavedTerminalState {
+  /** List of saved sessions */
+  sessions: SavedTerminalSession[];
+  /** ISO 8601 timestamp of when state was last saved */
+  savedAt: string;
+}
+
+/**
  * Detected shell information (from system detection)
  */
 export interface DetectedShell {

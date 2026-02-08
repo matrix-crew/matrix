@@ -17,10 +17,12 @@ import { cn } from '@maxtix/ui';
 import { Plus, X, Maximize2, Minimize2 } from 'lucide-react';
 import type { TerminalSessionInfo } from '@maxtix/shared';
 import { terminalService, MAX_TERMINAL_SESSIONS } from '@/services/TerminalService';
-import { TerminalInstance } from './TerminalInstance';
+import { TerminalInstance, type TerminalInstanceHandle } from './TerminalInstance';
 import { ToolSelectionModal } from './ToolSelectionModal';
 
 export interface TerminalManagerProps {
+  /** Workspace path for the active Matrix (persistence root) */
+  workspacePath?: string;
   /** Additional CSS classes */
   className?: string;
 }
@@ -57,23 +59,108 @@ function getRowDistribution(count: number): number[] {
 /**
  * Multi-session terminal manager with dynamic grid layout
  */
-const TerminalManager: React.FC<TerminalManagerProps> = ({ className }) => {
+const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, className }) => {
   const [sessions, setSessions] = React.useState<TerminalSessionInfo[]>([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [focusedSessionId, setFocusedSessionId] = React.useState<string | null>(null);
   const mountedRef = React.useRef(true);
+  const instanceRefs = React.useRef(new Map<string, TerminalInstanceHandle>());
+  const prevWorkspaceRef = React.useRef<string | undefined>(undefined);
+  const savingRef = React.useRef(false);
+
+  /** Get scrollback content for a session from its TerminalInstance ref */
+  const getScrollback = React.useCallback((sessionId: string): string => {
+    const handle = instanceRefs.current.get(sessionId);
+    return handle?.getScrollback() ?? '';
+  }, []);
+
+  /** Save current state to the workspace (debounced, fire-and-forget) */
+  const saveCurrentState = React.useCallback(
+    async (wp: string | undefined, currentSessions: TerminalSessionInfo[]) => {
+      if (!wp || currentSessions.length === 0 || savingRef.current) return;
+      savingRef.current = true;
+      try {
+        await terminalService.saveState(wp, getScrollback);
+      } finally {
+        savingRef.current = false;
+      }
+    },
+    [getScrollback]
+  );
 
   React.useEffect(() => {
     mountedRef.current = true;
     terminalService.initialize();
     return () => {
       mountedRef.current = false;
-      for (const session of terminalService.getAllSessions()) {
-        terminalService.closeTerminal(session.id);
+      // Save state before teardown
+      if (prevWorkspaceRef.current && terminalService.getAllSessions().length > 0) {
+        terminalService.saveState(prevWorkspaceRef.current, getScrollback).catch(() => {});
       }
+      terminalService.closeAllTerminals();
       terminalService.destroy();
     };
-  }, []);
+  }, [getScrollback]);
+
+  /**
+   * Handle Matrix workspace switch:
+   * save current → close PTYs → load new → re-spawn sessions
+   */
+  React.useEffect(() => {
+    const prevWorkspace = prevWorkspaceRef.current;
+    prevWorkspaceRef.current = workspacePath;
+
+    // No change
+    if (prevWorkspace === workspacePath) return;
+
+    const switchWorkspace = async () => {
+      // 1. Save current state if we had a previous workspace
+      if (prevWorkspace && terminalService.getAllSessions().length > 0) {
+        await terminalService.saveState(prevWorkspace, getScrollback);
+      }
+
+      // 2. Close all current sessions
+      terminalService.closeAllTerminals();
+      instanceRefs.current.clear();
+      setSessions([]);
+      setFocusedSessionId(null);
+
+      // 3. Load state for new workspace
+      if (!workspacePath) return;
+      const saved = await terminalService.loadState(workspacePath);
+      if (!saved || saved.state.sessions.length === 0) return;
+
+      // 4. Re-spawn sessions and restore scrollback
+      const restoredSessions: TerminalSessionInfo[] = [];
+      for (const savedSession of saved.state.sessions) {
+        try {
+          const session = await terminalService.createTerminal({
+            name: savedSession.name,
+            shell: savedSession.shell,
+            cwd: savedSession.cwd,
+          });
+          // Map old ID → new for scrollback lookup
+          const scrollback = saved.scrollbacks[savedSession.id];
+          if (scrollback) {
+            // Schedule scrollback write after TerminalInstance mounts
+            requestAnimationFrame(() => {
+              const handle = instanceRefs.current.get(session.id);
+              handle?.writeToDisplay(scrollback);
+            });
+          }
+          restoredSessions.push(session);
+        } catch (error) {
+          console.error('[TerminalManager] Failed to restore session:', savedSession.name, error);
+        }
+      }
+
+      if (mountedRef.current) {
+        setSessions(restoredSessions);
+      }
+    };
+
+    switchWorkspace();
+  }, [workspacePath, getScrollback]);
 
   const handleCreateTerminal = React.useCallback(
     async (selection: { shell: string; name: string; cwd?: string }) => {
@@ -90,8 +177,12 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ className }) => {
           return;
         }
 
-        setSessions((prev) => [...prev, session]);
+        const newSessions = [...sessions, session];
+        setSessions(newSessions);
         setIsModalOpen(false);
+
+        // Auto-save after creating a session
+        saveCurrentState(workspacePath, newSessions);
       } catch (error) {
         console.error('Failed to create terminal:', error);
         if (mountedRef.current) {
@@ -99,19 +190,24 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ className }) => {
         }
       }
     },
-    [sessions.length]
+    [sessions.length, workspacePath, saveCurrentState, sessions]
   );
 
   const handleCloseSession = React.useCallback(
     (sessionId: string) => {
+      instanceRefs.current.delete(sessionId);
       terminalService.closeTerminal(sessionId);
-      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      const remaining = sessions.filter((s) => s.id !== sessionId);
+      setSessions(remaining);
 
       if (focusedSessionId === sessionId) {
         setFocusedSessionId(null);
       }
+
+      // Auto-save after closing a session
+      saveCurrentState(workspacePath, remaining);
     },
-    [focusedSessionId]
+    [focusedSessionId, sessions, workspacePath, saveCurrentState]
   );
 
   const handleTerminalExit = React.useCallback((sessionId: string, exitCode: number) => {
@@ -254,6 +350,13 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ className }) => {
                     {/* Terminal content */}
                     <div className="flex-1 overflow-hidden">
                       <TerminalInstance
+                        ref={(handle) => {
+                          if (handle) {
+                            instanceRefs.current.set(session.id, handle);
+                          } else {
+                            instanceRefs.current.delete(session.id);
+                          }
+                        }}
                         sessionId={session.id}
                         isActive={true}
                         onExit={(exitCode) => handleTerminalExit(session.id, exitCode)}

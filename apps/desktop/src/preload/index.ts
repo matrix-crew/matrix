@@ -165,5 +165,32 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.on('terminal:exit', listener);
       return () => ipcRenderer.removeListener('terminal:exit', listener);
     },
+
+    /**
+     * Save terminal state to a Matrix workspace
+     */
+    saveState: (
+      workspacePath: string,
+      state: import('@maxtix/shared').SavedTerminalState,
+      scrollbacks: Array<{ sessionId: string; content: string }>
+    ): Promise<{ success: boolean; error?: string }> => {
+      return ipcRenderer.invoke('terminal:save-state', workspacePath, state, scrollbacks);
+    },
+
+    /**
+     * Load terminal state from a Matrix workspace
+     */
+    loadState: (
+      workspacePath: string
+    ): Promise<{
+      success: boolean;
+      data?: {
+        state: import('@maxtix/shared').SavedTerminalState;
+        scrollbacks: Record<string, string>;
+      } | null;
+      error?: string;
+    }> => {
+      return ipcRenderer.invoke('terminal:load-state', workspacePath);
+    },
   },
 });

@@ -183,8 +183,10 @@ const App: React.FC = () => {
         return <KanbanBoard />;
       case 'pipeline':
         return <PipelineEditor />;
-      case 'console':
-        return <TerminalManager />;
+      case 'console': {
+        const activeMatrix = matrices.find((m) => m.id === activeMatrixId);
+        return <TerminalManager workspacePath={activeMatrix?.workspace_path} />;
+      }
       case 'mcp':
         return <MCPControl />;
       case 'settings':
