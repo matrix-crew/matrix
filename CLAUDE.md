@@ -11,6 +11,12 @@ Maxtix is an Electron desktop application with a Python backend, featuring type-
 - `packages/shared` - TypeScript types for IPC communication
 - `packages/ui` - Shared React components (shadcn/ui patterns)
 
+## Git Workflow
+
+- **Default branch**: `develop` (NOT `main`)
+- When creating PRs, always use `--base develop` or omit `--base` to follow the GitHub default branch
+- Never create PRs with `main` as the base branch
+
 ## Common Commands
 
 ### Development
