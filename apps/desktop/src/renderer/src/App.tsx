@@ -7,7 +7,7 @@ import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { MatrixView } from '@/components/matrix/MatrixView';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
-import { ConsoleManager } from '@/components/agent/ConsoleManager';
+import { TerminalManager } from '@/components/terminal/TerminalManager';
 import { MCPControl } from '@/components/agent/MCPControl';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
@@ -163,7 +163,7 @@ const App: React.FC = () => {
       case 'pipeline':
         return <PipelineEditor />;
       case 'console':
-        return <ConsoleManager />;
+        return <TerminalManager />;
       case 'mcp':
         return <MCPControl />;
       case 'settings':

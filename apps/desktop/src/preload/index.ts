@@ -92,4 +92,68 @@ contextBridge.exposeInMainWorld('api', {
   openExternal: (url: string): Promise<void> => {
     return ipcRenderer.invoke('shell:open-external', url);
   },
+
+  // ── Terminal PTY APIs ─────────────────────────────────────────
+
+  terminal: {
+    /**
+     * Create a new terminal PTY session
+     * @param sessionId - Unique identifier for the session
+     * @param options - Shell, cwd, cols, rows configuration
+     * @returns Result with sessionId and pid
+     */
+    create: (
+      sessionId: string,
+      options: { shell: string; cwd?: string; cols: number; rows: number }
+    ): Promise<{ success: boolean; data?: { sessionId: string; pid: number }; error?: string }> => {
+      return ipcRenderer.invoke('terminal:create', sessionId, options);
+    },
+
+    /**
+     * Write data to a terminal session's stdin
+     * Uses send (fire-and-forget) for performance
+     */
+    write: (sessionId: string, data: string): void => {
+      ipcRenderer.send('terminal:write', sessionId, data);
+    },
+
+    /**
+     * Resize a terminal session
+     * Uses send (fire-and-forget) for performance
+     */
+    resize: (sessionId: string, cols: number, rows: number): void => {
+      ipcRenderer.send('terminal:resize', sessionId, cols, rows);
+    },
+
+    /**
+     * Close a terminal session and kill the PTY process
+     */
+    close: (sessionId: string): void => {
+      ipcRenderer.send('terminal:close', sessionId);
+    },
+
+    /**
+     * Subscribe to terminal data output events
+     * @param callback - Called with (sessionId, data) when PTY produces output
+     * @returns Cleanup function to remove the listener
+     */
+    onData: (callback: (sessionId: string, data: string) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, sessionId: string, data: string) =>
+        callback(sessionId, data);
+      ipcRenderer.on('terminal:data', listener);
+      return () => ipcRenderer.removeListener('terminal:data', listener);
+    },
+
+    /**
+     * Subscribe to terminal exit events
+     * @param callback - Called with (sessionId, exitCode) when PTY exits
+     * @returns Cleanup function to remove the listener
+     */
+    onExit: (callback: (sessionId: string, exitCode: number) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, sessionId: string, exitCode: number) =>
+        callback(sessionId, exitCode);
+      ipcRenderer.on('terminal:exit', listener);
+      return () => ipcRenderer.removeListener('terminal:exit', listener);
+    },
+  },
 });

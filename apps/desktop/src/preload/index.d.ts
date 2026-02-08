@@ -65,6 +65,31 @@ export interface ElectronAPI {
    * Open a URL in the default browser
    */
   openExternal: (url: string) => Promise<void>;
+
+  // ── Terminal PTY APIs ─────────────────────────────────────────
+
+  terminal: {
+    /** Create a new terminal PTY session */
+    create: (
+      sessionId: string,
+      options: { shell: string; cwd?: string; cols: number; rows: number }
+    ) => Promise<{ success: boolean; data?: { sessionId: string; pid: number }; error?: string }>;
+
+    /** Write data to a terminal session's stdin */
+    write: (sessionId: string, data: string) => void;
+
+    /** Resize a terminal session */
+    resize: (sessionId: string, cols: number, rows: number) => void;
+
+    /** Close a terminal session */
+    close: (sessionId: string) => void;
+
+    /** Subscribe to terminal data output events */
+    onData: (callback: (sessionId: string, data: string) => void) => () => void;
+
+    /** Subscribe to terminal exit events */
+    onExit: (callback: (sessionId: string, exitCode: number) => void) => () => void;
+  };
 }
 
 declare global {
