@@ -8,10 +8,7 @@
 export { MatrixView, actionButtonVariants } from './MatrixView';
 
 // Export MatrixView prop types
-export type { MatrixViewProps, MatrixViewState } from './MatrixView';
-
-// Export MatrixView utility functions
-export { createInitialMatrixViewState } from './MatrixView';
+export type { MatrixViewProps } from './MatrixView';
 
 // Export MatrixList component with its variants
 export { MatrixList, matrixItemVariants } from './MatrixList';
