@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { PythonShell } from 'python-shell';
 import { join } from 'path';
 import type { IPCMessage, IPCResponse } from '@maxtix/shared';
+import { getAppPaths } from './index';
 
 /**
  * IPC Bridge Handler for Electron-Python Communication
@@ -26,9 +27,10 @@ export function setupIPCHandlers(): void {
    *
    * This handler:
    * 1. Receives IPCMessage from renderer via preload context bridge
-   * 2. Sends message to Python backend via python-shell
-   * 3. Waits for Python response
-   * 4. Returns IPCResponse back to renderer
+   * 2. Injects db_path from application configuration
+   * 3. Sends message to Python backend via python-shell
+   * 4. Waits for Python response
+   * 5. Returns IPCResponse back to renderer
    */
   ipcMain.handle(
     'ipc:send-to-python',
@@ -42,8 +44,15 @@ export function setupIPCHandlers(): void {
           };
         }
 
+        // Inject database path from application configuration
+        const { dbPath } = getAppPaths();
+        const messageWithConfig: IPCMessage = {
+          ...message,
+          db_path: dbPath,
+        };
+
         // Send message to Python and wait for response
-        const response = await sendToPython(message);
+        const response = await sendToPython(messageWithConfig);
         return response;
       } catch (error) {
         // Handle any errors during IPC communication

@@ -24,6 +24,8 @@ export interface IPCMessage<T = unknown> {
   type: string;
   /** Optional payload data specific to the message type */
   data?: T;
+  /** Database path injected by Electron main process */
+  db_path?: string;
 }
 
 /**
