@@ -11,6 +11,7 @@ const mockApi = {
   off: vi.fn(),
   checkCommand: vi.fn().mockResolvedValue({ exists: false }),
   detectTerminals: vi.fn().mockResolvedValue([]),
+  detectShells: vi.fn().mockResolvedValue([]),
   detectIDEs: vi.fn().mockResolvedValue([]),
   readConfig: vi.fn().mockResolvedValue({ onboarding_completed: true }),
   writeConfig: vi.fn().mockResolvedValue({ success: true }),

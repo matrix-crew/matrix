@@ -125,18 +125,20 @@ describe('ToolSelectionModal', () => {
     expect(screen.getByText('Detecting shells...')).toBeInTheDocument();
   });
 
-  it('falls back to detectTerminals when config has no detected_terminals', async () => {
+  it('falls back to detectShells when config has no detected_terminals', async () => {
     vi.mocked(window.api.readConfig).mockResolvedValue({
       onboarding_completed: true,
     });
-    vi.mocked(window.api.detectTerminals).mockResolvedValue([
-      { id: 'iterm2', name: 'iTerm2', path: '/Applications/iTerm.app', isDefault: true },
+    vi.mocked(window.api.detectShells).mockResolvedValue([
+      { id: 'zsh', name: 'Zsh', path: '/bin/zsh', isDefault: true },
+      { id: 'bash', name: 'Bash', path: '/bin/bash', isDefault: false },
     ]);
 
     render(<ToolSelectionModal isOpen={true} onClose={mockOnClose} onConfirm={mockOnConfirm} />);
 
     await waitFor(() => {
-      expect(screen.getByText('iTerm2')).toBeInTheDocument();
+      expect(screen.getByText('Zsh')).toBeInTheDocument();
+      expect(screen.getByText('Bash')).toBeInTheDocument();
     });
   });
 });

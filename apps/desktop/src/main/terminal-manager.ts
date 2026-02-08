@@ -180,9 +180,12 @@ export function setupTerminalHandlers(): void {
     'terminal:create',
     async (_event, sessionId: string, options: TerminalCreateOptions) => {
       try {
+        console.log('[terminal] Creating session:', sessionId, options);
         const result = createSession(sessionId, options);
+        console.log('[terminal] Session created, pid:', result.pid);
         return { success: true, data: result };
       } catch (error) {
+        console.error('[terminal] Failed to create session:', error);
         const message = error instanceof Error ? error.message : 'Failed to create terminal';
         return { success: false, error: message };
       }

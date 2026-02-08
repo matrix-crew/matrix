@@ -53,12 +53,14 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ className }) => {
   const handleCreateTerminal = React.useCallback(
     async (selection: { shell: string; name: string; cwd?: string }) => {
       try {
+        console.log('[TerminalManager] Creating terminal with:', selection);
         const sessionNumber = sessions.length + 1;
         const session = await terminalService.createTerminal({
           name: `${selection.name} ${sessionNumber}`,
           shell: selection.shell,
           cwd: selection.cwd,
         });
+        console.log('[TerminalManager] Session created:', session);
 
         // Guard against unmount during async creation
         if (!mountedRef.current) {

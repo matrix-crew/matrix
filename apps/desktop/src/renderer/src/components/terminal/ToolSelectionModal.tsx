@@ -44,22 +44,23 @@ const ToolSelectionModal: React.FC<ToolSelectionModalProps> = ({ isOpen, onClose
           setShells(configShells);
           setSelectedShell(configShells.find((s) => s.isDefault) || configShells[0]);
         } else {
-          // Fallback: detect terminals now
-          const detected = await window.api.detectTerminals();
-          const mapped: DetectedShell[] = detected.map((t) => ({
-            id: t.id,
-            name: t.name,
-            path: t.path,
-            isDefault: t.isDefault,
+          // Detect available shells (zsh, bash, fish, etc.)
+          const detected = await window.api.detectShells();
+          const mapped: DetectedShell[] = detected.map((s) => ({
+            id: s.id,
+            name: s.name,
+            path: s.path,
+            isDefault: s.isDefault,
           }));
 
           if (mapped.length > 0) {
             setShells(mapped);
             setSelectedShell(mapped.find((s) => s.isDefault) || mapped[0]);
           } else {
-            // Ultimate fallback: provide basic shell options
+            // Ultimate fallback: use environment SHELL or /bin/zsh
+            const defaultPath = process.env.SHELL || '/bin/zsh';
             const fallbackShells: DetectedShell[] = [
-              { id: 'default', name: 'Default Shell', path: '', isDefault: true },
+              { id: 'default', name: 'Default Shell', path: defaultPath, isDefault: true },
             ];
             setShells(fallbackShells);
             setSelectedShell(fallbackShells[0]);

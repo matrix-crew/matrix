@@ -65,6 +65,16 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Detect available shells for PTY terminal sessions (zsh, bash, fish, etc.)
+   * @returns Array of detected shells with name, id, path, and isDefault flag
+   */
+  detectShells: (): Promise<
+    Array<{ id: string; name: string; path: string; isDefault: boolean }>
+  > => {
+    return ipcRenderer.invoke('system:detect-shells');
+  },
+
+  /**
    * Detect installed IDEs / code editors on the system
    * @returns Array of detected IDEs with id, name, and path
    */
