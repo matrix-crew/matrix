@@ -547,6 +547,97 @@ async function writeConfig(config: Record<string, unknown>): Promise<void> {
   await writeFile(CONFIG_PATH, JSON.stringify(merged, null, 2), { mode: 0o600 });
 }
 
+// ── Shell Detection (for PTY sessions) ──────────────────────────────────
+
+interface ShellInfo {
+  id: string;
+  name: string;
+  path: string;
+  isDefault: boolean;
+}
+
+/**
+ * Detect available shells on the system for PTY terminal sessions.
+ * Unlike detectTerminals() which finds terminal emulator apps,
+ * this finds actual shell executables (zsh, bash, fish, etc.).
+ */
+async function detectShells(): Promise<ShellInfo[]> {
+  const defaultShell = process.env.SHELL || '/bin/zsh';
+  const shells: ShellInfo[] = [];
+
+  const candidates = [
+    {
+      id: 'zsh',
+      name: 'Zsh',
+      paths: ['/bin/zsh', '/usr/bin/zsh', '/usr/local/bin/zsh', '/opt/homebrew/bin/zsh'],
+    },
+    {
+      id: 'bash',
+      name: 'Bash',
+      paths: ['/bin/bash', '/usr/bin/bash', '/usr/local/bin/bash', '/opt/homebrew/bin/bash'],
+    },
+    {
+      id: 'fish',
+      name: 'Fish',
+      paths: ['/usr/local/bin/fish', '/opt/homebrew/bin/fish', '/usr/bin/fish'],
+    },
+    { id: 'sh', name: 'sh', paths: ['/bin/sh', '/usr/bin/sh'] },
+  ];
+
+  if (platform() === 'win32') {
+    // Windows shells
+    const winShells: ShellInfo[] = [];
+    const comspec = process.env.COMSPEC || 'C:\\Windows\\System32\\cmd.exe';
+    winShells.push({ id: 'cmd', name: 'Command Prompt', path: comspec, isDefault: true });
+
+    // Check for PowerShell
+    const psPaths = [
+      'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+      'C:\\Program Files\\PowerShell\\7\\pwsh.exe',
+    ];
+    for (const ps of psPaths) {
+      try {
+        await access(ps);
+        winShells.push({
+          id: ps.includes('pwsh') ? 'pwsh' : 'powershell',
+          name: ps.includes('pwsh') ? 'PowerShell 7' : 'PowerShell',
+          path: ps,
+          isDefault: false,
+        });
+      } catch {
+        /* not found */
+      }
+    }
+
+    return winShells;
+  }
+
+  // Unix-like (macOS, Linux)
+  for (const candidate of candidates) {
+    for (const shellPath of candidate.paths) {
+      try {
+        await access(shellPath);
+        shells.push({
+          id: candidate.id,
+          name: candidate.name,
+          path: shellPath,
+          isDefault: shellPath === defaultShell,
+        });
+        break; // Use first found path for this shell
+      } catch {
+        /* not found */
+      }
+    }
+  }
+
+  // Ensure at least one shell is marked as default
+  if (shells.length > 0 && !shells.some((s) => s.isDefault)) {
+    shells[0].isDefault = true;
+  }
+
+  return shells;
+}
+
 // ── IPC Handler Registration ────────────────────────────────────────────
 
 /**
@@ -561,6 +652,11 @@ export function setupSystemCheckHandlers(): void {
   // Detect installed terminal emulators
   ipcMain.handle('system:detect-terminals', async () => {
     return detectTerminals();
+  });
+
+  // Detect available shells (for PTY terminal sessions)
+  ipcMain.handle('system:detect-shells', async () => {
+    return detectShells();
   });
 
   // Detect installed IDEs / code editors

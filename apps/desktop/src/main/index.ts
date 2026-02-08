@@ -4,6 +4,7 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { setupIPCHandlers } from './ipc';
 import { setupSystemCheckHandlers } from './system-check';
+import { setupTerminalHandlers } from './terminal-manager';
 
 const MATRIX_WORKSPACE_DIR = '.matrix';
 
@@ -87,6 +88,9 @@ app.whenReady().then(() => {
 
   // Initialize system check handlers for onboarding & config
   setupSystemCheckHandlers();
+
+  // Initialize terminal PTY handlers
+  setupTerminalHandlers();
 
   createWindow();
 
