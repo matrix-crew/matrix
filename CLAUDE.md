@@ -155,9 +155,9 @@ pnpm dev
 pnpm test
 
 # Run tests for a specific package
-cd apps/desktop && pnpm test        # Desktop app (14 tests)
-cd packages/ui && pnpm test         # UI components (13 tests)
-cd packages/shared && pnpm test     # Shared types (16 tests)
+cd apps/desktop && pnpm test
+cd packages/ui && pnpm test
+cd packages/shared && pnpm test
 
 # Watch mode (re-runs on file changes)
 cd apps/desktop && pnpm test:watch
@@ -242,6 +242,42 @@ Response flows back through the chain
 - [apps/backend/src/main.py](apps/backend/src/main.py) - Python entry point (reads stdin, writes stdout)
 - [apps/backend/src/ipc/handler.py](apps/backend/src/ipc/handler.py) - Message routing
 - [packages/shared/src/types/ipc.ts](packages/shared/src/types/ipc.ts) - TypeScript types for IPC messages
+
+### Terminal Architecture
+
+The embedded terminal uses **node-pty** (main process) + **xterm.js** (renderer) with direct Electron IPC (not Python):
+
+```
+TerminalManager (React)
+  ↓ terminalService.createTerminal()
+TerminalService (Renderer singleton)
+  ↓ window.api.terminal.create()
+Preload Bridge (contextBridge)
+  ↓ ipcRenderer.invoke('terminal:create')
+TerminalManagerMain (Main process)
+  ↓ node-pty spawn
+PTY Process (/bin/zsh, etc.)
+```
+
+**Data flow (bidirectional):**
+
+- **Input**: xterm.js `onData` → `window.api.terminal.write()` → `ipcMain` → `pty.write()`
+- **Output**: `pty.onData` → `ipcMain` event → `ipcRenderer` listener → `xterm.write()`
+
+**Key files:**
+
+- [apps/desktop/src/main/terminal-manager.ts](apps/desktop/src/main/terminal-manager.ts) - Main process PTY lifecycle + persistence IPC
+- [apps/desktop/src/renderer/services/TerminalService.ts](apps/desktop/src/renderer/services/TerminalService.ts) - Renderer service singleton (session CRUD, persistence)
+- [apps/desktop/src/renderer/components/terminal/TerminalManager.tsx](apps/desktop/src/renderer/components/terminal/TerminalManager.tsx) - Grid layout, workspace-scoped persistence
+- [apps/desktop/src/renderer/components/terminal/TerminalInstance.tsx](apps/desktop/src/renderer/components/terminal/TerminalInstance.tsx) - xterm.js instance with forwardRef for scrollback capture
+- [packages/shared/src/types/terminal.ts](packages/shared/src/types/terminal.ts) - Terminal types and xterm theme/options
+
+**Design decisions:**
+
+- **Always-mounted**: TerminalManager uses `visibility: hidden` (not `display: none`) when inactive to preserve PTY sessions and avoid ResizeObserver flicker
+- **Ref-based callbacks**: `onExit` stored in ref to prevent useEffect re-runs that would re-initialize all terminals
+- **Max 12 sessions**: Dynamic gap-free grid with top-heavy row distribution
+- **Matrix-scoped persistence**: Sessions saved to `~/.matrix/{slug}/terminals/` (sessions.json + scrollback files)
 
 ### Adding New IPC Handlers
 
