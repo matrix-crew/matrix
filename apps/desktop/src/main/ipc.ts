@@ -82,13 +82,13 @@ export function setupIPCHandlers(): void {
 async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
   return new Promise((resolve, reject) => {
     // Configure python-shell options
-    const corePath = join(__dirname, '../../../../packages/core');
+    const backendPath = join(__dirname, '../../../backend');
     const options = {
       mode: 'json' as const, // Parse stdin/stdout as JSON
       pythonPath: 'uv', // Use uv as the executable
       pythonOptions: ['run', 'python', '-u'], // Run Python via uv with unbuffered output
-      scriptPath: corePath,
-      cwd: corePath, // uv needs to run from packages/core/ to find pyproject.toml and src package
+      scriptPath: backendPath,
+      cwd: backendPath, // uv needs to run from apps/backend/ to find pyproject.toml and src package
     };
 
     // Create python shell instance
