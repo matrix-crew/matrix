@@ -4,10 +4,10 @@ This module defines the Source entity which represents a git repository
 that can be associated with one or more Matrices.
 """
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Optional
 import uuid
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 
 @dataclass
@@ -28,11 +28,11 @@ class Source:
     id: str
     name: str
     path: str
-    url: Optional[str]
+    url: str | None
     created_at: str
 
     @classmethod
-    def create(cls, name: str, path: str, url: Optional[str] = None) -> "Source":
+    def create(cls, name: str, path: str, url: str | None = None) -> "Source":
         """Create a new Source with auto-generated id and timestamp.
 
         Args:
@@ -48,7 +48,7 @@ class Source:
             name=name,
             path=path,
             url=url,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
     def to_json(self) -> dict[str, Any]:
