@@ -4,6 +4,7 @@ import { MatrixTabBar } from '@/components/layout/MatrixTabBar';
 import { ContextSidebar, type ContextItemId } from '@/components/layout/ContextSidebar';
 import { OnboardingView } from '@/components/layout/OnboardingView';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { HomeView } from '@/components/home/HomeView';
 import { MatrixView } from '@/components/matrix/MatrixView';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
@@ -22,23 +23,23 @@ const App: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [matrices, setMatrices] = useState<Matrix[]>([]);
   const [activeMatrixId, setActiveMatrixId] = useState<string | null>(null);
+  const [isHomeActive, setIsHomeActive] = useState(false);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Fetch matrices from backend on mount
+   * Fetch matrices from backend and optionally navigate to Home
    */
-  const fetchMatrices = useCallback(async () => {
+  const fetchMatrices = useCallback(async (navigateToHome = false) => {
     try {
       setIsLoading(true);
       const response = await window.api.sendMessage({ type: 'matrix-list' });
       if (response.success && response.data) {
         const loaded = (response.data as { matrices: Matrix[] }).matrices || [];
         setMatrices(loaded);
-        // Auto-select first matrix if none selected
-        if (loaded.length > 0 && !activeMatrixId) {
-          setActiveMatrixId(loaded[0].id);
+        if (navigateToHome && loaded.length > 0) {
+          setIsHomeActive(true);
         }
       }
     } catch {
@@ -59,12 +60,12 @@ const App: React.FC = () => {
         setShowOnboarding(needsOnboarding);
 
         if (!needsOnboarding) {
-          fetchMatrices();
+          fetchMatrices(true);
         }
       } catch {
         // If config check fails, skip onboarding and go to app
         setShowOnboarding(false);
-        fetchMatrices();
+        fetchMatrices(true);
       }
     };
     init();
@@ -75,14 +76,23 @@ const App: React.FC = () => {
    */
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
-    fetchMatrices();
+    fetchMatrices(true);
   }, [fetchMatrices]);
+
+  /**
+   * Select the Home tab
+   */
+  const handleSelectHome = useCallback(() => {
+    setActiveMatrixId(null);
+    setIsHomeActive(true);
+  }, []);
 
   /**
    * Select a matrix tab
    */
   const handleSelectMatrix = useCallback((id: string) => {
     setActiveMatrixId(id);
+    setIsHomeActive(false);
   }, []);
 
   /**
@@ -105,6 +115,7 @@ const App: React.FC = () => {
       const newMatrix = (response.data as { matrix: Matrix }).matrix;
       setMatrices((prev) => [...prev, newMatrix]);
       setActiveMatrixId(newMatrix.id);
+      setIsHomeActive(false);
       setIsFormOpen(false);
     } else {
       throw new Error(response.error || 'Failed to create matrix');
@@ -133,11 +144,10 @@ const App: React.FC = () => {
         if (response.success) {
           setMatrices((prev) => {
             const remaining = prev.filter((m) => m.id !== id);
-            // If we deleted the active tab, select an adjacent one
+            // If we deleted the active tab, go to Home
             if (activeMatrixId === id) {
-              const deletedIndex = prev.findIndex((m) => m.id === id);
-              const nextMatrix = remaining[Math.min(deletedIndex, remaining.length - 1)];
-              setActiveMatrixId(nextMatrix?.id ?? null);
+              setActiveMatrixId(null);
+              setIsHomeActive(remaining.length > 0);
             }
             return remaining;
           });
@@ -153,6 +163,17 @@ const App: React.FC = () => {
    * Render content based on active context item
    */
   const renderContent = () => {
+    // Home view: full-width grid, no sidebar
+    if (isHomeActive && !activeMatrixId) {
+      return (
+        <HomeView
+          matrices={matrices}
+          onSelectMatrix={handleSelectMatrix}
+          onCreateMatrix={handleOpenCreateForm}
+        />
+      );
+    }
+
     if (!activeMatrixId) return null;
 
     switch (activeContextItem) {
@@ -200,11 +221,13 @@ const App: React.FC = () => {
   if (matrices.length === 0 && !isFormOpen) {
     return (
       <div className="flex h-screen w-full flex-col bg-base-900">
-        {/* Empty tab bar with just the + button */}
+        {/* Empty tab bar with just the Home + button */}
         <MatrixTabBar
           matrices={[]}
           activeMatrixId={null}
+          isHomeActive={isHomeActive}
           onSelectMatrix={() => {}}
+          onSelectHome={handleSelectHome}
           onCreateMatrix={handleOpenCreateForm}
           onCloseMatrix={() => {}}
         />
@@ -217,22 +240,30 @@ const App: React.FC = () => {
     );
   }
 
+  const showSidebar = activeMatrixId !== null && !isHomeActive;
+
   return (
     <div className="flex h-screen w-full flex-col bg-base-900">
       {/* Matrix Tab Bar */}
       <MatrixTabBar
         matrices={matrices}
         activeMatrixId={activeMatrixId}
+        isHomeActive={isHomeActive}
         onSelectMatrix={handleSelectMatrix}
+        onSelectHome={handleSelectHome}
         onCreateMatrix={handleOpenCreateForm}
         onCloseMatrix={handleCloseMatrix}
       />
 
       {/* Sidebar + Content */}
       <div className="flex flex-1 overflow-hidden">
-        <ContextSidebar activeItem={activeContextItem} onItemSelect={setActiveContextItem} />
+        {showSidebar && (
+          <ContextSidebar activeItem={activeContextItem} onItemSelect={setActiveContextItem} />
+        )}
 
-        <main className="flex-1 overflow-auto p-4 animate-fade-in">{renderContent()}</main>
+        <main className={`flex-1 overflow-auto animate-fade-in${showSidebar ? ' p-4' : ''}`}>
+          {renderContent()}
+        </main>
       </div>
 
       {/* Create matrix form modal */}

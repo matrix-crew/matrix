@@ -54,7 +54,30 @@ describe('App', () => {
     });
   });
 
-  it('displays matrix tabs when matrices exist', async () => {
+  it('shows Home view by default when matrices exist', async () => {
+    vi.mocked(window.api.readConfig).mockResolvedValue({ onboarding_completed: true });
+    vi.mocked(window.api.sendMessage).mockImplementation(async (msg) => {
+      if (msg.type === 'matrix-list') {
+        return { success: true, data: { matrices: [mockMatrix] } };
+      }
+      return { success: true, data: { sources: [] } };
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      // Home view should show the matrix grid
+      expect(screen.getByText('Your Matrices')).toBeInTheDocument();
+    });
+
+    // Home tab should be present
+    expect(screen.getByLabelText('Home')).toBeInTheDocument();
+    // Matrix should appear as a card in the grid (also in tab bar)
+    expect(screen.getAllByText('My Project').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('switches to matrix view when matrix card is clicked from Home', async () => {
+    const user = userEvent.setup();
     vi.mocked(window.api.readConfig).mockResolvedValue({ onboarding_completed: true });
     vi.mocked(window.api.sendMessage).mockImplementation(async (msg) => {
       if (msg.type === 'matrix-list') {
@@ -69,7 +92,17 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('My Project')).toBeInTheDocument();
+      expect(screen.getByText('Your Matrices')).toBeInTheDocument();
+    });
+
+    // Click the matrix card in the grid (not the tab bar)
+    const cards = screen.getAllByText('My Project');
+    // The last one is in the HomeView grid card
+    await user.click(cards[cards.length - 1]);
+
+    // Home view should be replaced by matrix-specific content
+    await waitFor(() => {
+      expect(screen.queryByText('Your Matrices')).not.toBeInTheDocument();
     });
   });
 
