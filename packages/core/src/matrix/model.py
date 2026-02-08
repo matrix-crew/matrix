@@ -28,6 +28,7 @@ class Matrix:
     id: str
     name: str
     source_ids: list[str]
+    workspace_path: str
     created_at: str
     updated_at: str
 
@@ -42,11 +43,15 @@ class Matrix:
         Returns:
             A new Matrix instance with generated UUID and current timestamps
         """
+        from src.config.paths import get_matrix_space_path
+
         now = datetime.now(UTC).isoformat()
+        matrix_id = str(uuid.uuid4())
         return cls(
-            id=str(uuid.uuid4()),
+            id=matrix_id,
             name=name,
             source_ids=source_ids if source_ids is not None else [],
+            workspace_path=get_matrix_space_path(name, matrix_id),
             created_at=now,
             updated_at=now,
         )
@@ -61,6 +66,7 @@ class Matrix:
             "id": self.id,
             "name": self.name,
             "source_ids": self.source_ids,
+            "workspace_path": self.workspace_path,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
@@ -82,6 +88,7 @@ class Matrix:
             id=data["id"],
             name=data["name"],
             source_ids=data.get("source_ids", []),
+            workspace_path=data["workspace_path"],
             created_at=data["created_at"],
             updated_at=data["updated_at"],
         )

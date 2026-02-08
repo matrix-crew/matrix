@@ -1,22 +1,40 @@
 import { app, BrowserWindow } from 'electron';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { setupIPCHandlers } from './ipc';
 
 const MATRIX_WORKSPACE_DIR = '.matrix';
 
-function initializeWorkspace(): void {
+/** Application paths for database and workspace */
+interface AppPaths {
+  /** Path to the SQLite database file (OS-standard app data directory) */
+  dbPath: string;
+  /** Path to the workspace root for matrix spaces ($HOME/.matrix/) */
+  workspacePath: string;
+}
+
+let appPaths: AppPaths;
+
+function initializeAppPaths(): void {
+  // OS-standard app data directory for database
+  const appDataDir = join(app.getPath('appData'), 'Matrix');
+  const dbPath = join(appDataDir, 'matrix.db');
+
+  // User workspace directory for matrix spaces
   const workspacePath = join(homedir(), MATRIX_WORKSPACE_DIR);
 
-  if (!existsSync(workspacePath)) {
-    try {
-      mkdirSync(workspacePath, { recursive: true });
-      console.log(`Matrix workspace initialized: ${workspacePath}`);
-    } catch (error) {
-      console.error('Failed to create Matrix workspace:', error);
-    }
-  }
+  // Create both directories
+  mkdirSync(appDataDir, { recursive: true });
+  mkdirSync(workspacePath, { recursive: true });
+
+  appPaths = { dbPath, workspacePath };
+  console.log(`Matrix app data: ${appDataDir}`);
+  console.log(`Matrix workspace: ${workspacePath}`);
+}
+
+export function getAppPaths(): AppPaths {
+  return appPaths;
 }
 
 let mainWindow: BrowserWindow | null = null;
@@ -58,8 +76,8 @@ function createWindow(): void {
 
 // App lifecycle handlers
 app.whenReady().then(() => {
-  // Initialize Matrix workspace directory
-  initializeWorkspace();
+  // Initialize application paths (DB + workspace directories)
+  initializeAppPaths();
 
   // Initialize IPC handlers for Python backend communication
   setupIPCHandlers();

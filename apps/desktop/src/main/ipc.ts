@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 import { PythonShell } from 'python-shell';
 import { join } from 'path';
 import type { IPCMessage, IPCResponse } from '@maxtix/shared';
+import { getAppPaths } from './index';
 
 /**
  * IPC Bridge Handler for Electron-Python Communication
@@ -26,9 +27,10 @@ export function setupIPCHandlers(): void {
    *
    * This handler:
    * 1. Receives IPCMessage from renderer via preload context bridge
-   * 2. Sends message to Python backend via python-shell
-   * 3. Waits for Python response
-   * 4. Returns IPCResponse back to renderer
+   * 2. Injects db_path from application configuration
+   * 3. Sends message to Python backend via python-shell
+   * 4. Waits for Python response
+   * 5. Returns IPCResponse back to renderer
    */
   ipcMain.handle(
     'ipc:send-to-python',
@@ -42,8 +44,15 @@ export function setupIPCHandlers(): void {
           };
         }
 
+        // Inject database path from application configuration
+        const { dbPath } = getAppPaths();
+        const messageWithConfig: IPCMessage = {
+          ...message,
+          db_path: dbPath,
+        };
+
         // Send message to Python and wait for response
-        const response = await sendToPython(message);
+        const response = await sendToPython(messageWithConfig);
         return response;
       } catch (error) {
         // Handle any errors during IPC communication
@@ -73,15 +82,17 @@ export function setupIPCHandlers(): void {
 async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
   return new Promise((resolve, reject) => {
     // Configure python-shell options
+    const corePath = join(__dirname, '../../../../packages/core');
     const options = {
       mode: 'json' as const, // Parse stdin/stdout as JSON
-      pythonPath: 'uv run python', // Full command to execute Python via uv (ensures correct venv)
-      pythonOptions: ['-u'], // Unbuffered output for real-time communication
-      scriptPath: join(__dirname, '../../packages/core/src'),
+      pythonPath: 'uv', // Use uv as the executable
+      pythonOptions: ['run', 'python', '-u'], // Run Python via uv with unbuffered output
+      scriptPath: corePath,
+      cwd: corePath, // uv needs to run from packages/core/ to find pyproject.toml and src package
     };
 
     // Create python shell instance
-    const pyshell = new PythonShell('main.py', options);
+    const pyshell = new PythonShell('src/main.py', options);
 
     // Send message to Python stdin
     pyshell.send(message);

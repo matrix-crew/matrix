@@ -18,6 +18,8 @@ export interface Matrix {
   name: string;
   /** List of Source UUIDs contained in this Matrix */
   source_ids: string[];
+  /** Absolute path to the matrix workspace folder */
+  workspace_path: string;
   /** ISO 8601 timestamp of when the Matrix was created */
   created_at: string;
   /** ISO 8601 timestamp of when the Matrix was last modified */

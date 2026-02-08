@@ -14,9 +14,13 @@ def use_memory_db():
     engine = get_engine(":memory:")
     init_db(engine)
 
-    with patch("src.ipc.handler.get_engine", return_value=engine):
-        with patch("src.ipc.handler.init_db"):
-            yield
+    with (
+        patch("src.ipc.handler.get_engine", return_value=engine),
+        patch("src.ipc.handler.init_db"),
+        patch("src.ipc.handler.create_matrix_space"),
+        patch("src.ipc.handler.update_matrix_md"),
+    ):
+        yield
 
 
 class TestPingHandler:
