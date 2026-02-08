@@ -3,20 +3,29 @@ import { cn } from '@maxtix/ui';
 import type { AgentState, ToolState } from './types';
 import { createInitialAgentStates, createInitialToolStates } from './types';
 import { WelcomeStep } from './WelcomeStep';
+import { ToolCheckStep } from './ToolCheckStep';
 import { AgentDetectionStep } from './AgentDetectionStep';
 import { AgentAuthStep } from './AgentAuthStep';
-import { ToolCheckStep } from './ToolCheckStep';
 
-const TOTAL_STEPS = 3; // Steps after welcome (detection, auth, tools)
+/**
+ * Onboarding step order:
+ *   0 = Welcome
+ *   1 = Tools (dev tools + terminal + IDE selection)
+ *   2 = Agent Detection
+ *   3 = Agent Authentication
+ */
+const TOTAL_STEPS = 3; // Steps after welcome
 
 interface OnboardingWizardProps {
   onComplete: () => void;
 }
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
-  const [step, setStep] = useState(0); // 0=welcome, 1=detection, 2=auth, 3=tools
+  const [step, setStep] = useState(0);
   const [agents, setAgents] = useState<Record<string, AgentState>>(createInitialAgentStates);
   const [tools, setTools] = useState<Record<string, ToolState>>(createInitialToolStates);
+  const [selectedTerminal, setSelectedTerminal] = useState<string | null>(null);
+  const [selectedIDE, setSelectedIDE] = useState<string | null>(null);
 
   /**
    * Save config and finish onboarding
@@ -31,7 +40,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         };
 
         if (!skipped) {
-          // Save agent config (omit API keys from detection-only state)
+          // Save agent config
           const agentConfig: Record<string, unknown> = {};
           for (const [id, state] of Object.entries(agents)) {
             agentConfig[id] = {
@@ -52,6 +61,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             };
           }
           config.tools = toolConfig;
+
+          // Save terminal and IDE preferences
+          if (selectedTerminal) {
+            config.default_terminal = selectedTerminal;
+          }
+          if (selectedIDE) {
+            config.default_ide = selectedIDE;
+          }
         }
 
         await window.api.writeConfig(config);
@@ -61,7 +78,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
       onComplete();
     },
-    [agents, tools, onComplete]
+    [agents, tools, selectedTerminal, selectedIDE, onComplete]
   );
 
   const handleSkip = useCallback(() => finishOnboarding(true), [finishOnboarding]);
@@ -97,29 +114,32 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         {step === 0 && <WelcomeStep onNext={() => setStep(1)} />}
 
         {step === 1 && (
-          <AgentDetectionStep
-            agents={agents}
-            onAgentsChange={setAgents}
+          <ToolCheckStep
+            tools={tools}
+            onToolsChange={setTools}
+            selectedTerminal={selectedTerminal}
+            onTerminalChange={setSelectedTerminal}
+            selectedIDE={selectedIDE}
+            onIDEChange={setSelectedIDE}
             onNext={() => setStep(2)}
             onSkip={handleSkip}
           />
         )}
 
         {step === 2 && (
-          <AgentAuthStep
+          <AgentDetectionStep
             agents={agents}
             onAgentsChange={setAgents}
             onNext={() => setStep(3)}
-            onBack={() => setStep(1)}
             onSkip={handleSkip}
           />
         )}
 
         {step === 3 && (
-          <ToolCheckStep
-            tools={tools}
-            onToolsChange={setTools}
-            onComplete={handleComplete}
+          <AgentAuthStep
+            agents={agents}
+            onAgentsChange={setAgents}
+            onNext={handleComplete}
             onBack={() => setStep(2)}
             onSkip={handleSkip}
           />
