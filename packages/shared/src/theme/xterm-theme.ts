@@ -3,7 +3,7 @@
  *
  * Custom terminal theme matching the Maxtix design system.
  * Colors are derived from the TailwindCSS v4 design tokens
- * defined in apps/desktop/src/renderer/src/index.css.
+ * defined in apps/desktop/src/renderer/index.css.
  */
 
 /**

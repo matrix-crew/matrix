@@ -7,9 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Maxtix is an Electron desktop application with a Python backend, featuring type-safe IPC communication. The project is a **Turborepo monorepo** using **pnpm workspaces** with three main packages:
 
 - `apps/desktop` - Electron application (React + TailwindCSS v4)
-- `packages/core` - Python backend (managed with uv)
+- `apps/backend` - Python backend (managed with uv)
 - `packages/shared` - TypeScript types for IPC communication
 - `packages/ui` - Shared React components (shadcn/ui patterns)
+
+> **Note**: The Python backend lives under `apps/` (not `packages/`) because it is an independent application, not a shared library.
 
 ## Git Workflow
 
@@ -80,23 +82,23 @@ pre-commit run --all-files
 
 ```bash
 # Run Python backend standalone (verify installation)
-cd packages/core
+cd apps/backend
 uv run python src/main.py  # Should print "OK"
 
 # Sync Python dependencies
-cd packages/core
+cd apps/backend
 uv sync
 
 # Run Python tests
-cd packages/core
+cd apps/backend
 uv run pytest
 
 # Lint Python code
-cd packages/core
+cd apps/backend
 uv run ruff check src/
 
 # Format Python code
-cd packages/core
+cd apps/backend
 uv run ruff format src/
 ```
 
@@ -143,7 +145,7 @@ pnpm dev
 | Layer                     | Tool                           | Location                        |
 | ------------------------- | ------------------------------ | ------------------------------- |
 | TypeScript Unit/Component | Vitest + React Testing Library | `*.test.ts(x)` alongside source |
-| Python Unit               | pytest                         | `packages/core/tests/`          |
+| Python Unit               | pytest                         | `apps/backend/tests/`           |
 | E2E (Electron)            | Playwright                     | `apps/desktop/e2e/`             |
 
 ### Running Tests
@@ -162,7 +164,7 @@ cd apps/desktop && pnpm test:watch
 cd packages/ui && pnpm test:watch
 
 # Run Python tests
-cd packages/core && uv run pytest -v
+cd apps/backend && uv run pytest -v
 
 # Run E2E tests (requires built app)
 cd apps/desktop && pnpm build && pnpm test:e2e
@@ -172,7 +174,7 @@ cd apps/desktop && pnpm build && pnpm test:e2e
 
 When adding a new feature, tests are required at every layer it touches:
 
-1. **New IPC handler** (Python): Add tests in `packages/core/tests/` that call `handle_message()` directly with an in-memory SQLite database. Test success, error, and edge cases.
+1. **New IPC handler** (Python): Add tests in `apps/backend/tests/` that call `handle_message()` directly with an in-memory SQLite database. Test success, error, and edge cases.
 
 2. **New React component**: Add a `ComponentName.test.tsx` file next to the component. Mock `window.api.sendMessage` using `vi.mocked()` for IPC calls. Use `@testing-library/react` for rendering and assertions.
 
@@ -228,7 +230,7 @@ Preload Script (apps/desktop/src/preload/index.ts)
   ↓ contextBridge exposes secure API
 Main Process (apps/desktop/src/main/ipc.ts)
   ↓ python-shell with uv
-Python Backend (packages/core/src/main.py)
+Python Backend (apps/backend/src/main.py)
   ↓ stdin JSON → handler.py routes → stdout JSON
 Response flows back through the chain
 ```
@@ -237,8 +239,8 @@ Response flows back through the chain
 
 - [apps/desktop/src/main/ipc.ts](apps/desktop/src/main/ipc.ts) - IPC bridge using python-shell
 - [apps/desktop/src/preload/index.ts](apps/desktop/src/preload/index.ts) - Security boundary with contextBridge
-- [packages/core/src/main.py](packages/core/src/main.py) - Python entry point (reads stdin, writes stdout)
-- [packages/core/src/ipc/handler.py](packages/core/src/ipc/handler.py) - Message routing
+- [apps/backend/src/main.py](apps/backend/src/main.py) - Python entry point (reads stdin, writes stdout)
+- [apps/backend/src/ipc/handler.py](apps/backend/src/ipc/handler.py) - Message routing
 - [packages/shared/src/types/ipc.ts](packages/shared/src/types/ipc.ts) - TypeScript types for IPC messages
 
 ### Adding New IPC Handlers
@@ -252,7 +254,7 @@ export interface MyNewMessage extends IPCMessage {
 }
 ```
 
-2. **Add Python handler** in [packages/core/src/ipc/handler.py](packages/core/src/ipc/handler.py):
+2. **Add Python handler** in [apps/backend/src/ipc/handler.py](apps/backend/src/ipc/handler.py):
 
 ```python
 if message_type == "my-handler":
@@ -273,7 +275,7 @@ cd packages/shared && pnpm build
 ```
 
 5. **Write tests** (required):
-   - Add Python handler tests in `packages/core/tests/` covering success, error, and edge cases
+   - Add Python handler tests in `apps/backend/tests/` covering success, error, and edge cases
    - Add type contract tests in `packages/shared/src/types/ipc.test.ts` for the new message type
    - Add React component tests if a UI component consumes the new handler
 
@@ -286,10 +288,10 @@ cd packages/shared && pnpm build
 
 ### Python Backend Architecture
 
-The Python backend (`packages/core`) is a stateless message processor:
+The Python backend (`apps/backend/`) is a stateless message processor:
 
-- **Entry Point**: [src/main.py](packages/core/src/main.py) reads JSON from stdin, writes JSON to stdout
-- **Handler**: [src/ipc/handler.py](packages/core/src/ipc/handler.py) routes messages by `type` field
+- **Entry Point**: [apps/backend/src/main.py](apps/backend/src/main.py) reads JSON from stdin, writes JSON to stdout
+- **Handler**: [apps/backend/src/ipc/handler.py](apps/backend/src/ipc/handler.py) routes messages by `type` field
 - **Standalone Mode**: Running `uv run python src/main.py` in a TTY prints "OK"
 - **IPC Mode**: Running with stdin (non-TTY) processes JSON messages
 
@@ -306,7 +308,7 @@ All service data is implemented as Python objects with JSON serialization for pe
 
 **Design Pattern:**
 
-- **Runtime**: Python objects in `packages/core`
+- **Runtime**: Python objects in `apps/backend`
 - **Storage**: JSON format for all user-created objects
 
 **User Object Types:**
@@ -360,10 +362,10 @@ When adding shadcn/ui components, manually copy them into `packages/ui/src/compo
 The [apps/desktop/src/main/ipc.ts](apps/desktop/src/main/ipc.ts) file uses a relative path to find the Python script:
 
 ```typescript
-const pythonScriptPath = join(__dirname, '../../../../packages/core/src');
+const backendPath = join(__dirname, '../../../backend');
 ```
 
-This works because `__dirname` in production is `apps/desktop/out/main`. If you move the Python package, update this path.
+This works because `__dirname` in production is `apps/desktop/out/main`. Three levels up reaches `apps/`, then `backend` reaches `apps/backend`.
 
 ### Python Uses uv
 
@@ -408,7 +410,7 @@ pnpm dev
 pnpm dev
 
 # Terminal 2
-echo '{"type":"ping"}' | uv run python packages/core/src/main.py
+echo '{"type":"ping"}' | uv run python apps/backend/src/main.py
 # Expected: {"success":true,"data":{"message":"pong"}}
 ```
 
@@ -433,7 +435,7 @@ Install uv globally: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 ### Python dependencies not found
 
-Sync dependencies: `cd packages/core && uv sync`
+Sync dependencies: `cd apps/backend && uv sync`
 
 ### TypeScript errors about @maxtix/shared
 

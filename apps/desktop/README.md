@@ -73,10 +73,10 @@ apps/desktop/
 │   │   └── index.d.ts     # Type definitions for renderer
 │   │
 │   └── renderer/          # React UI (renderer process)
-│       ├── src/
-│       │   ├── App.tsx    # Main application component
-│       │   ├── main.tsx   # React entry point
-│       │   └── index.css  # Global styles with TailwindCSS
+│       ├── App.tsx        # Main application component
+│       ├── main.tsx       # React entry point
+│       ├── index.css      # Global styles with TailwindCSS
+│       ├── components/    # UI components
 │       └── index.html     # HTML entry point
 │
 ├── electron.vite.config.ts  # Vite configuration for Electron
@@ -205,7 +205,7 @@ export function App() {
 The app uses TailwindCSS v4 with CSS `@import` syntax:
 
 ```css
-/* src/renderer/src/index.css */
+/* src/renderer/index.css */
 @import 'tailwindcss';
 ```
 
@@ -362,7 +362,7 @@ const pythonShell = new PythonShell('main.py', {
   mode: 'json',
   pythonPath: 'uv',
   pythonOptions: ['run', 'python'],
-  scriptPath: join(__dirname, '../../packages/core/src'),
+  scriptPath: join(__dirname, '../../../backend'),
 });
 ```
 
@@ -421,7 +421,7 @@ Test IPC communication:
 pnpm dev
 
 # Terminal 2: Test Python backend directly
-echo '{"type":"ping"}' | uv run python packages/core/src/main.py
+echo '{"type":"ping"}' | uv run python apps/backend/src/main.py
 ```
 
 Expected output: `{"success":true,"data":{"message":"pong"}}`

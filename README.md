@@ -69,7 +69,7 @@ This installs all workspace dependencies including:
 ### 2. Set Up Python Environment
 
 ```bash
-cd packages/core
+cd apps/backend
 uv sync
 cd ../..
 ```
@@ -90,7 +90,7 @@ Expected output: All TypeScript files compile without errors.
 ### 4. Test Python Backend Standalone
 
 ```bash
-cd packages/core
+cd apps/backend
 uv run python src/main.py
 ```
 
@@ -127,7 +127,7 @@ Send a JSON message directly:
 pnpm dev
 
 # Terminal 2: Send a test message (while app is running)
-echo '{"type":"ping"}' | uv run python packages/core/src/main.py
+echo '{"type":"ping"}' | uv run python apps/backend/src/main.py
 ```
 
 Expected output: `{"success":true,"data":{"message":"pong"}}`
@@ -137,32 +137,29 @@ Expected output: `{"success":true,"data":{"message":"pong"}}`
 ```
 maxtix/
 ├── apps/
-│   └── desktop/                # Electron desktop application
+│   ├── desktop/                # Electron desktop application
+│   │   ├── src/
+│   │   │   ├── main/          # Main process (Electron control)
+│   │   │   │   ├── index.ts   # App lifecycle & window management
+│   │   │   │   └── ipc.ts     # IPC bridge to Python
+│   │   │   ├── preload/       # Preload script (security bridge)
+│   │   │   │   └── index.ts   # Exposes secure API to renderer
+│   │   │   └── renderer/      # React UI
+│   │   │       ├── App.tsx
+│   │   │       ├── main.tsx
+│   │   │       ├── index.css
+│   │   │       └── components/
+│   │   └── electron.vite.config.ts
+│   │
+│   └── backend/               # Python backend
 │       ├── src/
-│       │   ├── main/          # Main process (Electron control)
-│       │   │   ├── index.ts   # App lifecycle & window management
-│       │   │   └── ipc.ts     # IPC bridge to Python
-│       │   ├── preload/       # Preload script (security bridge)
-│       │   │   └── index.ts   # Exposes secure API to renderer
-│       │   └── renderer/      # React UI
-│       │       └── src/
-│       │           ├── App.tsx
-│       │           ├── main.tsx
-│       │           ├── index.css
-│       │           └── components/
-│       │               └── ui/
-│       │                   └── button.tsx
-│       └── electron.vite.config.ts
+│       │   ├── main.py       # Entry point with IPC processing
+│       │   └── ipc/
+│       │       ├── __init__.py
+│       │       └── handler.py # Message routing & processing
+│       └── pyproject.toml
 │
 ├── packages/
-│   ├── core/          # Python backend
-│   │   ├── src/
-│   │   │   ├── main.py       # Entry point with IPC processing
-│   │   │   └── ipc/
-│   │   │       ├── __init__.py
-│   │   │       └── handler.py # Message routing & processing
-│   │   └── pyproject.toml
-│   │
 │   └── shared/               # Shared types
 │       ├── src/
 │       │   ├── index.ts      # Type exports
@@ -219,15 +216,15 @@ pnpm build
 
 ```bash
 # Run Python backend standalone
-cd packages/core
+cd apps/backend
 uv run python src/main.py
 
 # Run tests
-cd packages/core
+cd apps/backend
 uv run pytest
 
 # Lint Python code
-cd packages/core
+cd apps/backend
 uv run ruff check src/
 ```
 
@@ -334,7 +331,7 @@ Ensures all TypeScript files compile correctly with strict mode enabled.
 ### Python Tests
 
 ```bash
-cd packages/core
+cd apps/backend
 uv run pytest
 ```
 
@@ -385,7 +382,7 @@ cd apps/desktop
 
 ```bash
 # Ensure Python dependencies are synced
-cd packages/core
+cd apps/backend
 uv sync
 cd ../..
 ```
@@ -415,7 +412,7 @@ pnpm type-check
 
 ### Adding a New IPC Handler
 
-1. **Python side** (`packages/core/src/ipc/handler.py`):
+1. **Python side** (`apps/backend/src/ipc/handler.py`):
 
 ```python
 def handle_message(message: dict[str, Any]) -> dict[str, Any]:
@@ -433,7 +430,7 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
     }
 ```
 
-2. **Frontend side** (`apps/desktop/src/renderer/src/App.tsx`):
+2. **Frontend side** (`apps/desktop/src/renderer/App.tsx`):
 
 ```typescript
 const handleTest = async () => {
@@ -451,7 +448,7 @@ const handleTest = async () => {
 
 ### Adding a New UI Component
 
-1. Create component in `apps/desktop/src/renderer/src/components/`
+1. Create component in `apps/desktop/src/renderer/components/`
 2. Use TypeScript and React hooks
 3. Style with TailwindCSS utility classes
 4. For complex UI, use shadcn/ui component library
@@ -513,8 +510,8 @@ pnpm dev  # Should start without errors
 This is a **Turborepo** monorepo with:
 
 - **Root** (`./`): Configuration, scripts, dependencies
-- **Apps** (`./apps/`): Runnable applications (Electron desktop)
-- **Packages** (`./packages/`): Reusable libraries (shared types, Python core)
+- **Apps** (`./apps/`): Runnable applications (Electron desktop, Python backend)
+- **Packages** (`./packages/`): Reusable libraries (shared types, UI components)
 
 ### Workspace Scripts
 

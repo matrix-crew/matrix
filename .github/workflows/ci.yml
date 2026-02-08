@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/core
+        working-directory: apps/backend
     steps:
       - uses: actions/checkout@v4
 
@@ -91,7 +91,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install Python dependencies
-        run: cd packages/core && uv sync --all-extras
+        run: cd apps/backend && uv sync --all-extras
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

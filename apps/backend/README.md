@@ -15,7 +15,7 @@ The Python core package provides the foundation for the Maxtix agent execution s
 
 ```bash
 # Install dependencies
-cd packages/core
+cd apps/backend
 uv sync
 ```
 
@@ -24,13 +24,13 @@ uv sync
 From the project root:
 
 ```bash
-uv run python packages/core/src/main.py
+uv run python apps/backend/src/main.py
 ```
 
 Or from the package directory:
 
 ```bash
-cd packages/core
+cd apps/backend
 uv run python src/main.py
 ```
 
@@ -39,7 +39,7 @@ uv run python src/main.py
 ### Running Tests
 
 ```bash
-cd packages/core
+cd apps/backend
 uv run pytest
 ```
 
