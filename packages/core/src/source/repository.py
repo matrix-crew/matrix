@@ -4,7 +4,6 @@ Provides CRUD operations for Source entities using SQLModel.
 Handles conversion between Source dataclasses and SourceEntity DB models.
 """
 
-
 from sqlmodel import Session, select
 
 from src.db.models import SourceEntity

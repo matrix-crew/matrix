@@ -2,7 +2,10 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@maxtix/ui';
 import { KanbanCard } from './KanbanCard';
-import type { KanbanColumn as KanbanColumnType, KanbanCard as KanbanCardType } from '@/types/kanban';
+import type {
+  KanbanColumn as KanbanColumnType,
+  KanbanCard as KanbanCardType,
+} from '@/types/kanban';
 
 /**
  * Kanban column header variants
@@ -149,9 +152,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       {/* Column header */}
       <div className={columnHeaderVariants({ columnType })}>
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {column.title}
-          </h3>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{column.title}</h3>
           <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gray-200 px-1.5 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
             {column.cards.length}
           </span>
@@ -162,9 +163,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
           <span
             className={cn(
               'text-xs font-medium',
-              isOverLimit
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-gray-500 dark:text-gray-400'
+              isOverLimit ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
             )}
           >
             {column.cards.length}/{column.cardLimit}

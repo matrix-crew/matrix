@@ -9,7 +9,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "clean": "rm -rf dist out .turbo"
   },

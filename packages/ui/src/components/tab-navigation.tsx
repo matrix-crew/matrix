@@ -34,7 +34,8 @@ const tabNavigationVariants = cva(
 );
 
 export interface TabNavigationProps<T extends string = string>
-  extends Omit<React.HTMLAttributes<HTMLElement>, 'onChange'>,
+  extends
+    Omit<React.HTMLAttributes<HTMLElement>, 'onChange'>,
     VariantProps<typeof tabNavigationVariants> {
   /** Array of tabs to display */
   tabs: Tab<T>[];

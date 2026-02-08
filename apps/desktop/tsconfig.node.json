@@ -23,15 +23,6 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true
   },
-  "include": [
-    "electron.vite.config.ts",
-    "src/main/**/*",
-    "src/preload/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out",
-    "src/renderer"
-  ]
+  "include": ["electron.vite.config.ts", "src/main/**/*", "src/preload/**/*"],
+  "exclude": ["node_modules", "dist", "out", "src/renderer"]
 }

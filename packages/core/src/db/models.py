@@ -4,7 +4,6 @@ Defines the database schema using SQLModel, including the junction table
 for the many-to-many Matrix-Source relationship.
 """
 
-
 from sqlmodel import Field, Relationship, SQLModel
 
 

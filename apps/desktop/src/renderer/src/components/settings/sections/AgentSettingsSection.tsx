@@ -11,7 +11,8 @@ const modelCardVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
       },
     },
     defaultVariants: {
@@ -209,9 +210,7 @@ const ModelProviderCard: React.FC<ModelProviderCardProps> = ({ config, selected,
     aria-checked={selected}
   >
     {config.icon}
-    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-      {config.label}
-    </span>
+    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{config.label}</span>
     <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
       {config.description}
     </span>
@@ -257,16 +256,10 @@ const AgentSettingsSection: React.FC<AgentSettingsSectionProps> = ({ className }
   const [selectedFramework, setSelectedFramework] = React.useState<FrameworkOption>('auto');
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Agent Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Agent Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Agent Settings
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Agent Settings</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure AI model and framework preferences for the agent
         </p>
@@ -324,9 +317,7 @@ const AgentSettingsSection: React.FC<AgentSettingsSectionProps> = ({ className }
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {config.label}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {config.description}
-                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
               </div>
             </label>
           ))}
@@ -337,10 +328,7 @@ const AgentSettingsSection: React.FC<AgentSettingsSectionProps> = ({ className }
       </SettingsGroup>
 
       {/* Agent Behavior Settings */}
-      <SettingsGroup
-        title="Agent Behavior"
-        description="Configure how the AI agent operates"
-      >
+      <SettingsGroup title="Agent Behavior" description="Configure how the AI agent operates">
         <div className="space-y-3">
           <label className="flex items-center justify-between">
             <div>
@@ -432,10 +420,7 @@ const AgentSettingsSection: React.FC<AgentSettingsSectionProps> = ({ className }
       </SettingsGroup>
 
       {/* API Configuration Placeholder */}
-      <SettingsGroup
-        title="API Configuration"
-        description="Configure API endpoints and keys"
-      >
+      <SettingsGroup title="API Configuration" description="Configure API endpoints and keys">
         <div className="space-y-4">
           <div>
             <label
@@ -481,10 +466,7 @@ const AgentSettingsSection: React.FC<AgentSettingsSectionProps> = ({ className }
       </SettingsGroup>
 
       {/* Model Parameters Placeholder */}
-      <SettingsGroup
-        title="Model Parameters"
-        description="Fine-tune model behavior parameters"
-      >
+      <SettingsGroup title="Model Parameters" description="Fine-tune model behavior parameters">
         <div className="space-y-4">
           <div>
             <label
@@ -504,9 +486,7 @@ const AgentSettingsSection: React.FC<AgentSettingsSectionProps> = ({ className }
                 disabled
                 className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-not-allowed dark:bg-gray-700"
               />
-              <span className="text-sm text-gray-500 dark:text-gray-400 w-12 text-right">
-                0.7
-              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 w-12 text-right">0.7</span>
             </div>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Controls randomness: 0 is deterministic, 2 is very creative

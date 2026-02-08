@@ -227,9 +227,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
     >
       {/* Board header */}
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Task Board
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Task Board</h2>
         <div className="text-sm text-gray-500 dark:text-gray-400">
           {boardState.columns.reduce((acc, col) => acc + col.cards.length, 0)} tasks
         </div>

@@ -1,7 +1,7 @@
-import { ipcMain } from 'electron'
-import { PythonShell } from 'python-shell'
-import { join } from 'path'
-import type { IPCMessage, IPCResponse } from '@maxtix/shared'
+import { ipcMain } from 'electron';
+import { PythonShell } from 'python-shell';
+import { join } from 'path';
+import type { IPCMessage, IPCResponse } from '@maxtix/shared';
 
 /**
  * IPC Bridge Handler for Electron-Python Communication
@@ -30,28 +30,31 @@ export function setupIPCHandlers(): void {
    * 3. Waits for Python response
    * 4. Returns IPCResponse back to renderer
    */
-  ipcMain.handle('ipc:send-to-python', async (_event, message: IPCMessage): Promise<IPCResponse> => {
-    try {
-      // Validate message structure
-      if (!message || typeof message.type !== 'string') {
+  ipcMain.handle(
+    'ipc:send-to-python',
+    async (_event, message: IPCMessage): Promise<IPCResponse> => {
+      try {
+        // Validate message structure
+        if (!message || typeof message.type !== 'string') {
+          return {
+            success: false,
+            error: 'Invalid message format: missing type field',
+          };
+        }
+
+        // Send message to Python and wait for response
+        const response = await sendToPython(message);
+        return response;
+      } catch (error) {
+        // Handle any errors during IPC communication
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         return {
           success: false,
-          error: 'Invalid message format: missing type field'
-        }
-      }
-
-      // Send message to Python and wait for response
-      const response = await sendToPython(message)
-      return response
-    } catch (error) {
-      // Handle any errors during IPC communication
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      return {
-        success: false,
-        error: `IPC communication failed: ${errorMessage}`
+          error: `IPC communication failed: ${errorMessage}`,
+        };
       }
     }
-  })
+  );
 }
 
 /**
@@ -74,34 +77,34 @@ async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
       mode: 'json' as const, // Parse stdin/stdout as JSON
       pythonPath: 'uv run python', // Full command to execute Python via uv (ensures correct venv)
       pythonOptions: ['-u'], // Unbuffered output for real-time communication
-      scriptPath: join(__dirname, '../../packages/core/src')
-    }
+      scriptPath: join(__dirname, '../../packages/core/src'),
+    };
 
     // Create python shell instance
-    const pyshell = new PythonShell('main.py', options)
+    const pyshell = new PythonShell('main.py', options);
 
     // Send message to Python stdin
-    pyshell.send(message)
+    pyshell.send(message);
 
     // Collect response from Python stdout
-    let response: IPCResponse | null = null
+    let response: IPCResponse | null = null;
 
     pyshell.on('message', (data: unknown) => {
       // Python should send exactly one JSON response
       if (data && typeof data === 'object') {
-        response = data as IPCResponse
+        response = data as IPCResponse;
       }
-    })
+    });
 
     // Handle Python process completion
     pyshell.end((err) => {
       if (err) {
-        reject(new Error(`Python process error: ${err.message}`))
+        reject(new Error(`Python process error: ${err.message}`));
       } else if (!response) {
-        reject(new Error('No response received from Python backend'))
+        reject(new Error('No response received from Python backend'));
       } else {
-        resolve(response)
+        resolve(response);
       }
-    })
-  })
+    });
+  });
 }

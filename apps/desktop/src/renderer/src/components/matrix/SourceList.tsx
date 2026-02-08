@@ -12,7 +12,8 @@ const sourceItemVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -188,7 +189,7 @@ const SourceList: React.FC<SourceListProps> = ({
     (sourceId: string | null) => {
       const newSelectedId = sourceId === state.selectedSourceId ? null : sourceId;
       const selectedSource = newSelectedId
-        ? state.sources.find((s) => s.id === newSelectedId) ?? null
+        ? (state.sources.find((s) => s.id === newSelectedId) ?? null)
         : null;
 
       updateState({
@@ -255,9 +256,7 @@ const SourceList: React.FC<SourceListProps> = ({
       <div className="border-b border-gray-200 p-4 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              Sources
-            </h2>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Sources</h2>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {state.matrix ? (
                 <>
@@ -397,13 +396,8 @@ const SourceList: React.FC<SourceListProps> = ({
           <div className="space-y-2">
             <DetailRow label="Name" value={selectedSource.name} />
             <DetailRow label="Path" value={selectedSource.path} mono />
-            {selectedSource.url && (
-              <DetailRow label="URL" value={selectedSource.url} mono />
-            )}
-            <DetailRow
-              label="Added"
-              value={formatSourceDate(selectedSource.created_at)}
-            />
+            {selectedSource.url && <DetailRow label="URL" value={selectedSource.url} mono />}
+            <DetailRow label="Added" value={formatSourceDate(selectedSource.created_at)} />
           </div>
         </div>
       )}
@@ -421,12 +415,7 @@ interface SourceListItemProps {
   onRemove?: (e: React.MouseEvent) => void;
 }
 
-const SourceListItem: React.FC<SourceListItemProps> = ({
-  source,
-  selected,
-  onClick,
-  onRemove,
-}) => {
+const SourceListItem: React.FC<SourceListItemProps> = ({ source, selected, onClick, onRemove }) => {
   const truncatedPath = truncatePath(source.path);
 
   return (

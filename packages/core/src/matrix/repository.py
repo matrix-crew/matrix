@@ -4,7 +4,6 @@ Provides CRUD operations for Matrix entities using SQLModel.
 Handles conversion between Matrix dataclasses and MatrixEntity DB models.
 """
 
-
 from sqlmodel import Session, select
 
 from src.db.models import MatrixEntity, MatrixSourceLink

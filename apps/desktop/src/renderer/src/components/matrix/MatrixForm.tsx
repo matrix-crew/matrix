@@ -11,9 +11,12 @@ const formButtonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
-        secondary: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
-        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
+        primary:
+          'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
+        secondary:
+          'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
+        danger:
+          'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
       },
       disabled: {
         true: 'cursor-not-allowed opacity-50',
@@ -95,7 +98,9 @@ export function createInitialFormState(matrix?: Matrix | null): MatrixFormState 
  * @param values - Form values to validate
  * @returns Object with field-level errors (empty if valid)
  */
-export function validateFormValues(values: MatrixFormValues): Partial<Record<keyof MatrixFormValues, string>> {
+export function validateFormValues(
+  values: MatrixFormValues
+): Partial<Record<keyof MatrixFormValues, string>> {
   const errors: Partial<Record<keyof MatrixFormValues, string>> = {};
 
   // Name is required and must be non-empty
@@ -145,13 +150,7 @@ export interface MatrixFormProps extends VariantProps<typeof formButtonVariants>
  *   onCancel={() => closeDialog()}
  * />
  */
-const MatrixForm: React.FC<MatrixFormProps> = ({
-  mode,
-  matrix,
-  onSubmit,
-  onCancel,
-  className,
-}) => {
+const MatrixForm: React.FC<MatrixFormProps> = ({ mode, matrix, onSubmit, onCancel, className }) => {
   const [state, setState] = React.useState<MatrixFormState>(() => {
     return createInitialFormState(matrix);
   });
@@ -159,24 +158,21 @@ const MatrixForm: React.FC<MatrixFormProps> = ({
   /**
    * Handle input value change
    */
-  const handleInputChange = React.useCallback(
-    (field: keyof MatrixFormValues, value: string) => {
-      setState((prevState) => ({
-        ...prevState,
-        values: {
-          ...prevState.values,
-          [field]: value,
-        },
-        // Clear field error when user starts typing
-        errors: {
-          ...prevState.errors,
-          [field]: undefined,
-        },
-        errorMessage: null,
-      }));
-    },
-    []
-  );
+  const handleInputChange = React.useCallback((field: keyof MatrixFormValues, value: string) => {
+    setState((prevState) => ({
+      ...prevState,
+      values: {
+        ...prevState.values,
+        [field]: value,
+      },
+      // Clear field error when user starts typing
+      errors: {
+        ...prevState.errors,
+        [field]: undefined,
+      },
+      errorMessage: null,
+    }));
+  }, []);
 
   /**
    * Handle form submission
@@ -239,13 +235,9 @@ const MatrixForm: React.FC<MatrixFormProps> = ({
     >
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {formTitle}
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formTitle}</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {isEditMode
-            ? 'Update the matrix name below.'
-            : 'Enter a name for your new matrix.'}
+          {isEditMode ? 'Update the matrix name below.' : 'Enter a name for your new matrix.'}
         </p>
       </div>
 
@@ -265,9 +257,7 @@ const MatrixForm: React.FC<MatrixFormProps> = ({
                 clipRule="evenodd"
               />
             </svg>
-            <p className="text-sm text-red-700 dark:text-red-400">
-              {state.errorMessage}
-            </p>
+            <p className="text-sm text-red-700 dark:text-red-400">{state.errorMessage}</p>
           </div>
         </div>
       )}
@@ -299,11 +289,7 @@ const MatrixForm: React.FC<MatrixFormProps> = ({
           autoFocus
         />
         {state.errors.name && (
-          <p
-            id="name-error"
-            className="mt-1.5 text-xs text-red-600 dark:text-red-400"
-            role="alert"
-          >
+          <p id="name-error" className="mt-1.5 text-xs text-red-600 dark:text-red-400" role="alert">
             {state.errors.name}
           </p>
         )}
@@ -315,9 +301,7 @@ const MatrixForm: React.FC<MatrixFormProps> = ({
           type="button"
           onClick={handleCancel}
           disabled={state.isSubmitting}
-          className={cn(
-            formButtonVariants({ variant: 'secondary', disabled: state.isSubmitting })
-          )}
+          className={cn(formButtonVariants({ variant: 'secondary', disabled: state.isSubmitting }))}
         >
           Cancel
         </button>

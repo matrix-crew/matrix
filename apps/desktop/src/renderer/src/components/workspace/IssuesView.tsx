@@ -25,7 +25,8 @@ const repoItemVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -37,25 +38,23 @@ const repoItemVariants = cva(
 /**
  * Issue card variants using class-variance-authority
  */
-const issueCardVariants = cva(
-  'rounded-lg border p-3 transition-all cursor-pointer',
-  {
-    variants: {
-      selected: {
-        true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
-      },
-      state: {
-        open: '',
-        closed: 'opacity-75',
-      },
+const issueCardVariants = cva('rounded-lg border p-3 transition-all cursor-pointer', {
+  variants: {
+    selected: {
+      true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
+      false:
+        'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
     },
-    defaultVariants: {
-      selected: false,
-      state: 'open',
+    state: {
+      open: '',
+      closed: 'opacity-75',
     },
-  }
-);
+  },
+  defaultVariants: {
+    selected: false,
+    state: 'open',
+  },
+});
 
 export interface IssuesViewProps extends VariantProps<typeof repoItemVariants> {
   /** Initial state for the issues view */
@@ -78,11 +77,7 @@ export interface IssuesViewProps extends VariantProps<typeof repoItemVariants> {
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const IssuesView: React.FC<IssuesViewProps> = ({
-  initialState,
-  onStateChange,
-  className,
-}) => {
+const IssuesView: React.FC<IssuesViewProps> = ({ initialState, onStateChange, className }) => {
   const [state, setState] = React.useState<IssuesViewState>(() => {
     return initialState ?? createInitialIssuesState();
   });
@@ -108,7 +103,8 @@ const IssuesView: React.FC<IssuesViewProps> = ({
         selectedRepositoryId: repositoryId === state.selectedRepositoryId ? null : repositoryId,
         filter: {
           ...state.filter,
-          repositoryId: repositoryId === state.selectedRepositoryId ? undefined : repositoryId ?? undefined,
+          repositoryId:
+            repositoryId === state.selectedRepositoryId ? undefined : (repositoryId ?? undefined),
         },
       });
     },
@@ -225,9 +221,7 @@ const IssuesView: React.FC<IssuesViewProps> = ({
       {/* Left panel - Repository list */}
       <div className="flex w-64 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
         <div className="border-b border-gray-200 p-3 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Repositories
-          </h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repositories</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {state.repositories.length} repos in matrix
           </p>
@@ -270,7 +264,10 @@ const IssuesView: React.FC<IssuesViewProps> = ({
                 key={repo.id}
                 repository={repo}
                 issueCount={state.issues.filter((i) => i.repository.id === repo.id).length}
-                openCount={state.issues.filter((i) => i.repository.id === repo.id && i.state === 'open').length}
+                openCount={
+                  state.issues.filter((i) => i.repository.id === repo.id && i.state === 'open')
+                    .length
+                }
                 selected={repo.id === state.selectedRepositoryId}
                 onClick={() => handleSelectRepository(repo.id)}
               />
@@ -454,10 +451,7 @@ const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
   <button
     type="button"
     onClick={onClick}
-    className={cn(
-      repoItemVariants({ selected }),
-      'w-full border text-left'
-    )}
+    className={cn(repoItemVariants({ selected }), 'w-full border text-left')}
     aria-selected={selected}
     role="option"
   >
@@ -518,12 +512,7 @@ interface StateFilterButtonProps {
   onClick: () => void;
 }
 
-const StateFilterButton: React.FC<StateFilterButtonProps> = ({
-  label,
-  count,
-  active,
-  onClick,
-}) => (
+const StateFilterButton: React.FC<StateFilterButtonProps> = ({ label, count, active, onClick }) => (
   <button
     type="button"
     onClick={onClick}
@@ -579,22 +568,14 @@ interface IssueCardProps {
   onClick: () => void;
 }
 
-const IssueCard: React.FC<IssueCardProps> = ({
-  issue,
-  selected,
-  showRepository,
-  onClick,
-}) => {
+const IssueCard: React.FC<IssueCardProps> = ({ issue, selected, showRepository, onClick }) => {
   const relativeTime = getRelativeTimeString(issue.updatedAt);
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        issueCardVariants({ selected, state: issue.state }),
-        'w-full text-left'
-      )}
+      className={cn(issueCardVariants({ selected, state: issue.state }), 'w-full text-left')}
       aria-selected={selected}
       role="option"
     >
@@ -683,8 +664,7 @@ const IssueCard: React.FC<IssueCardProps> = ({
 
           {/* Meta info */}
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            #{issue.number} opened by{' '}
-            <span className="font-medium">{issue.author}</span>
+            #{issue.number} opened by <span className="font-medium">{issue.author}</span>
             {' • '}
             {relativeTime}
             {issue.commentCount > 0 && (
@@ -750,11 +730,13 @@ const IssueDetailsPanel: React.FC<IssueDetailsPanelProps> = ({ issue, onClose })
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {issue.state === 'open' ? (
-            <span className={cn(
-              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-              getIssueStateBgClass(issue.state),
-              'text-green-700 dark:text-green-400'
-            )}>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                getIssueStateBgClass(issue.state),
+                'text-green-700 dark:text-green-400'
+              )}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 16 16"
@@ -771,11 +753,13 @@ const IssueDetailsPanel: React.FC<IssueDetailsPanelProps> = ({ issue, onClose })
               Open
             </span>
           ) : (
-            <span className={cn(
-              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-              getIssueStateBgClass(issue.state),
-              'text-purple-700 dark:text-purple-400'
-            )}>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                getIssueStateBgClass(issue.state),
+                'text-purple-700 dark:text-purple-400'
+              )}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 16 16"
@@ -921,10 +905,7 @@ const IssueDetailsPanel: React.FC<IssueDetailsPanelProps> = ({ issue, onClose })
                 day: 'numeric',
               })}
             />
-            <DetailRow
-              label="Updated"
-              value={getRelativeTimeString(issue.updatedAt)}
-            />
+            <DetailRow label="Updated" value={getRelativeTimeString(issue.updatedAt)} />
             {issue.closedAt && (
               <DetailRow
                 label="Closed"
@@ -975,12 +956,7 @@ interface DetailRowProps {
 const DetailRow: React.FC<DetailRowProps> = ({ label, value, mono }) => (
   <div className="flex items-center justify-between gap-2">
     <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-    <span
-      className={cn(
-        'text-sm text-gray-900 dark:text-gray-100',
-        mono && 'font-mono text-xs'
-      )}
-    >
+    <span className={cn('text-sm text-gray-900 dark:text-gray-100', mono && 'font-mono text-xs')}>
       {value}
     </span>
   </div>

@@ -11,7 +11,8 @@ const sizeCardVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
       },
     },
     defaultVariants: {
@@ -134,9 +135,7 @@ const FontSizeCard: React.FC<FontSizeCardProps> = ({ config, selected, onClick }
     <span className={cn('font-medium text-gray-900 dark:text-gray-100', config.previewSize)}>
       Aa
     </span>
-    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-      {config.label}
-    </span>
+    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{config.label}</span>
     <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
       {config.description}
     </span>
@@ -173,9 +172,7 @@ const ZoomLevelCard: React.FC<ZoomLevelCardProps> = ({ config, selected, onClick
         clipRule="evenodd"
       />
     </svg>
-    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-      {config.label}
-    </span>
+    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{config.label}</span>
     <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
       {config.description}
     </span>
@@ -221,31 +218,18 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ className }) => {
   const [selectedZoomLevel, setSelectedZoomLevel] = React.useState<ZoomLevelOption>('100');
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Display Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Display Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Display
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Display</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Adjust the size of UI elements
         </p>
       </div>
 
       {/* Font Size Settings */}
-      <SettingsGroup
-        title="Font Size"
-        description="Choose the base font size for the interface"
-      >
-        <div
-          className="flex flex-wrap gap-4"
-          role="radiogroup"
-          aria-label="Font size selection"
-        >
+      <SettingsGroup title="Font Size" description="Choose the base font size for the interface">
+        <div className="flex flex-wrap gap-4" role="radiogroup" aria-label="Font size selection">
           {FONT_SIZE_OPTIONS.map((config) => (
             <FontSizeCard
               key={config.id}
@@ -261,15 +245,8 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Zoom Level Settings */}
-      <SettingsGroup
-        title="Zoom Level"
-        description="Scale the entire interface up or down"
-      >
-        <div
-          className="flex flex-wrap gap-4"
-          role="radiogroup"
-          aria-label="Zoom level selection"
-        >
+      <SettingsGroup title="Zoom Level" description="Scale the entire interface up or down">
+        <div className="flex flex-wrap gap-4" role="radiogroup" aria-label="Zoom level selection">
           {ZOOM_LEVEL_OPTIONS.map((config) => (
             <ZoomLevelCard
               key={config.id}
@@ -285,10 +262,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Sidebar Width Placeholder */}
-      <SettingsGroup
-        title="Sidebar Width"
-        description="Adjust the default width of sidebars"
-      >
+      <SettingsGroup title="Sidebar Width" description="Adjust the default width of sidebars">
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600 dark:text-gray-400 w-20">Narrow</span>
@@ -303,9 +277,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ className }) => {
             />
             <span className="text-sm text-gray-600 dark:text-gray-400 w-20 text-right">Wide</span>
           </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Current: 280px (default)
-          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Current: 280px (default)</p>
         </div>
         <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
           Sidebar width customization coming soon.
@@ -313,10 +285,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Compact Mode Placeholder */}
-      <SettingsGroup
-        title="Density"
-        description="Control the spacing and density of UI elements"
-      >
+      <SettingsGroup title="Density" description="Control the spacing and density of UI elements">
         <div className="space-y-3">
           <label className="flex items-center justify-between">
             <div>

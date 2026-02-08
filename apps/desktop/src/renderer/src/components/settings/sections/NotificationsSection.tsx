@@ -40,7 +40,12 @@ interface ToggleSwitchProps {
   disabled?: boolean;
 }
 
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, onChange, label, disabled = false }) => (
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  enabled,
+  onChange,
+  label,
+  disabled = false,
+}) => (
   <button
     type="button"
     onClick={() => !disabled && onChange(!enabled)}
@@ -83,12 +88,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => (
   <label className="flex items-center justify-between">
     <div>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-        {title}
-      </span>
-      <p className="text-xs text-gray-500 dark:text-gray-400">
-        {description}
-      </p>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
+      <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
     </div>
     <ToggleSwitch
       enabled={enabled}
@@ -121,16 +122,10 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({ className }
   const [connectionStatus, setConnectionStatus] = React.useState(true);
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Notification Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Notification Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Notifications
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Notifications</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Configure how and when you receive alerts and notifications
         </p>
@@ -226,10 +221,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({ className }
       </SettingsGroup>
 
       {/* Do Not Disturb */}
-      <SettingsGroup
-        title="Do Not Disturb"
-        description="Temporarily silence all notifications"
-      >
+      <SettingsGroup title="Do Not Disturb" description="Temporarily silence all notifications">
         <div className="space-y-4">
           <label className="flex items-center justify-between">
             <div>

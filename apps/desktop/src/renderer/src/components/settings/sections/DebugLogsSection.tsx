@@ -40,7 +40,12 @@ interface ToggleSwitchProps {
   disabled?: boolean;
 }
 
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, onChange, label, disabled = false }) => (
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  enabled,
+  onChange,
+  label,
+  disabled = false,
+}) => (
   <button
     type="button"
     onClick={() => !disabled && onChange(!enabled)}
@@ -83,12 +88,8 @@ const DebugItem: React.FC<DebugItemProps> = ({
 }) => (
   <label className="flex items-center justify-between">
     <div>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-        {title}
-      </span>
-      <p className="text-xs text-gray-500 dark:text-gray-400">
-        {description}
-      </p>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
+      <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
     </div>
     <ToggleSwitch
       enabled={enabled}
@@ -167,16 +168,10 @@ const DebugLogsSection: React.FC<DebugLogsSectionProps> = ({ className }) => {
   const [selectedLogLevel, setSelectedLogLevel] = React.useState<LogLevel>('info');
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Debug and Logs Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Debug and Logs Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Debug & Logs
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Debug & Logs</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Troubleshooting tools and logging configuration
         </p>
@@ -215,10 +210,7 @@ const DebugLogsSection: React.FC<DebugLogsSectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Log Level Settings */}
-      <SettingsGroup
-        title="Log Level"
-        description="Control the verbosity of application logs"
-      >
+      <SettingsGroup title="Log Level" description="Control the verbosity of application logs">
         <div className="space-y-2">
           {LOG_LEVEL_OPTIONS.map((config) => (
             <label
@@ -242,9 +234,7 @@ const DebugLogsSection: React.FC<DebugLogsSectionProps> = ({ className }) => {
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {config.label}
                 </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {config.description}
-                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
               </div>
             </label>
           ))}
@@ -255,10 +245,7 @@ const DebugLogsSection: React.FC<DebugLogsSectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Log Output Settings */}
-      <SettingsGroup
-        title="Log Output"
-        description="Configure where logs are written"
-      >
+      <SettingsGroup title="Log Output" description="Configure where logs are written">
         <div className="space-y-4">
           <DebugItem
             title="Verbose Logging"
@@ -287,10 +274,7 @@ const DebugLogsSection: React.FC<DebugLogsSectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Log File Location */}
-      <SettingsGroup
-        title="Log File Location"
-        description="Configure where log files are stored"
-      >
+      <SettingsGroup title="Log File Location" description="Configure where log files are stored">
         <div className="space-y-3">
           <div>
             <label
@@ -344,10 +328,7 @@ const DebugLogsSection: React.FC<DebugLogsSectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Diagnostic Actions */}
-      <SettingsGroup
-        title="Diagnostic Actions"
-        description="Tools for troubleshooting issues"
-      >
+      <SettingsGroup title="Diagnostic Actions" description="Tools for troubleshooting issues">
         <div className="space-y-3">
           <button
             type="button"

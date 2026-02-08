@@ -1,25 +1,25 @@
-import { app, BrowserWindow } from 'electron'
-import { mkdirSync, existsSync } from 'fs'
-import { homedir } from 'os'
-import { join } from 'path'
-import { setupIPCHandlers } from './ipc'
+import { app, BrowserWindow } from 'electron';
+import { mkdirSync, existsSync } from 'fs';
+import { homedir } from 'os';
+import { join } from 'path';
+import { setupIPCHandlers } from './ipc';
 
-const MATRIX_WORKSPACE_DIR = '.matrix'
+const MATRIX_WORKSPACE_DIR = '.matrix';
 
 function initializeWorkspace(): void {
-  const workspacePath = join(homedir(), MATRIX_WORKSPACE_DIR)
+  const workspacePath = join(homedir(), MATRIX_WORKSPACE_DIR);
 
   if (!existsSync(workspacePath)) {
     try {
-      mkdirSync(workspacePath, { recursive: true })
-      console.log(`Matrix workspace initialized: ${workspacePath}`)
+      mkdirSync(workspacePath, { recursive: true });
+      console.log(`Matrix workspace initialized: ${workspacePath}`);
     } catch (error) {
-      console.error('Failed to create Matrix workspace:', error)
+      console.error('Failed to create Matrix workspace:', error);
     }
   }
 }
 
-let mainWindow: BrowserWindow | null = null
+let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -33,55 +33,55 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
+      nodeIntegration: false,
+    },
+  });
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow?.show()
-  })
+    mainWindow?.show();
+  });
 
   mainWindow.on('closed', () => {
-    mainWindow = null
-  })
+    mainWindow = null;
+  });
 
   // Load the renderer process
   // electron-vite provides these environment variables
   if (process.env.ELECTRON_RENDERER_URL) {
     // Development mode - load from Vite dev server
-    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
     // Production mode - load from built files
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
 }
 
 // App lifecycle handlers
 app.whenReady().then(() => {
   // Initialize Matrix workspace directory
-  initializeWorkspace()
+  initializeWorkspace();
 
   // Initialize IPC handlers for Python backend communication
-  setupIPCHandlers()
+  setupIPCHandlers();
 
-  createWindow()
+  createWindow();
 
   app.on('activate', () => {
     // On macOS, re-create window when dock icon is clicked and no windows are open
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      createWindow();
     }
-  })
-})
+  });
+});
 
 // Quit when all windows are closed, except on macOS
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
 
 // Handle any errors that might occur
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error)
-})
+  console.error('Uncaught exception:', error);
+});

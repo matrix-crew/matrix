@@ -25,10 +25,8 @@ const collapsibleHeaderVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
-        borderless:
-          'text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+        default: 'text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
+        borderless: 'text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300',
       },
     },
     defaultVariants: {
@@ -37,24 +35,20 @@ const collapsibleHeaderVariants = cva(
   }
 );
 
-const collapsibleContentVariants = cva(
-  'overflow-hidden transition-all duration-200 ease-in-out',
-  {
-    variants: {
-      expanded: {
-        true: 'opacity-100',
-        false: 'opacity-0 h-0',
-      },
+const collapsibleContentVariants = cva('overflow-hidden transition-all duration-200 ease-in-out', {
+  variants: {
+    expanded: {
+      true: 'opacity-100',
+      false: 'opacity-0 h-0',
     },
-    defaultVariants: {
-      expanded: true,
-    },
-  }
-);
+  },
+  defaultVariants: {
+    expanded: true,
+  },
+});
 
 export interface CollapsibleSectionProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof collapsibleSectionVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof collapsibleSectionVariants> {
   /** Title text for the section header */
   title: string;
   /** Content to show/hide when toggling the section */
@@ -74,10 +68,7 @@ export interface CollapsibleSectionProps
  */
 const ChevronIcon: React.FC<{ expanded: boolean }> = ({ expanded }) => (
   <svg
-    className={cn(
-      'size-4 transition-transform duration-200',
-      expanded ? 'rotate-90' : 'rotate-0'
-    )}
+    className={cn('size-4 transition-transform duration-200', expanded ? 'rotate-90' : 'rotate-0')}
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -161,11 +152,7 @@ const CollapsibleSection = React.forwardRef<HTMLDivElement, CollapsibleSectionPr
     };
 
     return (
-      <div
-        className={cn(collapsibleSectionVariants({ variant, className }))}
-        ref={ref}
-        {...props}
-      >
+      <div className={cn(collapsibleSectionVariants({ variant, className }))} ref={ref} {...props}>
         {/* Section Header */}
         <button
           className={cn(collapsibleHeaderVariants({ variant }))}

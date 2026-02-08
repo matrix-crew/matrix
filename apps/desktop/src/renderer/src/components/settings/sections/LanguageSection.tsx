@@ -11,7 +11,8 @@ const languageCardVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
       },
     },
     defaultVariants: {
@@ -185,16 +186,10 @@ const LanguageCard: React.FC<LanguageCardProps> = ({ config, selected, onClick }
     </div>
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          {config.label}
-        </span>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          ({config.nativeLabel})
-        </span>
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{config.label}</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">({config.nativeLabel})</span>
       </div>
-      <span className="text-xs text-gray-500 dark:text-gray-400">
-        {config.region}
-      </span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">{config.region}</span>
     </div>
     {selected && (
       <svg
@@ -258,12 +253,8 @@ const FormatOption: React.FC<FormatOptionProps> = ({ label, example, selected, o
     role="radio"
     aria-checked={selected}
   >
-    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-      {label}
-    </span>
-    <span className="text-xs text-gray-500 dark:text-gray-400">
-      {example}
-    </span>
+    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</span>
+    <span className="text-xs text-gray-500 dark:text-gray-400">{example}</span>
   </button>
 );
 
@@ -288,16 +279,10 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({ className }) => {
   const [selectedTimeFormat, setSelectedTimeFormat] = React.useState<TimeFormatOption>('12h');
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Language Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Language Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Language
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Language</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Choose your preferred language and regional format settings
         </p>
@@ -332,11 +317,7 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({ className }) => {
         title="Date Format"
         description="Choose how dates are displayed throughout the application"
       >
-        <div
-          className="flex flex-wrap gap-3"
-          role="radiogroup"
-          aria-label="Date format selection"
-        >
+        <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="Date format selection">
           {DATE_FORMAT_OPTIONS.map((config) => (
             <FormatOption
               key={config.id}
@@ -357,11 +338,7 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({ className }) => {
         title="Time Format"
         description="Choose between 12-hour and 24-hour time display"
       >
-        <div
-          className="flex flex-wrap gap-3"
-          role="radiogroup"
-          aria-label="Time format selection"
-        >
+        <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="Time format selection">
           {TIME_FORMAT_OPTIONS.map((config) => (
             <FormatOption
               key={config.id}
@@ -378,10 +355,7 @@ const LanguageSection: React.FC<LanguageSectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Spell Check Placeholder */}
-      <SettingsGroup
-        title="Spell Check"
-        description="Configure spell checking behavior"
-      >
+      <SettingsGroup title="Spell Check" description="Configure spell checking behavior">
         <div className="space-y-3">
           <label className="flex items-center justify-between">
             <div>
