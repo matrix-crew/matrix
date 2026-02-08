@@ -28,7 +28,7 @@ interface ActiveSession {
 const activeSessions = new Map<string, ActiveSession>();
 
 /** Maximum concurrent terminal sessions */
-const MAX_SESSIONS = 10;
+const MAX_SESSIONS = 12;
 
 /**
  * Get the default shell for the current platform

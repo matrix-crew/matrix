@@ -8,7 +8,7 @@
 import type { TerminalSessionInfo, TerminalSessionStatus } from '@maxtix/shared';
 
 /** Maximum concurrent terminal sessions */
-export const MAX_TERMINAL_SESSIONS = 10;
+export const MAX_TERMINAL_SESSIONS = 12;
 
 /** Callbacks for terminal events, keyed by sessionId */
 type DataHandler = (data: string) => void;

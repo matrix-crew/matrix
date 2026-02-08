@@ -25,7 +25,7 @@ vi.mock('@/services/TerminalService', () => ({
     canCreateSession: vi.fn().mockReturnValue(true),
     getSessionCount: vi.fn().mockReturnValue(0),
   },
-  MAX_TERMINAL_SESSIONS: 10,
+  MAX_TERMINAL_SESSIONS: 12,
 }));
 
 // Mock TerminalInstance since it requires xterm.js / canvas
