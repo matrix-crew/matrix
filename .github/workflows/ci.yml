@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-typescript:
-    name: TypeScript (Lint, Type-check, Test, Build)
+  desktop:
+    name: Desktop App (Lint, Type-check, Test, Build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +39,8 @@ jobs:
       - name: Test
         run: pnpm test
 
-  test-python:
-    name: Python (Lint, Test)
+  backend:
+    name: Backend (Lint, Test)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -71,7 +71,7 @@ jobs:
   e2e:
     name: E2E Tests (Electron)
     runs-on: ubuntu-latest
-    needs: [test-typescript, test-python]
+    needs: [desktop, backend]
     steps:
       - uses: actions/checkout@v4
 
