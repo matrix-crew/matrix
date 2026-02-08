@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --external react --external react-dom",
     "dev": "tsup src/index.ts --format cjs,esm --dts --external react --external react-dom --watch",
+    "lint": "eslint src",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },

@@ -23,8 +23,7 @@ const tabPanelVariants = cva('flex-1 overflow-auto focus:outline-none', {
 });
 
 export interface TabPanelProps<T extends string = string>
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'id'>,
-    VariantProps<typeof tabPanelVariants> {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'id'>, VariantProps<typeof tabPanelVariants> {
   /** The unique identifier for this tab panel */
   id: T;
   /** The currently active tab ID */

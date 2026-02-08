@@ -96,6 +96,7 @@ const className = cn(
 ```
 
 Benefits:
+
 - Merges Tailwind classes intelligently (removes conflicts)
 - Handles conditional classes
 - Supports arrays and objects
@@ -113,6 +114,7 @@ pnpm dev
 ```
 
 The build process uses `tsup` to generate:
+
 - CommonJS output (`dist/index.js`)
 - ESM output (`dist/index.mjs`)
 - TypeScript declarations (`dist/index.d.ts`)
@@ -202,17 +204,17 @@ const componentVariants = cva('base-classes', {
   variants: {
     variant: {
       default: 'variant-classes',
-      secondary: 'secondary-classes'
+      secondary: 'secondary-classes',
     },
     size: {
       sm: 'size-small-classes',
-      lg: 'size-large-classes'
-    }
+      lg: 'size-large-classes',
+    },
   },
   defaultVariants: {
     variant: 'default',
-    size: 'sm'
-  }
+    size: 'sm',
+  },
 });
 
 export interface ComponentProps extends VariantProps<typeof componentVariants> {
@@ -237,6 +239,7 @@ export interface ComponentProps extends VariantProps<typeof componentVariants> {
 ## Peer Dependencies
 
 This package requires:
+
 - `react` ^18.3.1
 - `react-dom` ^18.3.1
 
@@ -245,6 +248,7 @@ These must be installed in consuming applications.
 ## Contributing
 
 When adding components:
+
 - Follow existing patterns and naming conventions
 - Add TypeScript types for all props
 - Use semantic HTML elements

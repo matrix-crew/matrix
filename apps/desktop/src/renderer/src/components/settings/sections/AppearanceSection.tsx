@@ -11,7 +11,8 @@ const themeCardVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
       },
     },
     defaultVariants: {
@@ -121,9 +122,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme, selected, onClick }) => (
     aria-checked={selected}
   >
     {theme.icon}
-    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-      {theme.label}
-    </span>
+    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{theme.label}</span>
     <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
       {theme.description}
     </span>
@@ -166,31 +165,18 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({ className }) => {
   const [selectedTheme, setSelectedTheme] = React.useState<ThemeOption>('system');
 
   return (
-    <div
-      className={cn('space-y-6', className)}
-      role="region"
-      aria-label="Appearance Settings"
-    >
+    <div className={cn('space-y-6', className)} role="region" aria-label="Appearance Settings">
       {/* Section Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Appearance
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Appearance</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Customize how Matrix looks and feels
         </p>
       </div>
 
       {/* Theme Settings */}
-      <SettingsGroup
-        title="Theme"
-        description="Choose how Matrix appears on your screen"
-      >
-        <div
-          className="flex flex-wrap gap-4"
-          role="radiogroup"
-          aria-label="Theme selection"
-        >
+      <SettingsGroup title="Theme" description="Choose how Matrix appears on your screen">
+        <div className="flex flex-wrap gap-4" role="radiogroup" aria-label="Theme selection">
           {THEME_OPTIONS.map((theme) => (
             <ThemeCard
               key={theme.id}
@@ -236,10 +222,7 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({ className }) => {
       </SettingsGroup>
 
       {/* Window Effects Placeholder */}
-      <SettingsGroup
-        title="Window Effects"
-        description="Visual effects for the application window"
-      >
+      <SettingsGroup title="Window Effects" description="Visual effects for the application window">
         <div className="space-y-3">
           <label className="flex items-center justify-between">
             <div>

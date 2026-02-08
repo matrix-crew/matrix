@@ -14,6 +14,7 @@ A modern desktop application framework combining Electron with a Python backend,
 ### Installation
 
 #### macOS (using Homebrew)
+
 ```bash
 # Install Node.js with nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
@@ -33,6 +34,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 #### Linux (Ubuntu/Debian)
+
 ```bash
 # Install Node.js
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -57,6 +59,7 @@ pnpm install
 ```
 
 This installs all workspace dependencies including:
+
 - Electron and electron-vite for the desktop app
 - React 18 with TypeScript
 - TailwindCSS v4
@@ -72,6 +75,7 @@ cd ../..
 ```
 
 This creates a Python virtual environment and installs dependencies:
+
 - pytest (testing framework)
 - ruff (linter)
 
@@ -99,6 +103,7 @@ pnpm dev
 ```
 
 Expected behavior:
+
 - Electron window opens displaying the Maxtix UI
 - React app loads with "Maxtix" heading and a styled button
 - Hot Module Replacement (HMR) enabled for development
@@ -254,6 +259,7 @@ React Component
 ### Message Format
 
 **Request** (JavaScript → Python):
+
 ```json
 {
   "type": "ping"
@@ -261,6 +267,7 @@ React Component
 ```
 
 **Response** (Python → JavaScript):
+
 ```json
 {
   "success": true,
@@ -291,6 +298,7 @@ React Component
 ## 📚 Technology Stack
 
 ### Frontend
+
 - **Electron** 28+ - Desktop application framework
 - **electron-vite** - Optimized Vite configuration for Electron
 - **React** 18 - UI library
@@ -300,12 +308,14 @@ React Component
 - **CVA** (Class Variance Authority) - Component variant system
 
 ### Backend
+
 - **Python** 3.12 - Backend runtime
 - **uv** - Fast Python package management
 - **pytest** - Testing framework
 - **ruff** - Python linter
 
 ### Build & Development
+
 - **Turborepo** - Monorepo task orchestration
 - **pnpm** - Fast, disk-efficient package manager
 - **ESLint** - JavaScript/TypeScript linting
@@ -429,7 +439,7 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
 const handleTest = async () => {
   setLoading(true);
   try {
-    const response = await window.api.sendMessage({ type: "my-new-handler" });
+    const response = await window.api.sendMessage({ type: 'my-new-handler' });
     setResponse(response);
   } catch (error) {
     setResponse({ success: false, error: String(error) });
@@ -447,6 +457,7 @@ const handleTest = async () => {
 4. For complex UI, use shadcn/ui component library
 
 Example:
+
 ```typescript
 // components/Counter.tsx
 import { useState } from 'react';

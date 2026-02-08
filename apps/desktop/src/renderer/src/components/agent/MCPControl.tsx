@@ -21,7 +21,8 @@ const serverItemVariants = cva(
     variants: {
       selected: {
         true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
+        false:
+          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -33,20 +34,18 @@ const serverItemVariants = cva(
 /**
  * Tool card variants using class-variance-authority
  */
-const toolCardVariants = cva(
-  'rounded-lg border p-3 transition-all cursor-pointer',
-  {
-    variants: {
-      selected: {
-        true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
-        false: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
-      },
+const toolCardVariants = cva('rounded-lg border p-3 transition-all cursor-pointer', {
+  variants: {
+    selected: {
+      true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
+      false:
+        'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
     },
-    defaultVariants: {
-      selected: false,
-    },
-  }
-);
+  },
+  defaultVariants: {
+    selected: false,
+  },
+});
 
 export interface MCPControlProps extends VariantProps<typeof serverItemVariants> {
   /** Initial state for the MCP control panel */
@@ -69,11 +68,7 @@ export interface MCPControlProps extends VariantProps<typeof serverItemVariants>
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const MCPControl: React.FC<MCPControlProps> = ({
-  initialState,
-  onStateChange,
-  className,
-}) => {
+const MCPControl: React.FC<MCPControlProps> = ({ initialState, onStateChange, className }) => {
   const [state, setState] = React.useState<MCPControlState>(() => {
     return initialState ?? createInitialMCPState();
   });
@@ -172,9 +167,7 @@ const MCPControl: React.FC<MCPControlProps> = ({
       {/* Left panel - Server list */}
       <div className="flex w-64 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
         <div className="border-b border-gray-200 p-3 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            MCP Servers
-          </h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">MCP Servers</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {state.servers.filter((s) => s.status === 'connected').length} connected
           </p>
@@ -237,7 +230,9 @@ const MCPControl: React.FC<MCPControlProps> = ({
                         : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
                   )}
                 >
-                  <span className={cn('h-2 w-2 rounded-full', getStatusBgClass(selectedServer.status))} />
+                  <span
+                    className={cn('h-2 w-2 rounded-full', getStatusBgClass(selectedServer.status))}
+                  />
                   {selectedServer.status.charAt(0).toUpperCase() + selectedServer.status.slice(1)}
                 </span>
               </div>
@@ -436,10 +431,7 @@ const ServerListItem: React.FC<ServerListItemProps> = ({ server, selected, onCli
   <button
     type="button"
     onClick={onClick}
-    className={cn(
-      serverItemVariants({ selected }),
-      'w-full border text-left'
-    )}
+    className={cn(serverItemVariants({ selected }), 'w-full border text-left')}
     aria-selected={selected}
     role="option"
   >
@@ -489,9 +481,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool, selected, onClick }) => (
         <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">
           {tool.name}
         </div>
-        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          {tool.description}
-        </p>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{tool.description}</p>
         {tool.parameters.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {tool.parameters.map((param) => (
@@ -620,9 +610,7 @@ const ToolExecutionPanel: React.FC<ToolExecutionPanelProps> = ({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              This tool has no parameters.
-            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">This tool has no parameters.</p>
           )}
         </div>
 

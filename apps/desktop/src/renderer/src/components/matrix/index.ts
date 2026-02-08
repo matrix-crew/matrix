@@ -17,11 +17,7 @@ export { createInitialMatrixViewState } from './MatrixView';
 export { MatrixList, matrixItemVariants } from './MatrixList';
 
 // Export MatrixList prop types
-export type {
-  MatrixListProps,
-  MatrixListState,
-  MatrixFilter,
-} from './MatrixList';
+export type { MatrixListProps, MatrixListState, MatrixFilter } from './MatrixList';
 
 // Export MatrixList utility functions
 export {
@@ -49,11 +45,7 @@ export { createInitialFormState, validateFormValues } from './MatrixForm';
 export { SourceList, sourceItemVariants } from './SourceList';
 
 // Export SourceList prop types
-export type {
-  SourceListProps,
-  SourceListState,
-  SourceFilter,
-} from './SourceList';
+export type { SourceListProps, SourceListState, SourceFilter } from './SourceList';
 
 // Export SourceList utility functions
 export {

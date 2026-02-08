@@ -18,10 +18,7 @@ export type { SidebarItemProps } from './components/sidebar-item';
 export { CollapsibleSection, collapsibleSectionVariants } from './components/collapsible-section';
 export type { CollapsibleSectionProps } from './components/collapsible-section';
 
-export {
-  SidebarNavigation,
-  DEFAULT_NAVIGATION_SECTIONS,
-} from './components/sidebar-navigation';
+export { SidebarNavigation, DEFAULT_NAVIGATION_SECTIONS } from './components/sidebar-navigation';
 export type {
   SidebarNavigationProps,
   NavigationItem,

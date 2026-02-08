@@ -83,9 +83,7 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _handle_matrix_create(
-    message: dict[str, Any], repo: MatrixRepository
-) -> dict[str, Any]:
+def _handle_matrix_create(message: dict[str, Any], repo: MatrixRepository) -> dict[str, Any]:
     data = message.get("data", {})
     name = data.get("name", "")
 
@@ -106,9 +104,7 @@ def _handle_matrix_list(repo: MatrixRepository) -> dict[str, Any]:
     }
 
 
-def _handle_matrix_get(
-    message: dict[str, Any], repo: MatrixRepository
-) -> dict[str, Any]:
+def _handle_matrix_get(message: dict[str, Any], repo: MatrixRepository) -> dict[str, Any]:
     data = message.get("data", {})
     matrix_id = data.get("id", "")
 
@@ -123,9 +119,7 @@ def _handle_matrix_get(
     return {"success": True, "data": {"matrix": matrix.to_json()}}
 
 
-def _handle_matrix_update(
-    message: dict[str, Any], repo: MatrixRepository
-) -> dict[str, Any]:
+def _handle_matrix_update(message: dict[str, Any], repo: MatrixRepository) -> dict[str, Any]:
     data = message.get("data", {})
     matrix_id = data.get("id", "")
 
@@ -153,9 +147,7 @@ def _handle_matrix_update(
     return {"success": True, "data": {"matrix": matrix.to_json()}}
 
 
-def _handle_matrix_delete(
-    message: dict[str, Any], repo: MatrixRepository
-) -> dict[str, Any]:
+def _handle_matrix_delete(message: dict[str, Any], repo: MatrixRepository) -> dict[str, Any]:
     data = message.get("data", {})
     matrix_id = data.get("id", "")
 
@@ -170,9 +162,7 @@ def _handle_matrix_delete(
     return {"success": True, "data": {"deleted": True}}
 
 
-def _handle_source_create(
-    message: dict[str, Any], repo: SourceRepository
-) -> dict[str, Any]:
+def _handle_source_create(message: dict[str, Any], repo: SourceRepository) -> dict[str, Any]:
     data = message.get("data", {})
     name = data.get("name", "")
     path = data.get("path", "")
@@ -198,9 +188,7 @@ def _handle_source_list(repo: SourceRepository) -> dict[str, Any]:
     }
 
 
-def _handle_source_get(
-    message: dict[str, Any], repo: SourceRepository
-) -> dict[str, Any]:
+def _handle_source_get(message: dict[str, Any], repo: SourceRepository) -> dict[str, Any]:
     data = message.get("data", {})
     source_id = data.get("id", "")
 
@@ -215,9 +203,7 @@ def _handle_source_get(
     return {"success": True, "data": {"source": source.to_json()}}
 
 
-def _handle_matrix_add_source(
-    message: dict[str, Any], repo: MatrixRepository
-) -> dict[str, Any]:
+def _handle_matrix_add_source(message: dict[str, Any], repo: MatrixRepository) -> dict[str, Any]:
     data = message.get("data", {})
     matrix_id = data.get("matrixId", "")
     source_id = data.get("sourceId", "")
@@ -241,9 +227,7 @@ def _handle_matrix_add_source(
     return {"success": True, "data": {"matrix": matrix.to_json()}}
 
 
-def _handle_matrix_remove_source(
-    message: dict[str, Any], repo: MatrixRepository
-) -> dict[str, Any]:
+def _handle_matrix_remove_source(message: dict[str, Any], repo: MatrixRepository) -> dict[str, Any]:
     data = message.get("data", {})
     matrix_id = data.get("matrixId", "")
     source_id = data.get("sourceId", "")

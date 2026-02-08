@@ -26,12 +26,12 @@ This package is part of the Maxtix monorepo and is automatically linked via work
 import type { IPCMessage, IPCResponse } from '@maxtix/shared';
 
 const message: IPCMessage = {
-  type: 'ping'
+  type: 'ping',
 };
 
 const response: IPCResponse = {
   success: true,
-  data: { message: 'pong' }
+  data: { message: 'pong' },
 };
 ```
 
@@ -73,6 +73,7 @@ pnpm dev
 ```
 
 The build process uses `tsup` to generate:
+
 - CommonJS output (`dist/index.js`)
 - ESM output (`dist/index.mjs`)
 - TypeScript declarations (`dist/index.d.ts`)
@@ -139,6 +140,7 @@ The package uses modern package.json exports for optimal compatibility:
 ```
 
 This ensures proper resolution for:
+
 - TypeScript (via `types` field)
 - ESM imports (via `import` field)
 - CommonJS requires (via `require` field)
@@ -146,6 +148,7 @@ This ensures proper resolution for:
 ## Contributing
 
 When modifying types:
+
 - Ensure backward compatibility or coordinate breaking changes
 - Add JSDoc comments for complex types
 - Run `pnpm type-check` before committing

@@ -26,8 +26,7 @@ const sidebarItemVariants = cva(
 );
 
 export interface SidebarItemProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof sidebarItemVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof sidebarItemVariants> {
   /** Icon element or component to display on the left */
   icon?: React.ReactNode;
   /** Label text for the menu item */
@@ -63,7 +62,10 @@ const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>(
       >
         {/* Icon */}
         {icon && (
-          <span className="flex-shrink-0 [&_svg]:size-5 [&_svg]:pointer-events-none" aria-hidden="true">
+          <span
+            className="flex-shrink-0 [&_svg]:size-5 [&_svg]:pointer-events-none"
+            aria-hidden="true"
+          >
             {icon}
           </span>
         )}

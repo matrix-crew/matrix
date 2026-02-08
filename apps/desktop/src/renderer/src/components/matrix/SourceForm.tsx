@@ -11,9 +11,12 @@ const sourceFormButtonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
-        secondary: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
-        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
+        primary:
+          'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
+        secondary:
+          'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600',
+        danger:
+          'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
       },
       disabled: {
         true: 'cursor-not-allowed opacity-50',
@@ -101,7 +104,9 @@ export function createInitialSourceFormState(source?: Source | null): SourceForm
  * @param values - Form values to validate
  * @returns Object with field-level errors (empty if valid)
  */
-export function validateSourceFormValues(values: SourceFormValues): Partial<Record<keyof SourceFormValues, string>> {
+export function validateSourceFormValues(
+  values: SourceFormValues
+): Partial<Record<keyof SourceFormValues, string>> {
   const errors: Partial<Record<keyof SourceFormValues, string>> = {};
 
   // Name is required and must be non-empty
@@ -163,13 +168,7 @@ export interface SourceFormProps extends VariantProps<typeof sourceFormButtonVar
  *   onCancel={() => closeDialog()}
  * />
  */
-const SourceForm: React.FC<SourceFormProps> = ({
-  mode,
-  source,
-  onSubmit,
-  onCancel,
-  className,
-}) => {
+const SourceForm: React.FC<SourceFormProps> = ({ mode, source, onSubmit, onCancel, className }) => {
   const [state, setState] = React.useState<SourceFormState>(() => {
     return createInitialSourceFormState(source);
   });
@@ -177,24 +176,21 @@ const SourceForm: React.FC<SourceFormProps> = ({
   /**
    * Handle input value change
    */
-  const handleInputChange = React.useCallback(
-    (field: keyof SourceFormValues, value: string) => {
-      setState((prevState) => ({
-        ...prevState,
-        values: {
-          ...prevState.values,
-          [field]: value,
-        },
-        // Clear field error when user starts typing
-        errors: {
-          ...prevState.errors,
-          [field]: undefined,
-        },
-        errorMessage: null,
-      }));
-    },
-    []
-  );
+  const handleInputChange = React.useCallback((field: keyof SourceFormValues, value: string) => {
+    setState((prevState) => ({
+      ...prevState,
+      values: {
+        ...prevState.values,
+        [field]: value,
+      },
+      // Clear field error when user starts typing
+      errors: {
+        ...prevState.errors,
+        [field]: undefined,
+      },
+      errorMessage: null,
+    }));
+  }, []);
 
   /**
    * Handle form submission
@@ -257,9 +253,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
     >
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {formTitle}
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{formTitle}</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           {isEditMode
             ? 'Update the source details below.'
@@ -283,9 +277,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
                 clipRule="evenodd"
               />
             </svg>
-            <p className="text-sm text-red-700 dark:text-red-400">
-              {state.errorMessage}
-            </p>
+            <p className="text-sm text-red-700 dark:text-red-400">{state.errorMessage}</p>
           </div>
         </div>
       )}
@@ -317,11 +309,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
           autoFocus
         />
         {state.errors.name && (
-          <p
-            id="name-error"
-            className="mt-1.5 text-xs text-red-600 dark:text-red-400"
-            role="alert"
-          >
+          <p id="name-error" className="mt-1.5 text-xs text-red-600 dark:text-red-400" role="alert">
             {state.errors.name}
           </p>
         )}
@@ -353,11 +341,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
           aria-describedby={state.errors.path ? 'path-error' : undefined}
         />
         {state.errors.path && (
-          <p
-            id="path-error"
-            className="mt-1.5 text-xs text-red-600 dark:text-red-400"
-            role="alert"
-          >
+          <p id="path-error" className="mt-1.5 text-xs text-red-600 dark:text-red-400" role="alert">
             {state.errors.path}
           </p>
         )}
@@ -388,11 +372,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
           aria-describedby={state.errors.url ? 'url-error' : undefined}
         />
         {state.errors.url && (
-          <p
-            id="url-error"
-            className="mt-1.5 text-xs text-red-600 dark:text-red-400"
-            role="alert"
-          >
+          <p id="url-error" className="mt-1.5 text-xs text-red-600 dark:text-red-400" role="alert">
             {state.errors.url}
           </p>
         )}

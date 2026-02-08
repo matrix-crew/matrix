@@ -126,9 +126,7 @@ const ConsoleTerminal: React.FC<ConsoleTerminalProps> = ({
         if (commandHistory.length === 0) return;
 
         const newIndex =
-          historyIndex === -1
-            ? commandHistory.length - 1
-            : Math.max(0, historyIndex - 1);
+          historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
 
         const command = commandHistory[newIndex];
         setInputValue(command.command);
@@ -178,10 +176,7 @@ const ConsoleTerminal: React.FC<ConsoleTerminalProps> = ({
    * Render a single output line
    */
   const renderOutputLine = (line: TerminalOutputLine) => (
-    <div
-      key={line.id}
-      className={cn(outputLineVariants({ type: line.type }))}
-    >
+    <div key={line.id} className={cn(outputLineVariants({ type: line.type }))}>
       <span className="mr-2 text-gray-600 dark:text-gray-500">
         {line.timestamp.toLocaleTimeString('en-US', {
           hour12: false,

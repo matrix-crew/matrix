@@ -219,10 +219,11 @@ const PipelineNode: React.FC<PipelineNodeProps> = ({
   /**
    * Handle port click for creating connections
    */
-  const handlePortClick = (portId: string, portType: 'input' | 'output') => (event: React.MouseEvent) => {
-    event.stopPropagation();
-    onPortClick?.(node.id, portId, portType);
-  };
+  const handlePortClick =
+    (portId: string, portType: 'input' | 'output') => (event: React.MouseEvent) => {
+      event.stopPropagation();
+      onPortClick?.(node.id, portId, portType);
+    };
 
   return (
     <div

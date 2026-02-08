@@ -95,13 +95,7 @@ export const DEFAULT_NAVIGATION_SECTIONS: NavigationSection[] = [
  */
 const SidebarNavigation = React.forwardRef<HTMLElement, SidebarNavigationProps>(
   (
-    {
-      className,
-      activeItemId,
-      onItemSelect,
-      sections = DEFAULT_NAVIGATION_SECTIONS,
-      ...props
-    },
+    { className, activeItemId, onItemSelect, sections = DEFAULT_NAVIGATION_SECTIONS, ...props },
     ref
   ) => {
     /**

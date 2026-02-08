@@ -1,0 +1,7 @@
+dist
+out
+build
+.turbo
+node_modules
+pnpm-lock.yaml
+packages/core

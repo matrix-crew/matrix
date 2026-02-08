@@ -13,7 +13,7 @@ export type {
   PongResponse,
   IPCMessageTypes,
   IPCResponseTypes,
-} from "./types/ipc";
+} from './types/ipc';
 
 // Export all Matrix and Source types
 export type {
@@ -25,4 +25,4 @@ export type {
   SourceCreateData,
   SourceIdData,
   MatrixSourceData,
-} from "./types/matrix";
+} from './types/matrix';

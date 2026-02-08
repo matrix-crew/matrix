@@ -31,8 +31,43 @@ pnpm lint
 # Build all packages (respects dependencies via Turborepo)
 pnpm build
 
+# Format all files with Prettier
+pnpm format
+
+# Check formatting without changes
+pnpm format:check
+
 # Clean all build artifacts
 pnpm clean
+```
+
+### Pre-Commit Hooks
+
+The project uses **Husky + lint-staged** for JavaScript/TypeScript and **pre-commit** (Python package) for Python.
+
+**Automatic (via Husky):**
+
+- Runs on every `git commit`
+- Auto-formats staged files with Prettier (`--write`)
+- Auto-fixes ESLint issues (`--fix`)
+- Runs TypeScript type-checking (`tsc --noEmit`)
+- Runs Ruff linting and formatting for Python files (if `pre-commit` is installed)
+
+**Python pre-commit setup (one-time):**
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+**Manual run:**
+
+```bash
+# Run lint-staged manually
+pnpm lint-staged
+
+# Run Python pre-commit on all files
+pre-commit run --all-files
 ```
 
 ### Python Backend
@@ -110,6 +145,7 @@ Response flows back through the chain
 ```
 
 **Key files:**
+
 - [apps/desktop/src/main/ipc.ts](apps/desktop/src/main/ipc.ts) - IPC bridge using python-shell
 - [apps/desktop/src/preload/index.ts](apps/desktop/src/preload/index.ts) - Security boundary with contextBridge
 - [packages/core/src/main.py](packages/core/src/main.py) - Python entry point (reads stdin, writes stdout)
@@ -119,14 +155,16 @@ Response flows back through the chain
 ### Adding New IPC Handlers
 
 1. **Define TypeScript types** in [packages/shared/src/types/ipc.ts](packages/shared/src/types/ipc.ts):
+
 ```typescript
 export interface MyNewMessage extends IPCMessage {
-  type: "my-handler";
+  type: 'my-handler';
   data?: { someField: string };
 }
 ```
 
 2. **Add Python handler** in [packages/core/src/ipc/handler.py](packages/core/src/ipc/handler.py):
+
 ```python
 if message_type == "my-handler":
     data = message.get("data", {})
@@ -134,11 +172,13 @@ if message_type == "my-handler":
 ```
 
 3. **Use in React** via `window.api.sendMessage()`:
+
 ```typescript
-const response = await window.api.sendMessage({ type: "my-handler", data: { someField: "value" } });
+const response = await window.api.sendMessage({ type: 'my-handler', data: { someField: 'value' } });
 ```
 
 4. **Rebuild shared types** if you modified `packages/shared`:
+
 ```bash
 cd packages/shared && pnpm build
 ```
@@ -160,6 +200,7 @@ The Python backend (`packages/core`) is a stateless message processor:
 - **IPC Mode**: Running with stdin (non-TTY) processes JSON messages
 
 Each IPC call spawns a new Python process via `python-shell`. The Python process:
+
 1. Reads one line of JSON from stdin
 2. Routes the message through `handle_message()`
 3. Writes one JSON response to stdout
@@ -170,10 +211,12 @@ Each IPC call spawns a new Python process via `python-shell`. The Python process
 All service data is implemented as Python objects with JSON serialization for persistence:
 
 **Design Pattern:**
+
 - **Runtime**: Python objects in `packages/core`
 - **Storage**: JSON format for all user-created objects
 
 **User Object Types:**
+
 - `Matrix` - Core matrix objects
 - `Kanban` - Kanban boards
 - `Task` - Individual tasks
@@ -181,6 +224,7 @@ All service data is implemented as Python objects with JSON serialization for pe
 - (Extensible for future object types)
 
 **Serialization Flow:**
+
 ```
 Python Object (Runtime) ↔ JSON (Storage/Transfer)
 ```
@@ -203,10 +247,11 @@ This is a **Turborepo** monorepo with **pnpm workspaces**:
 The UI uses **TailwindCSS v4** with the new CSS `@import` syntax (not a PostCSS plugin):
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 ```
 
 Components follow **shadcn/ui patterns**:
+
 - Located in `packages/ui/src/components/ui/`
 - Use `class-variance-authority` (cva) for variant management
 - Use `tailwind-merge` for className composition
@@ -221,7 +266,7 @@ When adding shadcn/ui components, manually copy them into `packages/ui/src/compo
 The [apps/desktop/src/main/ipc.ts](apps/desktop/src/main/ipc.ts) file uses a relative path to find the Python script:
 
 ```typescript
-const pythonScriptPath = join(__dirname, '../../../../packages/core/src')
+const pythonScriptPath = join(__dirname, '../../../../packages/core/src');
 ```
 
 This works because `__dirname` in production is `apps/desktop/out/main`. If you move the Python package, update this path.
@@ -229,6 +274,7 @@ This works because `__dirname` in production is `apps/desktop/out/main`. If you 
 ### Python Uses uv
 
 All Python commands use `uv` package manager:
+
 - `pythonPath: 'uv'` in python-shell configuration
 - `pythonOptions: ['run', 'python', '-u']` runs `uv run python`
 
@@ -237,6 +283,7 @@ Ensure `uv` is installed globally. Do not use `python3` or `python` directly.
 ### TypeScript Build Order
 
 Shared types must be built before the desktop app can build:
+
 1. `packages/shared` exports types used by `apps/desktop`
 2. Turborepo enforces this via `"dependsOn": ["^build"]` in [turbo.json](turbo.json)
 3. Run `pnpm build` from root to build in correct order
@@ -244,6 +291,7 @@ Shared types must be built before the desktop app can build:
 ### Hot Module Replacement (HMR)
 
 When running `pnpm dev`:
+
 - Vite serves the React app with HMR on port 5173 (configurable)
 - Electron loads from `process.env.ELECTRON_RENDERER_URL`
 - Changes to React components reload instantly

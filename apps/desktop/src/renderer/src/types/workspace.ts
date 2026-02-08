@@ -468,11 +468,7 @@ export function getBranchStatusBgClass(status: BranchStatus): string {
  * @param behind - Commits behind
  * @returns Human-readable status text
  */
-export function getBranchStatusText(
-  status: BranchStatus,
-  ahead: number,
-  behind: number
-): string {
+export function getBranchStatusText(status: BranchStatus, ahead: number, behind: number): string {
   switch (status) {
     case 'ahead':
       return `${ahead} commit${ahead !== 1 ? 's' : ''} ahead`;
@@ -527,9 +523,7 @@ export function filterBranches(branches: Branch[], filter: BranchFilter): Branch
  * @param branches - Array of branches
  * @returns Branches grouped by repository
  */
-export function groupBranchesByRepository(
-  branches: Branch[]
-): Record<string, Branch[]> {
+export function groupBranchesByRepository(branches: Branch[]): Record<string, Branch[]> {
   return branches.reduce(
     (acc, branch) => {
       const repoId = branch.repository.id;
@@ -780,10 +774,7 @@ export function filterIssues(
     }
     if (filter.searchQuery) {
       const query = filter.searchQuery.toLowerCase();
-      if (
-        !issue.title.toLowerCase().includes(query) &&
-        !issue.body.toLowerCase().includes(query)
-      ) {
+      if (!issue.title.toLowerCase().includes(query) && !issue.body.toLowerCase().includes(query)) {
         return false;
       }
     }
@@ -870,10 +861,26 @@ export function createInitialIssuesState(): IssuesViewState {
   ];
 
   // Sample labels
-  const bugLabel: IssueLabel = { name: 'bug', color: '#d73a4a', description: 'Something is not working' };
-  const featureLabel: IssueLabel = { name: 'enhancement', color: '#a2eeef', description: 'New feature or request' };
-  const docsLabel: IssueLabel = { name: 'documentation', color: '#0075ca', description: 'Improvements to documentation' };
-  const helpWantedLabel: IssueLabel = { name: 'help wanted', color: '#008672', description: 'Extra attention is needed' };
+  const bugLabel: IssueLabel = {
+    name: 'bug',
+    color: '#d73a4a',
+    description: 'Something is not working',
+  };
+  const featureLabel: IssueLabel = {
+    name: 'enhancement',
+    color: '#a2eeef',
+    description: 'New feature or request',
+  };
+  const docsLabel: IssueLabel = {
+    name: 'documentation',
+    color: '#0075ca',
+    description: 'Improvements to documentation',
+  };
+  const helpWantedLabel: IssueLabel = {
+    name: 'help wanted',
+    color: '#008672',
+    description: 'Extra attention is needed',
+  };
 
   // Sample issues for each repository
   const issues: Issue[] = [
@@ -1190,10 +1197,7 @@ export function filterPRs(
     }
     if (filter.searchQuery) {
       const query = filter.searchQuery.toLowerCase();
-      if (
-        !pr.title.toLowerCase().includes(query) &&
-        !pr.body.toLowerCase().includes(query)
-      ) {
+      if (!pr.title.toLowerCase().includes(query) && !pr.body.toLowerCase().includes(query)) {
         return false;
       }
     }
@@ -1227,9 +1231,7 @@ export function filterPRs(
  * @param pullRequests - Array of pull requests
  * @returns Pull requests grouped by repository
  */
-export function groupPRsByRepository(
-  pullRequests: PullRequest[]
-): Record<string, PullRequest[]> {
+export function groupPRsByRepository(pullRequests: PullRequest[]): Record<string, PullRequest[]> {
   return pullRequests.reduce(
     (acc, pr) => {
       const repoId = pr.repository.id;
@@ -1257,10 +1259,26 @@ export function createInitialPRsState(): PRsViewState {
   ];
 
   // Sample labels
-  const bugLabel: IssueLabel = { name: 'bug', color: '#d73a4a', description: 'Something is not working' };
-  const featureLabel: IssueLabel = { name: 'enhancement', color: '#a2eeef', description: 'New feature or request' };
-  const docsLabel: IssueLabel = { name: 'documentation', color: '#0075ca', description: 'Improvements to documentation' };
-  const reviewNeededLabel: IssueLabel = { name: 'review needed', color: '#fbca04', description: 'Needs review' };
+  const bugLabel: IssueLabel = {
+    name: 'bug',
+    color: '#d73a4a',
+    description: 'Something is not working',
+  };
+  const featureLabel: IssueLabel = {
+    name: 'enhancement',
+    color: '#a2eeef',
+    description: 'New feature or request',
+  };
+  const docsLabel: IssueLabel = {
+    name: 'documentation',
+    color: '#0075ca',
+    description: 'Improvements to documentation',
+  };
+  const reviewNeededLabel: IssueLabel = {
+    name: 'review needed',
+    color: '#fbca04',
+    description: 'Needs review',
+  };
 
   // Sample pull requests for each repository
   const pullRequests: PullRequest[] = [
@@ -1275,7 +1293,11 @@ export function createInitialPRsState(): PRsViewState {
       labels: [featureLabel, reviewNeededLabel],
       reviewers: ['theo', 'contributor'],
       reviews: [
-        { reviewer: 'theo', state: 'approved', submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+        {
+          reviewer: 'theo',
+          state: 'approved',
+          submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        },
       ],
       ciStatus: 'success',
       commitCount: 5,
@@ -1295,7 +1317,11 @@ export function createInitialPRsState(): PRsViewState {
       labels: [bugLabel],
       reviewers: ['developer'],
       reviews: [
-        { reviewer: 'developer', state: 'changes_requested', submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+        {
+          reviewer: 'developer',
+          state: 'changes_requested',
+          submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        },
       ],
       ciStatus: 'failure',
       hasConflicts: true,
@@ -1316,7 +1342,11 @@ export function createInitialPRsState(): PRsViewState {
       labels: [],
       reviewers: ['developer'],
       reviews: [
-        { reviewer: 'developer', state: 'approved', submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
+        {
+          reviewer: 'developer',
+          state: 'approved',
+          submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        },
       ],
       ciStatus: 'success',
       commitCount: 1,
@@ -1358,7 +1388,11 @@ export function createInitialPRsState(): PRsViewState {
       labels: [reviewNeededLabel],
       reviewers: ['theo'],
       reviews: [
-        { reviewer: 'theo', state: 'commented', submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+        {
+          reviewer: 'theo',
+          state: 'commented',
+          submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        },
       ],
       ciStatus: 'success',
       commitCount: 12,
@@ -1380,7 +1414,11 @@ export function createInitialPRsState(): PRsViewState {
       labels: [featureLabel],
       reviewers: ['theo'],
       reviews: [
-        { reviewer: 'theo', state: 'approved', submittedAt: new Date(Date.now() - 4 * 60 * 60 * 1000) },
+        {
+          reviewer: 'theo',
+          state: 'approved',
+          submittedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        },
       ],
       ciStatus: 'success',
       commitCount: 3,
@@ -1400,7 +1438,11 @@ export function createInitialPRsState(): PRsViewState {
       labels: [docsLabel],
       reviewers: ['developer'],
       reviews: [
-        { reviewer: 'developer', state: 'approved', submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
+        {
+          reviewer: 'developer',
+          state: 'approved',
+          submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        },
       ],
       ciStatus: 'success',
       commitCount: 1,

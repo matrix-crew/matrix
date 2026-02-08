@@ -20,7 +20,8 @@ const terminalTabVariants = cva(
     variants: {
       active: {
         true: 'bg-gray-800 text-gray-100 dark:bg-gray-700',
-        false: 'bg-gray-700 text-gray-400 hover:bg-gray-750 hover:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750',
+        false:
+          'bg-gray-700 text-gray-400 hover:bg-gray-750 hover:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750',
       },
     },
     defaultVariants: {
@@ -225,9 +226,7 @@ const ConsoleManager: React.FC<ConsoleManagerProps> = ({
           )}
           aria-label="Create new terminal"
           title={
-            canCreateTerminal(state)
-              ? 'New terminal'
-              : `Maximum ${MAX_TERMINALS} terminals reached`
+            canCreateTerminal(state) ? 'New terminal' : `Maximum ${MAX_TERMINALS} terminals reached`
           }
         >
           <svg
