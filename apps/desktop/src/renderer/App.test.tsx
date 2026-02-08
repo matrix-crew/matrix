@@ -95,10 +95,10 @@ describe('App', () => {
       expect(screen.getByText('Your Matrices')).toBeInTheDocument();
     });
 
-    // Click the matrix card in the grid (not the tab bar)
+    // Double-click the matrix card in the grid (not the tab bar)
     const cards = screen.getAllByText('My Project');
     // The last one is in the HomeView grid card
-    await user.click(cards[cards.length - 1]);
+    await user.dblClick(cards[cards.length - 1]);
 
     // Home view should be replaced by matrix-specific content
     await waitFor(() => {

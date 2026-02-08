@@ -6,7 +6,9 @@ import type { Matrix, Source } from '@maxtix/shared';
 export interface MatrixCardProps {
   matrix: Matrix;
   sources: Source[];
+  isSelected?: boolean;
   onClick: () => void;
+  onDoubleClick: () => void;
   className?: string;
 }
 
@@ -27,14 +29,27 @@ function formatTimeAgo(dateStr: string): string {
   return `${diffMonths} months ago`;
 }
 
-export const MatrixCard: React.FC<MatrixCardProps> = ({ matrix, sources, onClick, className }) => {
+export const MatrixCard: React.FC<MatrixCardProps> = ({
+  matrix,
+  sources,
+  isSelected = false,
+  onClick,
+  onDoubleClick,
+  className,
+}) => {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      onDoubleClick={onDoubleClick}
       className={cn(
-        'flex flex-col rounded-lg border border-border-default bg-surface-raised p-4 text-left transition-all',
-        'hover:border-base-400 hover:bg-base-700',
+        'flex flex-col rounded-lg border p-4 text-left transition-all',
+        isSelected
+          ? 'border-accent-lime bg-accent-lime/5 ring-1 ring-accent-lime/20'
+          : 'border-border-default bg-surface-raised hover:border-base-400 hover:bg-base-700',
         className
       )}
     >

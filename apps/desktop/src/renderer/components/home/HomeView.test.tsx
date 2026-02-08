@@ -98,7 +98,7 @@ describe('HomeView', () => {
     expect(screen.getByText('api-server')).toBeInTheDocument();
   });
 
-  it('calls onSelectMatrix when a card is clicked', async () => {
+  it('highlights card on single click without navigating', async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
 
@@ -116,6 +116,28 @@ describe('HomeView', () => {
     });
 
     await user.click(screen.getByText('Frontend'));
+    // Single click should NOT navigate
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('calls onSelectMatrix on double-click', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+
+    vi.mocked(window.api.sendMessage).mockResolvedValue({
+      success: true,
+      data: { sources: [] },
+    });
+
+    render(
+      <HomeView matrices={mockMatrices} onSelectMatrix={onSelect} onCreateMatrix={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Frontend')).toBeInTheDocument();
+    });
+
+    await user.dblClick(screen.getByText('Frontend'));
     expect(onSelect).toHaveBeenCalledWith('matrix-1');
   });
 

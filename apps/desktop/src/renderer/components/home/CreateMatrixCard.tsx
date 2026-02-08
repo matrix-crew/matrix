@@ -11,7 +11,10 @@ export const CreateMatrixCard: React.FC<CreateMatrixCardProps> = ({ onClick, cla
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       className={cn(
         'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border-default p-8 transition-all',
         'text-text-muted hover:border-accent-lime hover:bg-accent-lime/5 hover:text-accent-lime',

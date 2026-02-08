@@ -19,6 +19,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMatrixId, setSelectedMatrixId] = useState<string | null>(null);
 
   const fetchSources = useCallback(async () => {
     try {
@@ -59,7 +60,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   }
 
   return (
-    <div className={cn('h-full overflow-auto p-6', className)}>
+    <div
+      className={cn('h-full overflow-auto p-6', className)}
+      onClick={() => setSelectedMatrixId(null)}
+    >
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6">
@@ -71,15 +75,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <CreateMatrixCard onClick={onCreateMatrix} />
           {matrices.map((matrix) => (
             <MatrixCard
               key={matrix.id}
               matrix={matrix}
               sources={matrixSourcesMap.get(matrix.id) || []}
-              onClick={() => onSelectMatrix(matrix.id)}
+              isSelected={selectedMatrixId === matrix.id}
+              onClick={() => setSelectedMatrixId(matrix.id)}
+              onDoubleClick={() => onSelectMatrix(matrix.id)}
             />
           ))}
+          <CreateMatrixCard
+            onClick={() => {
+              setSelectedMatrixId(null);
+              onCreateMatrix();
+            }}
+          />
         </div>
       </div>
     </div>
