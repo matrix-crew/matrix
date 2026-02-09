@@ -11,6 +11,31 @@
     "lint": {},
     "type-check": {},
     "test": {},
+    "package": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:mac": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:win": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:linux": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:publish": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
     "clean": {
       "cache": false
     }

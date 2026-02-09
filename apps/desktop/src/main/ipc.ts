@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron';
 import { PythonShell } from 'python-shell';
-import { join } from 'path';
 import type { IPCMessage, IPCResponse } from '@shared/types/ipc';
 import { getAppPaths } from './index';
+import { getResourcePaths } from './resource-paths';
 
 /**
  * IPC Bridge Handler for Electron-Python Communication
@@ -81,14 +81,17 @@ export function setupIPCHandlers(): void {
  */
 async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
   return new Promise((resolve, reject) => {
-    // Configure python-shell options
-    const backendPath = join(__dirname, '../../../backend');
+    // Configure python-shell options (auto-detects dev vs production paths)
+    const resourcePaths = getResourcePaths();
     const options = {
       mode: 'json' as const, // Parse stdin/stdout as JSON
-      pythonPath: 'uv', // Use uv as the executable
-      pythonOptions: ['run', 'python', '-u'], // Run Python via uv with unbuffered output
-      scriptPath: backendPath,
-      cwd: backendPath, // uv needs to run from apps/backend/ to find pyproject.toml and src package
+      pythonPath: resourcePaths.uvPath, // System uv in dev, bundled uv in production
+      pythonOptions: resourcePaths.pythonOptions, // Includes --python flag in production
+      scriptPath: resourcePaths.backendPath,
+      cwd: resourcePaths.backendPath, // uv needs pyproject.toml in cwd
+      // In production, redirect uv's venv/cache to writable user data directory
+      // (Resources/ is read-only in packaged apps)
+      env: { ...process.env, ...resourcePaths.env },
     };
 
     // Create python shell instance

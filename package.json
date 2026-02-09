@@ -20,6 +20,11 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "package": "turbo run package",
+    "package:mac": "turbo run package:mac",
+    "package:win": "turbo run package:win",
+    "package:linux": "turbo run package:linux",
+    "package:publish": "turbo run package:publish",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "prepare": "husky"
   },
