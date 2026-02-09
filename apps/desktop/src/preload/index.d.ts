@@ -78,6 +78,16 @@ export interface ElectronAPI {
   writeConfig: (config: Record<string, unknown>) => Promise<{ success: boolean }>;
 
   /**
+   * Reset application config to defaults (overwrites entire file)
+   */
+  resetConfig: () => Promise<{ success: boolean }>;
+
+  /**
+   * Get application paths (config, DB, workspace)
+   */
+  getPaths: () => Promise<{ configPath: string; dbPath: string; workspacePath: string }>;
+
+  /**
    * Open a URL in the default browser
    */
   openExternal: (url: string) => Promise<void>;

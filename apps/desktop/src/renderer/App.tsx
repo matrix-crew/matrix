@@ -13,6 +13,7 @@ import { TerminalManager } from '@/components/terminal/TerminalManager';
 import { MCPControl } from '@/components/agent/MCPControl';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
+import { DevToolsModal } from '@/components/devtools/DevToolsModal';
 
 /**
  * Main App component for Maxtix desktop application
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [activeMatrixId, setActiveMatrixId] = useState<string | null>(null);
   const [isHomeActive, setIsHomeActive] = useState(false);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [showDevTools, setShowDevTools] = useState(false);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,6 +105,30 @@ const App: React.FC = () => {
   const handleToggleSettings = useCallback(() => {
     setShowGlobalSettings((prev) => !prev);
   }, []);
+
+  const handleToggleDevTools = useCallback(() => {
+    setShowDevTools((prev) => !prev);
+  }, []);
+
+  /**
+   * Handle data reset from DevTools (refresh matrices list)
+   */
+  const handleDevToolsDataReset = useCallback(() => {
+    fetchMatrices(true);
+  }, [fetchMatrices]);
+
+  /**
+   * Handle onboarding toggle from DevTools (immediately reflect in app)
+   */
+  const handleOnboardingToggle = useCallback(
+    (completed: boolean) => {
+      setShowOnboarding(!completed);
+      if (completed) {
+        fetchMatrices(true);
+      }
+    },
+    [fetchMatrices]
+  );
 
   /**
    * Open create matrix form
@@ -235,11 +261,13 @@ const App: React.FC = () => {
           activeMatrixId={null}
           isHomeActive={isHomeActive}
           isSettingsActive={showGlobalSettings}
+          isDevToolsActive={showDevTools}
           onSelectMatrix={() => {}}
           onSelectHome={handleSelectHome}
           onCreateMatrix={handleOpenCreateForm}
           onCloseMatrix={() => {}}
           onOpenSettings={handleToggleSettings}
+          onOpenDevTools={handleToggleDevTools}
         />
         <OnboardingView onCreateMatrix={handleOpenCreateForm} />
 
@@ -260,11 +288,13 @@ const App: React.FC = () => {
         activeMatrixId={activeMatrixId}
         isHomeActive={isHomeActive}
         isSettingsActive={showGlobalSettings}
+        isDevToolsActive={showDevTools}
         onSelectMatrix={handleSelectMatrix}
         onSelectHome={handleSelectHome}
         onCreateMatrix={handleOpenCreateForm}
         onCloseMatrix={handleCloseMatrix}
         onOpenSettings={handleToggleSettings}
+        onOpenDevTools={handleToggleDevTools}
       />
 
       {/* Sidebar + Content */}
@@ -316,6 +346,29 @@ const App: React.FC = () => {
             <SettingsPage
               initialSection="appearance"
               onClose={() => setShowGlobalSettings(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* DevTools modal overlay (dev mode only) */}
+      {import.meta.env.DEV && showDevTools && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          aria-label="DevTools"
+          onClick={() => setShowDevTools(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setShowDevTools(false)}
+        >
+          <div
+            className="h-[70vh] w-full max-w-2xl animate-slide-in overflow-hidden rounded-xl border border-border-default bg-base-900 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DevToolsModal
+              onClose={() => setShowDevTools(false)}
+              onDataReset={handleDevToolsDataReset}
+              onOnboardingToggle={handleOnboardingToggle}
             />
           </div>
         </div>

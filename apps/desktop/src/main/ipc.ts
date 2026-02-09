@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { PythonShell } from 'python-shell';
 import type { IPCMessage, IPCResponse } from '@shared/types/ipc';
-import { getAppPaths } from './index';
+import { getAppPaths } from './app-paths';
 import { getResourcePaths } from './resource-paths';
 
 /**

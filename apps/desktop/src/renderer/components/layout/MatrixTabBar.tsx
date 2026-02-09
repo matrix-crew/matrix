@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, X, Home, Settings } from 'lucide-react';
+import { Plus, X, Home, Settings, Wrench } from 'lucide-react';
 import type { Matrix } from '@shared/types/matrix';
 
 export interface MatrixTabBarProps {
@@ -8,11 +8,13 @@ export interface MatrixTabBarProps {
   activeMatrixId: string | null;
   isHomeActive?: boolean;
   isSettingsActive?: boolean;
+  isDevToolsActive?: boolean;
   onSelectMatrix: (id: string) => void;
   onSelectHome?: () => void;
   onCreateMatrix: () => void;
   onCloseMatrix: (id: string) => void;
   onOpenSettings?: () => void;
+  onOpenDevTools?: () => void;
   className?: string;
 }
 
@@ -21,11 +23,13 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
   activeMatrixId,
   isHomeActive = false,
   isSettingsActive = false,
+  isDevToolsActive = false,
   onSelectMatrix,
   onSelectHome,
   onCreateMatrix,
   onCloseMatrix,
   onOpenSettings,
+  onOpenDevTools,
   className,
 }) => {
   return (
@@ -107,6 +111,23 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* DevTools button (dev mode only) */}
+      {import.meta.env.DEV && onOpenDevTools && (
+        <button
+          type="button"
+          onClick={onOpenDevTools}
+          className={cn(
+            'no-drag flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors',
+            isDevToolsActive
+              ? 'bg-base-600 text-text-primary'
+              : 'text-text-muted hover:bg-base-700 hover:text-text-secondary'
+          )}
+          aria-label="DevTools"
+        >
+          <Wrench className="size-[18px]" />
+        </button>
+      )}
 
       {/* Settings button (always visible) */}
       {onOpenSettings && (

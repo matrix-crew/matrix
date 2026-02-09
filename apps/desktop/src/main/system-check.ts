@@ -17,6 +17,7 @@ import { constants as fsConstants } from 'fs';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir, platform } from 'os';
+import { getAppPaths } from './app-paths';
 
 const CONFIG_DIR = join(homedir(), '.matrix');
 const CONFIG_PATH = join(CONFIG_DIR, '.matrix.json');
@@ -594,6 +595,17 @@ async function writeConfig(config: Record<string, unknown>): Promise<void> {
   await writeFile(CONFIG_PATH, JSON.stringify(merged, null, 2), { mode: 0o600 });
 }
 
+/**
+ * Reset application config to defaults (overwrites entire file)
+ */
+async function resetConfig(): Promise<void> {
+  if (!existsSync(CONFIG_DIR)) {
+    await mkdir(CONFIG_DIR, { recursive: true });
+  }
+  const defaults = { onboarding_completed: false };
+  await writeFile(CONFIG_PATH, JSON.stringify(defaults, null, 2), { mode: 0o600 });
+}
+
 // ── Shell Detection (for PTY sessions) ──────────────────────────────────
 
 interface ShellInfo {
@@ -725,6 +737,18 @@ export function setupSystemCheckHandlers(): void {
   ipcMain.handle('config:write', async (_event, config: Record<string, unknown>) => {
     await writeConfig(config);
     return { success: true };
+  });
+
+  // Reset application config to defaults (overwrites entire file)
+  ipcMain.handle('config:reset', async () => {
+    await resetConfig();
+    return { success: true };
+  });
+
+  // Get application paths (for DevTools panel)
+  ipcMain.handle('system:get-paths', async () => {
+    const { dbPath, workspacePath } = getAppPaths();
+    return { configPath: CONFIG_PATH, dbPath, workspacePath };
   });
 
   // Open URL in default browser (only allow http/https)
