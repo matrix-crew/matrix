@@ -24,7 +24,7 @@ import {
  * Sidebar item variants using class-variance-authority
  */
 const sidebarItemVariants = cva(
-  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all cursor-pointer w-full text-left',
+  'flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm transition-all cursor-pointer w-full text-left',
   {
     variants: {
       active: {
@@ -111,7 +111,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({
   onKeyDown,
 }) => (
   <div className="space-y-1">
-    <h3 className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted">
+    <h3 className="px-3.5 py-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
       {label}
     </h3>
     <div className="space-y-1">
@@ -222,16 +222,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
     >
       {/* Sidebar Navigation */}
       <nav
-        className="flex w-64 flex-shrink-0 flex-col border-r border-border-default bg-base-800"
+        className="flex w-72 flex-shrink-0 flex-col border-r border-border-default bg-base-800"
         role="tablist"
         aria-orientation="vertical"
         aria-label="Settings sections"
       >
         {/* Settings Header */}
-        <div className="flex items-start justify-between border-b border-border-default p-4">
+        <div className="flex items-start justify-between border-b border-border-default p-5">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
-            <p className="mt-1 text-xs text-text-muted">Configure Matrix preferences</p>
+            <h2 className="text-xl font-semibold text-text-primary">Settings</h2>
+            <p className="mt-1.5 text-sm text-text-muted">Configure Matrix preferences</p>
           </div>
           {onClose && (
             <button
@@ -246,8 +246,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* Sidebar Sections */}
-        <div className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="space-y-5">
             {SETTINGS_GROUPS.map((group) => (
               <SidebarGroup
                 key={group.id}
@@ -264,13 +264,13 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
       {/* Content Area */}
       <main
-        className="flex-1 overflow-y-auto bg-base-900 p-6"
+        className="flex-1 overflow-y-auto bg-base-900 p-8"
         role="tabpanel"
         id={`settings-panel-${activeSection}`}
         aria-labelledby={`settings-tab-${activeSection}`}
         tabIndex={0}
       >
-        <div className="mx-auto max-w-2xl">{getSectionComponent(activeSection)}</div>
+        <div className="mx-auto max-w-3xl">{getSectionComponent(activeSection)}</div>
       </main>
     </div>
   );

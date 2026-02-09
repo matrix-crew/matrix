@@ -310,7 +310,7 @@ const App: React.FC = () => {
           onKeyDown={(e) => e.key === 'Escape' && setShowGlobalSettings(false)}
         >
           <div
-            className="h-[80vh] w-full max-w-4xl animate-slide-in overflow-hidden rounded-xl border border-border-default bg-base-900 shadow-2xl"
+            className="h-[85vh] w-full max-w-5xl animate-slide-in overflow-hidden rounded-xl border border-border-default bg-base-900 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <SettingsPage

@@ -61,20 +61,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div
-      className={cn('h-full overflow-auto p-6', className)}
+      className={cn('h-full overflow-auto p-8', className)}
       onClick={() => setSelectedMatrixId(null)}
     >
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-text-primary">Your Matrices</h1>
-          <p className="mt-1 text-sm text-text-muted">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-text-primary">Your Matrices</h1>
+          <p className="mt-1.5 text-sm text-text-muted">
             {matrices.length} matri{matrices.length === 1 ? 'x' : 'ces'}
           </p>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {matrices.map((matrix) => (
             <MatrixCard
               key={matrix.id}

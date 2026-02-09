@@ -16,16 +16,16 @@ export const CreateMatrixCard: React.FC<CreateMatrixCardProps> = ({ onClick, cla
         onClick();
       }}
       className={cn(
-        'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border-default p-8 transition-all',
+        'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border-default p-10 transition-all',
         'text-text-muted hover:border-accent-lime hover:bg-accent-lime/5 hover:text-accent-lime',
         className
       )}
       aria-label="Create new matrix"
     >
-      <div className="mb-2 rounded-full bg-base-700 p-3">
-        <Plus className="size-5" />
+      <div className="mb-3 rounded-full bg-base-700 p-3.5">
+        <Plus className="size-6" />
       </div>
-      <p className="text-sm font-medium">Create Matrix</p>
+      <p className="text-[15px] font-medium">Create Matrix</p>
     </button>
   );
 };

@@ -62,9 +62,9 @@ const sections: SidebarSection[] = [
   },
 ];
 
-const MIN_WIDTH = 140;
-const MAX_WIDTH = 320;
-const DEFAULT_WIDTH = 192;
+const MIN_WIDTH = 160;
+const MAX_WIDTH = 360;
+const DEFAULT_WIDTH = 220;
 
 export interface ContextSidebarProps {
   activeItem: ContextItemId;
@@ -121,10 +121,10 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
       )}
     >
       {/* Scrollable sections */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
+      <nav className="flex-1 overflow-y-auto px-2.5 py-4">
         {sections.map((section) => (
-          <div key={section.title} className="mb-3">
-            <h3 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+          <div key={section.title} className="mb-4">
+            <h3 className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
               {section.title}
             </h3>
             {section.items.map((item) => {
@@ -135,7 +135,7 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
                   type="button"
                   onClick={() => onItemSelect(item.id)}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors',
                     isActive
                       ? 'bg-accent-lime/10 text-accent-lime'
                       : 'text-text-secondary hover:bg-base-700 hover:text-text-primary'
@@ -146,7 +146,7 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
                   </span>
                   <span className="flex-1 truncate text-left">{item.label}</span>
                   {item.shortcut && (
-                    <span className="text-[10px] text-text-muted">{item.shortcut}</span>
+                    <span className="text-[11px] text-text-muted">{item.shortcut}</span>
                   )}
                 </button>
               );
