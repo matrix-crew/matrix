@@ -55,6 +55,17 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Validate that a file path points to an executable
+   * @param filePath - Absolute path to check
+   * @returns Validation result with optional version info
+   */
+  validateExecutable: (
+    filePath: string
+  ): Promise<{ valid: boolean; version?: string; error?: string }> => {
+    return ipcRenderer.invoke('system:validate-executable', filePath);
+  },
+
+  /**
    * Detect installed terminal emulators on the system
    * @returns Array of detected terminals with name, id, path, and isDefault flag
    */

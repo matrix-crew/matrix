@@ -43,11 +43,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           // Save agent config
           const agentConfig: Record<string, unknown> = {};
           for (const [id, state] of Object.entries(agents)) {
+            const cliPath = state.customPath || state.path;
             agentConfig[id] = {
               detected: state.detected,
               auth_method: state.authMethod,
               ...(state.apiKey ? { api_key: state.apiKey } : {}),
-              ...(state.path ? { cli_path: state.path } : {}),
+              ...(cliPath ? { cli_path: cliPath } : {}),
             };
           }
           config.agents = agentConfig;
@@ -55,9 +56,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           // Save tool info
           const toolConfig: Record<string, unknown> = {};
           for (const [id, state] of Object.entries(tools)) {
+            const toolPath = state.customPath || state.path;
             toolConfig[id] = {
               installed: state.installed,
               ...(state.version ? { version: state.version } : {}),
+              ...(toolPath ? { path: toolPath } : {}),
             };
           }
           config.tools = toolConfig;

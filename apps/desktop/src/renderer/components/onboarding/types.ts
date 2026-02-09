@@ -24,6 +24,9 @@ export interface AgentState {
   version?: string;
   authMethod: 'cli' | 'api-key' | null;
   apiKey: string;
+  customPath?: string;
+  validating?: boolean;
+  validationError?: string;
 }
 
 export const AGENT_CONFIGS: AgentConfig[] = [
@@ -73,6 +76,9 @@ export interface ToolState {
   installed: boolean;
   version?: string;
   path?: string;
+  customPath?: string;
+  validating?: boolean;
+  validationError?: string;
 }
 
 export const TOOL_CONFIGS: ToolConfig[] = [
