@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, fireEvent, waitFor, act } from '@testing-library/react';
 import { TerminalManager } from './TerminalManager';
-import type { TerminalSessionInfo } from '@maxtix/shared';
+import type { TerminalSessionInfo } from '@shared/types/terminal';
 
 // Use vi.hoisted so mock values are available in vi.mock factories (which are hoisted above imports)
 const { mockTerminalService } = vi.hoisted(() => ({

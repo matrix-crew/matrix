@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { FolderOpen, LayoutDashboard, GitBranch, Terminal, Zap, Settings } from 'lucide-react';
 
 export type ContextItemId = 'sources' | 'kanban' | 'pipeline' | 'console' | 'mcp' | 'settings';

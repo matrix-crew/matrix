@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { cn } from '@maxtix/ui';
-import type { Matrix, Source } from '@maxtix/shared';
+import { cn } from '@/lib/utils';
+import type { Matrix, Source } from '@shared/types/matrix';
 import { MatrixCard } from './MatrixCard';
 import { CreateMatrixCard } from './CreateMatrixCard';
 

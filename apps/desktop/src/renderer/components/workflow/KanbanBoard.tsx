@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { KanbanColumn } from './KanbanColumn';
 import {
   type KanbanBoardState,

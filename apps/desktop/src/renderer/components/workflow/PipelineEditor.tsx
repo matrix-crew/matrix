@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { PipelineNode } from './PipelineNode';
 import {
   type Pipeline,

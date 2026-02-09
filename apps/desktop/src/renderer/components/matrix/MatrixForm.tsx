@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@maxtix/ui';
-import type { Matrix } from '@maxtix/shared';
+import { cn } from '@/lib/utils';
+import type { Matrix } from '@shared/types/matrix';
 
 /**
  * Form button variants using class-variance-authority

@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 
 export interface CreateMatrixCardProps {

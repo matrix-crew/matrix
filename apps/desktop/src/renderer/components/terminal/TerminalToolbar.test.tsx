@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TerminalToolbar } from './TerminalToolbar';
-import type { TerminalSessionInfo } from '@maxtix/shared';
+import type { TerminalSessionInfo } from '@shared/types/terminal';
 
 function makeSession(overrides?: Partial<TerminalSessionInfo>): TerminalSessionInfo {
   return {

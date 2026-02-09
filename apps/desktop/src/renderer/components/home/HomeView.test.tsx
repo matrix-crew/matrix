@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HomeView } from './HomeView';
-import type { Matrix, Source } from '@maxtix/shared';
+import type { Matrix, Source } from '@shared/types/matrix';
 
 const mockMatrices: Matrix[] = [
   {

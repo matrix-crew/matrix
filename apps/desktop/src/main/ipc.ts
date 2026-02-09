@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { PythonShell } from 'python-shell';
 import { join } from 'path';
-import type { IPCMessage, IPCResponse } from '@maxtix/shared';
+import type { IPCMessage, IPCResponse } from '@shared/types/ipc';
 import { getAppPaths } from './index';
 
 /**

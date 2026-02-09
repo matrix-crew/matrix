@@ -6,9 +6,9 @@
  */
 
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { Terminal, X } from 'lucide-react';
-import type { DetectedShell } from '@maxtix/shared';
+import type { DetectedShell } from '@shared/types/terminal';
 
 export interface ToolSelectionModalProps {
   /** Whether the modal is visible */

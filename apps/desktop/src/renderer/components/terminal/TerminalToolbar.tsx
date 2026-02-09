@@ -6,8 +6,8 @@
  */
 
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
-import type { TerminalSessionInfo } from '@maxtix/shared';
+import { cn } from '@/lib/utils';
+import type { TerminalSessionInfo } from '@shared/types/terminal';
 
 export interface TerminalToolbarProps {
   /** Terminal session metadata */

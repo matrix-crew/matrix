@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
-import type { Matrix } from '@maxtix/shared';
+import type { Matrix } from '@shared/types/matrix';
 
 const mockMatrix: Matrix = {
   id: 'matrix-1',

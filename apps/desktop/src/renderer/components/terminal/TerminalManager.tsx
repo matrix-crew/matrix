@@ -13,9 +13,9 @@
  */
 
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { Plus, X, Maximize2, Minimize2 } from 'lucide-react';
-import type { TerminalSessionInfo } from '@maxtix/shared';
+import type { TerminalSessionInfo } from '@shared/types/terminal';
 import { terminalService, MAX_TERMINAL_SESSIONS } from '@/services/TerminalService';
 import { TerminalInstance, type TerminalInstanceHandle } from './TerminalInstance';
 import { ToolSelectionModal } from './ToolSelectionModal';

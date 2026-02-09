@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { IPCMessage, IPCResponse } from '@maxtix/shared';
+import type { IPCMessage, IPCResponse } from '@shared/types/ipc';
 
 /**
  * Preload script for Electron renderer process
@@ -171,7 +171,7 @@ contextBridge.exposeInMainWorld('api', {
      */
     saveState: (
       workspacePath: string,
-      state: import('@maxtix/shared').SavedTerminalState,
+      state: import('@shared/types/terminal').SavedTerminalState,
       scrollbacks: Array<{ sessionId: string; content: string }>
     ): Promise<{ success: boolean; error?: string }> => {
       return ipcRenderer.invoke('terminal:save-state', workspacePath, state, scrollbacks);
@@ -185,7 +185,7 @@ contextBridge.exposeInMainWorld('api', {
     ): Promise<{
       success: boolean;
       data?: {
-        state: import('@maxtix/shared').SavedTerminalState;
+        state: import('@shared/types/terminal').SavedTerminalState;
         scrollbacks: Record<string, string>;
       } | null;
       error?: string;

@@ -11,11 +11,11 @@
  */
 
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { matrixXtermTheme, matrixXtermOptions } from '@maxtix/shared';
+import { matrixXtermTheme, matrixXtermOptions } from '@shared/theme/xterm-theme';
 import { terminalService } from '@/services/TerminalService';
 import { useResizeObserver } from '@/hooks/useResizeObserver';
 

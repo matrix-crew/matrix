@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import type { AgentState, ToolState } from './types';
 import { createInitialAgentStates, createInitialToolStates } from './types';
 import { WelcomeStep } from './WelcomeStep';
