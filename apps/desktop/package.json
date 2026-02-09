@@ -3,8 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "description": "Maxtix Electron desktop application",
+  "homepage": "https://github.com/matrix-crew/matrix",
   "main": "./out/main/index.js",
-  "author": "Maxtix",
+  "author": {
+    "name": "Maxtix",
+    "email": "thearchitect9927@gmail.com"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
