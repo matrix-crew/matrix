@@ -87,7 +87,6 @@ const App: React.FC = () => {
   const handleSelectHome = useCallback(() => {
     setActiveMatrixId(null);
     setIsHomeActive(true);
-    setShowGlobalSettings(false);
   }, []);
 
   /**
@@ -96,14 +95,13 @@ const App: React.FC = () => {
   const handleSelectMatrix = useCallback((id: string) => {
     setActiveMatrixId(id);
     setIsHomeActive(false);
-    setShowGlobalSettings(false);
   }, []);
 
   /**
-   * Open global settings (accessible from any view)
+   * Toggle global settings modal
    */
-  const handleOpenSettings = useCallback(() => {
-    setShowGlobalSettings(true);
+  const handleToggleSettings = useCallback(() => {
+    setShowGlobalSettings((prev) => !prev);
   }, []);
 
   /**
@@ -174,11 +172,6 @@ const App: React.FC = () => {
    * Render content based on active context item
    */
   const renderContent = () => {
-    // Global settings (accessible from any view)
-    if (showGlobalSettings) {
-      return <SettingsPage initialSection="appearance" />;
-    }
-
     // Home view: full-width grid, no sidebar
     if (isHomeActive && !activeMatrixId) {
       return (
@@ -204,8 +197,6 @@ const App: React.FC = () => {
         return null;
       case 'mcp':
         return <MCPControl />;
-      case 'settings':
-        return <SettingsPage />;
       default:
         return <MatrixView matrixId={activeMatrixId} key={activeMatrixId} />;
     }
@@ -248,7 +239,7 @@ const App: React.FC = () => {
           onSelectHome={handleSelectHome}
           onCreateMatrix={handleOpenCreateForm}
           onCloseMatrix={() => {}}
-          onOpenSettings={handleOpenSettings}
+          onOpenSettings={handleToggleSettings}
         />
         <OnboardingView onCreateMatrix={handleOpenCreateForm} />
 
@@ -259,7 +250,7 @@ const App: React.FC = () => {
     );
   }
 
-  const showSidebar = activeMatrixId !== null && !isHomeActive && !showGlobalSettings;
+  const showSidebar = activeMatrixId !== null && !isHomeActive;
 
   return (
     <div className="flex h-screen w-full flex-col bg-base-900">
@@ -267,13 +258,13 @@ const App: React.FC = () => {
       <MatrixTabBar
         matrices={matrices}
         activeMatrixId={activeMatrixId}
-        isHomeActive={isHomeActive && !showGlobalSettings}
+        isHomeActive={isHomeActive}
         isSettingsActive={showGlobalSettings}
         onSelectMatrix={handleSelectMatrix}
         onSelectHome={handleSelectHome}
         onCreateMatrix={handleOpenCreateForm}
         onCloseMatrix={handleCloseMatrix}
-        onOpenSettings={handleOpenSettings}
+        onOpenSettings={handleToggleSettings}
       />
 
       {/* Sidebar + Content */}
@@ -286,7 +277,7 @@ const App: React.FC = () => {
         <div className="relative flex-1 overflow-hidden">
           {/* Regular content (non-terminal views, or Home view) */}
           {(isHomeActive || activeContextItem !== 'console') && (
-            <main className={`h-full overflow-auto animate-fade-in${showSidebar ? ' p-4' : ''}`}>
+            <main className={cn('h-full overflow-auto animate-fade-in', showSidebar && 'p-4')}>
               {renderContent()}
             </main>
           )}
@@ -307,6 +298,28 @@ const App: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Settings modal overlay */}
+      {showGlobalSettings && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Settings"
+          onClick={() => setShowGlobalSettings(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setShowGlobalSettings(false)}
+        >
+          <div
+            className="h-[80vh] w-full max-w-4xl animate-slide-in overflow-hidden rounded-xl border border-border-default bg-base-900 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SettingsPage
+              initialSection="appearance"
+              onClose={() => setShowGlobalSettings(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Create matrix form modal */}
       {isFormOpen && (

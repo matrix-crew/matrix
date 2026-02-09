@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { X } from 'lucide-react';
 import {
   type SettingsSectionId,
   SETTINGS_SECTIONS,
@@ -43,6 +44,7 @@ const sidebarItemVariants = cva(
 export interface SettingsPageProps {
   initialSection?: SettingsSectionId;
   onSectionChange?: (sectionId: SettingsSectionId) => void;
+  onClose?: () => void;
   className?: string;
 }
 
@@ -161,6 +163,7 @@ const getSectionComponent = (sectionId: SettingsSectionId): React.ReactNode => {
 const SettingsPage: React.FC<SettingsPageProps> = ({
   initialSection,
   onSectionChange,
+  onClose,
   className,
 }) => {
   const [activeSection, setActiveSection] = React.useState<SettingsSectionId>(
@@ -225,9 +228,21 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         aria-label="Settings sections"
       >
         {/* Settings Header */}
-        <div className="border-b border-border-default p-4">
-          <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
-          <p className="mt-1 text-xs text-text-muted">Configure Matrix preferences</p>
+        <div className="flex items-start justify-between border-b border-border-default p-4">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Settings</h2>
+            <p className="mt-1 text-xs text-text-muted">Configure Matrix preferences</p>
+          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-base-700 hover:text-text-primary"
+              aria-label="Close settings"
+            >
+              <X className="size-4" />
+            </button>
+          )}
         </div>
 
         {/* Sidebar Sections */}

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { FolderOpen, LayoutDashboard, GitBranch, Terminal, Zap, Settings } from 'lucide-react';
+import { FolderOpen, LayoutDashboard, GitBranch, Terminal, Zap } from 'lucide-react';
 
-export type ContextItemId = 'sources' | 'kanban' | 'pipeline' | 'console' | 'mcp' | 'settings';
+export type ContextItemId = 'sources' | 'kanban' | 'pipeline' | 'console' | 'mcp';
 
 interface SidebarSection {
   title: string;
@@ -62,6 +62,10 @@ const sections: SidebarSection[] = [
   },
 ];
 
+const MIN_WIDTH = 140;
+const MAX_WIDTH = 320;
+const DEFAULT_WIDTH = 192;
+
 export interface ContextSidebarProps {
   activeItem: ContextItemId;
   onItemSelect: (id: ContextItemId) => void;
@@ -73,10 +77,46 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
   onItemSelect,
   className,
 }) => {
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const isResizing = useRef(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current || !sidebarRef.current) return;
+      const sidebarLeft = sidebarRef.current.getBoundingClientRect().left;
+      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX - sidebarLeft));
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizing.current) return;
+      isResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   return (
     <div
+      ref={sidebarRef}
+      style={{ width }}
       className={cn(
-        'flex w-48 flex-shrink-0 flex-col border-r border-border-default bg-base-800',
+        'relative flex flex-shrink-0 flex-col border-r border-border-default bg-base-800',
         className
       )}
     >
@@ -104,7 +144,7 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
                   <span className={cn(isActive ? 'text-accent-lime' : 'text-text-muted')}>
                     {item.icon}
                   </span>
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <span className="flex-1 truncate text-left">{item.label}</span>
                   {item.shortcut && (
                     <span className="text-[10px] text-text-muted">{item.shortcut}</span>
                   )}
@@ -115,28 +155,11 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
         ))}
       </nav>
 
-      {/* Settings pinned at bottom */}
-      <div className="border-t border-border-default px-2 py-2">
-        <button
-          type="button"
-          onClick={() => onItemSelect('settings')}
-          className={cn(
-            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-            activeItem === 'settings'
-              ? 'bg-accent-lime/10 text-accent-lime'
-              : 'text-text-secondary hover:bg-base-700 hover:text-text-primary'
-          )}
-        >
-          <Settings
-            className={cn(
-              'size-4',
-              activeItem === 'settings' ? 'text-accent-lime' : 'text-text-muted'
-            )}
-          />
-          <span className="flex-1 text-left">Settings</span>
-          <span className="text-[10px] text-text-muted">⌘,</span>
-        </button>
-      </div>
+      {/* Resize handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="absolute top-0 right-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-accent-primary/30 active:bg-accent-primary/50"
+      />
     </div>
   );
 };
