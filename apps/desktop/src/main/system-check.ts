@@ -11,8 +11,9 @@
  */
 
 import { ipcMain, shell } from 'electron';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { readFile, writeFile, mkdir, readdir, access } from 'fs/promises';
+import { constants as fsConstants } from 'fs';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir, platform } from 'os';
@@ -86,6 +87,52 @@ async function checkCommand(command: string): Promise<CommandCheckResult> {
     return { exists: true, path: cmdPath, version };
   } catch {
     return { exists: false };
+  }
+}
+
+interface ExecutableValidationResult {
+  valid: boolean;
+  version?: string;
+  error?: string;
+}
+
+/**
+ * Validate that a file path points to an executable
+ */
+async function validateExecutablePath(filePath: string): Promise<ExecutableValidationResult> {
+  if (!filePath || typeof filePath !== 'string') {
+    return { valid: false, error: 'Invalid path' };
+  }
+
+  // Basic path sanitization
+  const normalized = filePath.trim();
+  if (!normalized.startsWith('/') && !normalized.match(/^[A-Z]:\\/i)) {
+    return { valid: false, error: 'Path must be absolute' };
+  }
+
+  try {
+    await access(normalized, fsConstants.X_OK);
+
+    // Try to get version info (use execFile to avoid shell injection)
+    let version: string | undefined;
+    try {
+      const output = await new Promise<string>((resolve, reject) => {
+        execFile(normalized, ['--version'], { timeout: 2000 }, (error, stdout, stderr) => {
+          if (error) reject(error);
+          else resolve((stdout || stderr).trim());
+        });
+      });
+      const match = output.match(/(\d+\.\d+(?:\.\d+)*)/);
+      version = match?.[1];
+    } catch {
+      // Version check is optional
+    }
+
+    return { valid: true, version };
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'EACCES') return { valid: false, error: 'File is not executable' };
+    return { valid: false, error: 'File not found' };
   }
 }
 
@@ -647,6 +694,11 @@ export function setupSystemCheckHandlers(): void {
   // Check if a CLI command exists and get version info
   ipcMain.handle('system:check-command', async (_event, command: string) => {
     return checkCommand(command);
+  });
+
+  // Validate an executable file path
+  ipcMain.handle('system:validate-executable', async (_event, filePath: string) => {
+    return validateExecutablePath(filePath);
   });
 
   // Detect installed terminal emulators

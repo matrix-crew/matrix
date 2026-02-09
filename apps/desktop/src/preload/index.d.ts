@@ -39,6 +39,13 @@ export interface ElectronAPI {
   checkCommand: (command: string) => Promise<{ exists: boolean; path?: string; version?: string }>;
 
   /**
+   * Validate that a file path points to an executable
+   */
+  validateExecutable: (
+    filePath: string
+  ) => Promise<{ valid: boolean; version?: string; error?: string }>;
+
+  /**
    * Detect installed terminal emulators on the system
    * @returns Array of detected terminals with name, id, path, and isDefault flag
    */
