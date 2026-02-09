@@ -16,7 +16,8 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/renderer/src/*"]
+      "@/*": ["./src/renderer/*"],
+      "@shared/*": ["./src/shared/*"]
     },
 
     /* Linting */
@@ -28,13 +29,6 @@
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true
   },
-  "include": [
-    "src/renderer/src/**/*",
-    "src/preload/index.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out"
-  ]
+  "include": ["src/renderer/**/*", "src/shared/**/*", "src/preload/index.d.ts"],
+  "exclude": ["node_modules", "dist", "out", "**/*.test.ts", "**/*.test.tsx"]
 }

@@ -2,19 +2,39 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
       "outputs": ["dist/**", "out/**", ".vite/**", "build/**"]
     },
     "dev": {
-      "dependsOn": ["build"],
       "cache": false,
       "persistent": true
     },
-    "lint": {
-      "dependsOn": ["^build"]
+    "lint": {},
+    "type-check": {},
+    "test": {},
+    "package": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
     },
-    "type-check": {
-      "dependsOn": ["^build"]
+    "package:mac": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:win": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:linux": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
+    },
+    "package:publish": {
+      "dependsOn": ["build"],
+      "outputs": ["dist/**"],
+      "cache": false
     },
     "clean": {
       "cache": false

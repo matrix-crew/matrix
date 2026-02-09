@@ -1,7 +1,8 @@
-import { ipcMain } from 'electron'
-import { PythonShell } from 'python-shell'
-import { join } from 'path'
-import type { IPCMessage, IPCResponse } from '@maxtix/shared'
+import { ipcMain } from 'electron';
+import { PythonShell } from 'python-shell';
+import type { IPCMessage, IPCResponse } from '@shared/types/ipc';
+import { getAppPaths } from './index';
+import { getResourcePaths } from './resource-paths';
 
 /**
  * IPC Bridge Handler for Electron-Python Communication
@@ -26,32 +27,43 @@ export function setupIPCHandlers(): void {
    *
    * This handler:
    * 1. Receives IPCMessage from renderer via preload context bridge
-   * 2. Sends message to Python backend via python-shell
-   * 3. Waits for Python response
-   * 4. Returns IPCResponse back to renderer
+   * 2. Injects db_path from application configuration
+   * 3. Sends message to Python backend via python-shell
+   * 4. Waits for Python response
+   * 5. Returns IPCResponse back to renderer
    */
-  ipcMain.handle('ipc:send-to-python', async (_event, message: IPCMessage): Promise<IPCResponse> => {
-    try {
-      // Validate message structure
-      if (!message || typeof message.type !== 'string') {
+  ipcMain.handle(
+    'ipc:send-to-python',
+    async (_event, message: IPCMessage): Promise<IPCResponse> => {
+      try {
+        // Validate message structure
+        if (!message || typeof message.type !== 'string') {
+          return {
+            success: false,
+            error: 'Invalid message format: missing type field',
+          };
+        }
+
+        // Inject database path from application configuration
+        const { dbPath } = getAppPaths();
+        const messageWithConfig: IPCMessage = {
+          ...message,
+          db_path: dbPath,
+        };
+
+        // Send message to Python and wait for response
+        const response = await sendToPython(messageWithConfig);
+        return response;
+      } catch (error) {
+        // Handle any errors during IPC communication
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         return {
           success: false,
-          error: 'Invalid message format: missing type field'
-        }
-      }
-
-      // Send message to Python and wait for response
-      const response = await sendToPython(message)
-      return response
-    } catch (error) {
-      // Handle any errors during IPC communication
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      return {
-        success: false,
-        error: `IPC communication failed: ${errorMessage}`
+          error: `IPC communication failed: ${errorMessage}`,
+        };
       }
     }
-  })
+  );
 }
 
 /**
@@ -69,39 +81,44 @@ export function setupIPCHandlers(): void {
  */
 async function sendToPython(message: IPCMessage): Promise<IPCResponse> {
   return new Promise((resolve, reject) => {
-    // Configure python-shell options
+    // Configure python-shell options (auto-detects dev vs production paths)
+    const resourcePaths = getResourcePaths();
     const options = {
       mode: 'json' as const, // Parse stdin/stdout as JSON
-      pythonPath: 'uv run python', // Full command to execute Python via uv (ensures correct venv)
-      pythonOptions: ['-u'], // Unbuffered output for real-time communication
-      scriptPath: join(__dirname, '../../packages/core/src')
-    }
+      pythonPath: resourcePaths.uvPath, // System uv in dev, bundled uv in production
+      pythonOptions: resourcePaths.pythonOptions, // Includes --python flag in production
+      scriptPath: resourcePaths.backendPath,
+      cwd: resourcePaths.backendPath, // uv needs pyproject.toml in cwd
+      // In production, redirect uv's venv/cache to writable user data directory
+      // (Resources/ is read-only in packaged apps)
+      env: { ...process.env, ...resourcePaths.env },
+    };
 
     // Create python shell instance
-    const pyshell = new PythonShell('main.py', options)
+    const pyshell = new PythonShell('src/main.py', options);
 
     // Send message to Python stdin
-    pyshell.send(message)
+    pyshell.send(message);
 
     // Collect response from Python stdout
-    let response: IPCResponse | null = null
+    let response: IPCResponse | null = null;
 
     pyshell.on('message', (data: unknown) => {
       // Python should send exactly one JSON response
       if (data && typeof data === 'object') {
-        response = data as IPCResponse
+        response = data as IPCResponse;
       }
-    })
+    });
 
     // Handle Python process completion
     pyshell.end((err) => {
       if (err) {
-        reject(new Error(`Python process error: ${err.message}`))
+        reject(new Error(`Python process error: ${err.message}`));
       } else if (!response) {
-        reject(new Error('No response received from Python backend'))
+        reject(new Error('No response received from Python backend'));
       } else {
-        resolve(response)
+        resolve(response);
       }
-    })
-  })
+    });
+  });
 }

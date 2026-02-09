@@ -21,17 +21,14 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["./src/shared/*"]
+    }
   },
-  "include": [
-    "electron.vite.config.ts",
-    "src/main/**/*",
-    "src/preload/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out",
-    "src/renderer"
-  ]
+  "include": ["electron.vite.config.ts", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
+  "exclude": ["node_modules", "dist", "out", "src/renderer"]
 }
