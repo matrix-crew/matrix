@@ -108,6 +108,20 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Reset application config to defaults (overwrites entire file)
+   */
+  resetConfig: (): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('config:reset');
+  },
+
+  /**
+   * Get application paths (config, DB, workspace)
+   */
+  getPaths: (): Promise<{ configPath: string; dbPath: string; workspacePath: string }> => {
+    return ipcRenderer.invoke('system:get-paths');
+  },
+
+  /**
    * Open a URL in the default browser
    */
   openExternal: (url: string): Promise<void> => {
