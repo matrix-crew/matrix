@@ -1,0 +1,10 @@
+{
+  "$comment": "Python and uv versions for bundling. Update these when upgrading.",
+  "python": {
+    "version": "3.12.12",
+    "buildStandaloneRelease": "20260203"
+  },
+  "uv": {
+    "version": "0.10.0"
+  }
+}
