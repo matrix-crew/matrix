@@ -23,7 +23,7 @@ import type {
   TerminalCreateOptions,
   TerminalCreateResult,
   SavedTerminalState,
-} from '@maxtix/shared';
+} from '@shared/types/terminal';
 
 interface ActiveSession {
   process: pty.IPty;

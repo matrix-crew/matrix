@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import type { AppearanceMode, ColorTheme } from '@maxtix/shared';
+import type { AppearanceMode, ColorTheme } from '@shared/theme/palettes';
 import {
   COLOR_THEMES,
   DEFAULT_THEME_ID,
   DEFAULT_APPEARANCE_MODE,
   getThemeById,
-  paletteToCSSVars,
-  paletteToXtermTheme,
-} from '@maxtix/shared';
+} from '@shared/theme/palettes';
+import { paletteToCSSVars, paletteToXtermTheme } from '@shared/theme/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────
 

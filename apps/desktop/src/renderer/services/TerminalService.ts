@@ -10,7 +10,7 @@ import type {
   TerminalSessionStatus,
   SavedTerminalState,
   SavedTerminalSession,
-} from '@maxtix/shared';
+} from '@shared/types/terminal';
 
 /** Maximum concurrent terminal sessions */
 export const MAX_TERMINAL_SESSIONS = 12;

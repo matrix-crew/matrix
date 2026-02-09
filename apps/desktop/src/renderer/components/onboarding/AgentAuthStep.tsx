@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Copy, Check, Terminal } from 'lucide-react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import type { AgentConfig, AgentState } from './types';
 import { AGENT_CONFIGS } from './types';
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { cn } from '@maxtix/ui';
-import type { Matrix } from '@maxtix/shared';
+import { cn } from '@/lib/utils';
+import type { Matrix } from '@shared/types/matrix';
 import { MatrixTabBar } from '@/components/layout/MatrixTabBar';
 import { ContextSidebar, type ContextItemId } from '@/components/layout/ContextSidebar';
 import { OnboardingView } from '@/components/layout/OnboardingView';

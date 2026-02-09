@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import {
   CheckCircle2,
   XCircle,

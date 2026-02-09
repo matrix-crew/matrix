@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { cn } from '@maxtix/ui';
-import type { AppearanceMode, ColorTheme } from '@maxtix/shared';
+import { cn } from '@/lib/utils';
+import type { AppearanceMode, ColorTheme } from '@shared/theme/palettes';
 import { useTheme } from '@/contexts/ThemeProvider';
 
 // ─── Appearance Mode ──────────────────────────────────────────────────

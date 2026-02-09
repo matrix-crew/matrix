@@ -1,7 +1,7 @@
 import React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { FolderGit2 } from 'lucide-react';
-import type { Matrix, Source } from '@maxtix/shared';
+import type { Matrix, Source } from '@shared/types/matrix';
 
 export interface MatrixCardProps {
   matrix: Matrix;

@@ -1,7 +1,7 @@
 import React from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { Plus, X, Home, Settings } from 'lucide-react';
-import type { Matrix } from '@maxtix/shared';
+import type { Matrix } from '@shared/types/matrix';
 
 export interface MatrixTabBarProps {
   matrices: Matrix[];

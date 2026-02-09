@@ -1,4 +1,5 @@
-import type { IPCMessage, IPCResponse, SavedTerminalState } from '@maxtix/shared';
+import type { IPCMessage, IPCResponse } from '@shared/types/ipc';
+import type { SavedTerminalState } from '@shared/types/terminal';
 
 /**
  * Type definitions for the Electron preload API exposed to renderer

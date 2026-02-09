@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { cn } from '@maxtix/ui';
+import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 import type { AgentConfig, AgentState, CommandCheckResult } from './types';
 import { AGENT_CONFIGS } from './types';

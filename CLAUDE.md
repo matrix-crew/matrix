@@ -4,14 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Maxtix is an Electron desktop application with a Python backend, featuring type-safe IPC communication. The project is a **Turborepo monorepo** using **pnpm workspaces** with three main packages:
+Maxtix is an Electron desktop application with a Python backend, featuring type-safe IPC communication. The project is a **Turborepo monorepo** using **pnpm workspaces** with two apps:
 
 - `apps/desktop` - Electron application (React + TailwindCSS v4)
 - `apps/backend` - Python backend (managed with uv)
-- `packages/shared` - TypeScript types for IPC communication
-- `packages/ui` - Shared React components (shadcn/ui patterns)
-
-> **Note**: The Python backend lives under `apps/` (not `packages/`) because it is an independent application, not a shared library.
 
 ## Git Workflow
 
@@ -118,22 +114,6 @@ cd apps/desktop
 pnpm type-check
 ```
 
-### Workspace Packages
-
-```bash
-# Build shared types package (required before desktop app)
-cd packages/shared
-pnpm build
-
-# Build UI components package
-cd packages/ui
-pnpm build
-
-# Watch mode for development
-cd packages/shared
-pnpm dev
-```
-
 ## Testing
 
 ### Test Requirement
@@ -154,14 +134,11 @@ pnpm dev
 # Run ALL TypeScript tests (via Turborepo)
 pnpm test
 
-# Run tests for a specific package
+# Run tests for desktop app
 cd apps/desktop && pnpm test
-cd packages/ui && pnpm test
-cd packages/shared && pnpm test
 
 # Watch mode (re-runs on file changes)
 cd apps/desktop && pnpm test:watch
-cd packages/ui && pnpm test:watch
 
 # Run Python tests
 cd apps/backend && uv run pytest -v
@@ -178,9 +155,7 @@ When adding a new feature, tests are required at every layer it touches:
 
 2. **New React component**: Add a `ComponentName.test.tsx` file next to the component. Mock `window.api.sendMessage` using `vi.mocked()` for IPC calls. Use `@testing-library/react` for rendering and assertions.
 
-3. **New shared types**: Add type contract tests in `packages/shared/src/types/` that verify message structure satisfies the interfaces.
-
-4. **New UI component**: Add a test file in `packages/ui/src/components/` using React Testing Library. Test all variants, states, and interactions.
+3. **New shared types**: Add type contract tests in `apps/desktop/src/shared/types/` that verify message structure satisfies the interfaces.
 
 ### Test Patterns
 
@@ -241,7 +216,7 @@ Response flows back through the chain
 - [apps/desktop/src/preload/index.ts](apps/desktop/src/preload/index.ts) - Security boundary with contextBridge
 - [apps/backend/src/main.py](apps/backend/src/main.py) - Python entry point (reads stdin, writes stdout)
 - [apps/backend/src/ipc/handler.py](apps/backend/src/ipc/handler.py) - Message routing
-- [packages/shared/src/types/ipc.ts](packages/shared/src/types/ipc.ts) - TypeScript types for IPC messages
+- [apps/desktop/src/shared/types/ipc.ts](apps/desktop/src/shared/types/ipc.ts) - TypeScript types for IPC messages
 
 ### Terminal Architecture
 
@@ -270,7 +245,8 @@ PTY Process (/bin/zsh, etc.)
 - [apps/desktop/src/renderer/services/TerminalService.ts](apps/desktop/src/renderer/services/TerminalService.ts) - Renderer service singleton (session CRUD, persistence)
 - [apps/desktop/src/renderer/components/terminal/TerminalManager.tsx](apps/desktop/src/renderer/components/terminal/TerminalManager.tsx) - Grid layout, workspace-scoped persistence
 - [apps/desktop/src/renderer/components/terminal/TerminalInstance.tsx](apps/desktop/src/renderer/components/terminal/TerminalInstance.tsx) - xterm.js instance with forwardRef for scrollback capture
-- [packages/shared/src/types/terminal.ts](packages/shared/src/types/terminal.ts) - Terminal types and xterm theme/options
+- [apps/desktop/src/shared/types/terminal.ts](apps/desktop/src/shared/types/terminal.ts) - Terminal types
+- [apps/desktop/src/shared/theme/xterm-theme.ts](apps/desktop/src/shared/theme/xterm-theme.ts) - xterm.js theme/options
 
 **Design decisions:**
 
@@ -281,7 +257,7 @@ PTY Process (/bin/zsh, etc.)
 
 ### Adding New IPC Handlers
 
-1. **Define TypeScript types** in [packages/shared/src/types/ipc.ts](packages/shared/src/types/ipc.ts):
+1. **Define TypeScript types** in [apps/desktop/src/shared/types/ipc.ts](apps/desktop/src/shared/types/ipc.ts):
 
 ```typescript
 export interface MyNewMessage extends IPCMessage {
@@ -304,15 +280,9 @@ if message_type == "my-handler":
 const response = await window.api.sendMessage({ type: 'my-handler', data: { someField: 'value' } });
 ```
 
-4. **Rebuild shared types** if you modified `packages/shared`:
-
-```bash
-cd packages/shared && pnpm build
-```
-
-5. **Write tests** (required):
+4. **Write tests** (required):
    - Add Python handler tests in `apps/backend/tests/` covering success, error, and edge cases
-   - Add type contract tests in `packages/shared/src/types/ipc.test.ts` for the new message type
+   - Add type contract tests in `apps/desktop/src/shared/types/ipc.test.ts` for the new message type
    - Add React component tests if a UI component consumes the new handler
 
 ### Security Architecture
@@ -368,11 +338,10 @@ All user objects must implement `to_json()` and `from_json()` methods for bidire
 This is a **Turborepo** monorepo with **pnpm workspaces**:
 
 - **Root** scripts run across all workspaces (via `turbo run <task>`)
-- **Build dependencies**: Turborepo ensures `packages/shared` builds before `apps/desktop`
-- **Package references**: Use `workspace:*` in package.json dependencies
+- **Two apps**: `apps/desktop` (Electron) and `apps/backend` (Python)
+- **Shared types**: Live in `apps/desktop/src/shared/` (used by main, preload, and renderer processes)
+- **Path aliases**: `@/*` → `src/renderer/*`, `@shared/*` → `src/shared/*`
 - **Turbo cache**: Located in `.turbo/` directory
-
-**Important**: Always run `pnpm build` from root to ensure correct build order. Turborepo handles the dependency graph defined in [turbo.json](turbo.json).
 
 ### UI Component Patterns
 
@@ -384,12 +353,9 @@ The UI uses **TailwindCSS v4** with the new CSS `@import` syntax (not a PostCSS 
 
 Components follow **shadcn/ui patterns**:
 
-- Located in `packages/ui/src/components/ui/`
 - Use `class-variance-authority` (cva) for variant management
 - Use `tailwind-merge` for className composition
-- Utility function `cn()` in `packages/ui/src/lib/utils.ts`
-
-When adding shadcn/ui components, manually copy them into `packages/ui/src/components/ui/` (no CLI generator is configured).
+- Utility function `cn()` in `apps/desktop/src/renderer/lib/utils.ts`
 
 ## Development Notes
 
@@ -411,14 +377,6 @@ All Python commands use `uv` package manager:
 - `pythonOptions: ['run', 'python', '-u']` runs `uv run python`
 
 Ensure `uv` is installed globally. Do not use `python3` or `python` directly.
-
-### TypeScript Build Order
-
-Shared types must be built before the desktop app can build:
-
-1. `packages/shared` exports types used by `apps/desktop`
-2. Turborepo enforces this via `"dependsOn": ["^build"]` in [turbo.json](turbo.json)
-3. Run `pnpm build` from root to build in correct order
 
 ### Hot Module Replacement (HMR)
 
@@ -472,10 +430,6 @@ Install uv globally: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 ### Python dependencies not found
 
 Sync dependencies: `cd apps/backend && uv sync`
-
-### TypeScript errors about @maxtix/shared
-
-Build shared package first: `cd packages/shared && pnpm build`
 
 ### Port 5173 already in use
 
