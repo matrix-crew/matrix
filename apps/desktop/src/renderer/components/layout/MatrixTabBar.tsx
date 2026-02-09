@@ -31,18 +31,18 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
   return (
     <div
       className={cn(
-        'drag-region flex h-10 items-center gap-0.5 border-b border-border-default bg-base-800 pl-20 pr-2',
+        'drag-region flex h-12 items-center gap-1 border-b border-border-default bg-base-800 pl-20 pr-2',
         className
       )}
     >
       {/* Tabs */}
-      <div className="no-drag flex items-center gap-0.5 overflow-x-auto">
+      <div className="no-drag flex items-center gap-1 overflow-x-auto">
         {/* Home tab - always first, icon only, no close button */}
         <button
           type="button"
           onClick={onSelectHome}
           className={cn(
-            'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md transition-colors',
             isHomeActive
               ? 'bg-base-600 text-text-primary'
               : 'text-text-muted hover:bg-base-700 hover:text-text-secondary'
@@ -60,7 +60,7 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
               type="button"
               onClick={() => onSelectMatrix(matrix.id)}
               className={cn(
-                'group flex h-7 max-w-[180px] items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
+                'group flex h-8 max-w-[200px] items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors',
                 isActive
                   ? 'bg-base-600 text-text-primary'
                   : 'text-text-muted hover:bg-base-700 hover:text-text-secondary'
@@ -99,10 +99,10 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
       <button
         type="button"
         onClick={onCreateMatrix}
-        className="no-drag flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-base-700 hover:text-text-secondary"
+        className="no-drag flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-base-700 hover:text-text-secondary"
         aria-label="Create new matrix"
       >
-        <Plus className="size-3.5" />
+        <Plus className="size-4" />
       </button>
 
       {/* Spacer */}
@@ -114,14 +114,14 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
           type="button"
           onClick={onOpenSettings}
           className={cn(
-            'no-drag flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md transition-colors',
+            'no-drag flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors',
             isSettingsActive
               ? 'bg-base-600 text-text-primary'
               : 'text-text-muted hover:bg-base-700 hover:text-text-secondary'
           )}
           aria-label="Settings"
         >
-          <Settings className="size-3.5" />
+          <Settings className="size-[18px]" />
         </button>
       )}
     </div>
