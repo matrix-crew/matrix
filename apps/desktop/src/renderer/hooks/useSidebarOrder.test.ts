@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useSidebarOrder, reconcileWithDefaults, type SidebarOrder } from './useSidebarOrder';
 
 // ─── Setup ────────────────────────────────────────────────────────────
@@ -132,82 +132,6 @@ describe('useSidebarOrder', () => {
     const { result } = renderHook(() => useSidebarOrder());
     expect(result.current.order.groups).toEqual(['source', 'agent', 'workflow']);
     expect(result.current.order.items.workflow).toEqual(['pipeline', 'kanban']);
-  });
-
-  it('reorderGroups moves a group to a new position', () => {
-    const { result } = renderHook(() => useSidebarOrder());
-
-    act(() => {
-      result.current.reorderGroups(0, 2); // workflow from 0 to 2
-    });
-
-    expect(result.current.order.groups).toEqual(['agent', 'source', 'workflow']);
-  });
-
-  it('reorderGroups persists to localStorage and config', () => {
-    const { result } = renderHook(() => useSidebarOrder());
-
-    act(() => {
-      result.current.reorderGroups(0, 2);
-    });
-
-    const cached = JSON.parse(localStorage.getItem('maxtix-sidebar-order')!);
-    expect(cached.groups).toEqual(['agent', 'source', 'workflow']);
-    expect(window.api.writeConfig).toHaveBeenCalledWith({
-      sidebar_order: expect.objectContaining({
-        groups: ['agent', 'source', 'workflow'],
-      }),
-    });
-  });
-
-  it('reorderItems swaps items within a group', () => {
-    const { result } = renderHook(() => useSidebarOrder());
-
-    act(() => {
-      result.current.reorderItems('workflow', 0, 1); // kanban ↔ pipeline
-    });
-
-    expect(result.current.order.items.workflow).toEqual(['pipeline', 'kanban']);
-  });
-
-  it('reorderItems persists to localStorage and config', () => {
-    const { result } = renderHook(() => useSidebarOrder());
-
-    act(() => {
-      result.current.reorderItems('agent', 0, 1);
-    });
-
-    const cached = JSON.parse(localStorage.getItem('maxtix-sidebar-order')!);
-    expect(cached.items.agent).toEqual(['mcp', 'console']);
-    expect(window.api.writeConfig).toHaveBeenCalledWith({
-      sidebar_order: expect.objectContaining({
-        items: expect.objectContaining({ agent: ['mcp', 'console'] }),
-      }),
-    });
-  });
-
-  it('reorderGroups no-op when from === to', () => {
-    const { result } = renderHook(() => useSidebarOrder());
-    vi.mocked(window.api.writeConfig).mockClear();
-
-    act(() => {
-      result.current.reorderGroups(1, 1);
-    });
-
-    expect(result.current.order.groups).toEqual(['workflow', 'agent', 'source']);
-    expect(window.api.writeConfig).not.toHaveBeenCalled();
-  });
-
-  it('reorderItems no-op when from === to', () => {
-    const { result } = renderHook(() => useSidebarOrder());
-    vi.mocked(window.api.writeConfig).mockClear();
-
-    act(() => {
-      result.current.reorderItems('workflow', 0, 0);
-    });
-
-    expect(result.current.order.items.workflow).toEqual(['kanban', 'pipeline']);
-    expect(window.api.writeConfig).not.toHaveBeenCalled();
   });
 
   it('loads from config on mount and reconciles', async () => {

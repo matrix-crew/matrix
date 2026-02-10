@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -74,13 +74,6 @@ export function reconcileWithDefaults(persisted: SidebarOrder): SidebarOrder {
   return { groups, items };
 }
 
-// ─── Persistence helper ───────────────────────────────────────────────
-
-function persist(order: SidebarOrder): void {
-  writeCache(order);
-  window.api?.writeConfig({ sidebar_order: order }).catch(() => {});
-}
-
 // ─── Hook ─────────────────────────────────────────────────────────────
 
 export function useSidebarOrder() {
@@ -110,34 +103,5 @@ export function useSidebarOrder() {
     })();
   }, []);
 
-  const reorderGroups = useCallback((fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex) return;
-    setOrder((prev) => {
-      const newGroups = [...prev.groups];
-      const [moved] = newGroups.splice(fromIndex, 1);
-      newGroups.splice(toIndex, 0, moved);
-      const next = { ...prev, groups: newGroups };
-      persist(next);
-      return next;
-    });
-  }, []);
-
-  const reorderItems = useCallback(
-    (groupId: SidebarGroupId, fromIndex: number, toIndex: number) => {
-      if (fromIndex === toIndex) return;
-      setOrder((prev) => {
-        const groupItems = prev.items[groupId];
-        if (!groupItems) return prev;
-        const newItems = [...groupItems];
-        const [moved] = newItems.splice(fromIndex, 1);
-        newItems.splice(toIndex, 0, moved);
-        const next = { ...prev, items: { ...prev.items, [groupId]: newItems } };
-        persist(next);
-        return next;
-      });
-    },
-    []
-  );
-
-  return { order, reorderGroups, reorderItems };
+  return { order };
 }
