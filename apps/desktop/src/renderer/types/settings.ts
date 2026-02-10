@@ -19,6 +19,7 @@ export type SettingsSectionId =
   | 'appearance'
   | 'display'
   | 'language'
+  | 'keyboard-shortcuts'
   | 'developer-tools'
   | 'agent-settings'
   | 'paths'
@@ -77,6 +78,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     group: 'general',
   },
   {
+    id: 'keyboard-shortcuts',
+    label: 'Keyboard Shortcuts',
+    description: 'View and customize shortcuts',
+    group: 'general',
+  },
+  {
     id: 'notifications',
     label: 'Notifications',
     description: 'Alert preferences',
@@ -117,7 +124,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     id: 'general',
     label: 'General',
-    sections: ['appearance', 'display', 'language', 'notifications'],
+    sections: ['appearance', 'display', 'language', 'keyboard-shortcuts', 'notifications'],
   },
   {
     id: 'development',

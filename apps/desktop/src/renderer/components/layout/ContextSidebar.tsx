@@ -1,20 +1,24 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { FolderOpen, LayoutDashboard, GitBranch, Terminal, Zap } from 'lucide-react';
+import { useShortcuts } from '@/contexts/ShortcutProvider';
+import type { ShortcutActionId } from '@shared/types/shortcuts';
 
 export type ContextItemId = 'sources' | 'kanban' | 'pipeline' | 'console' | 'mcp';
 
-interface SidebarSection {
-  title: string;
-  items: {
-    id: ContextItemId;
-    label: string;
-    icon: React.ReactNode;
-    shortcut?: string;
-  }[];
+interface SidebarItem {
+  id: ContextItemId;
+  label: string;
+  icon: React.ReactNode;
+  actionId: ShortcutActionId;
 }
 
-const sections: SidebarSection[] = [
+interface SidebarSection {
+  title: string;
+  items: SidebarItem[];
+}
+
+const SIDEBAR_SECTIONS: SidebarSection[] = [
   {
     title: 'Overview',
     items: [
@@ -22,7 +26,7 @@ const sections: SidebarSection[] = [
         id: 'sources',
         label: 'Sources',
         icon: <FolderOpen className="size-4" />,
-        shortcut: '⌘S',
+        actionId: 'context-sources',
       },
     ],
   },
@@ -33,13 +37,13 @@ const sections: SidebarSection[] = [
         id: 'kanban',
         label: 'Kanban',
         icon: <LayoutDashboard className="size-4" />,
-        shortcut: '⌘K',
+        actionId: 'context-kanban',
       },
       {
         id: 'pipeline',
         label: 'Pipeline',
         icon: <GitBranch className="size-4" />,
-        shortcut: '⌘P',
+        actionId: 'context-pipeline',
       },
     ],
   },
@@ -50,13 +54,13 @@ const sections: SidebarSection[] = [
         id: 'console',
         label: 'Console',
         icon: <Terminal className="size-4" />,
-        shortcut: '⌘A',
+        actionId: 'context-console',
       },
       {
         id: 'mcp',
         label: 'MCP',
         icon: <Zap className="size-4" />,
-        shortcut: '⌘M',
+        actionId: 'context-mcp',
       },
     ],
   },
@@ -77,6 +81,7 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
   onItemSelect,
   className,
 }) => {
+  const { getDisplayString } = useShortcuts();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const isResizing = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -122,13 +127,14 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
     >
       {/* Scrollable sections */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-4">
-        {sections.map((section) => (
+        {SIDEBAR_SECTIONS.map((section) => (
           <div key={section.title} className="mb-4">
             <h3 className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
               {section.title}
             </h3>
             {section.items.map((item) => {
               const isActive = item.id === activeItem;
+              const shortcut = getDisplayString(item.actionId);
               return (
                 <button
                   key={item.id}
@@ -145,9 +151,7 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
                     {item.icon}
                   </span>
                   <span className="flex-1 truncate text-left">{item.label}</span>
-                  {item.shortcut && (
-                    <span className="text-[11px] text-text-muted">{item.shortcut}</span>
-                  )}
+                  {shortcut && <span className="text-[11px] text-text-muted">{shortcut}</span>}
                 </button>
               );
             })}

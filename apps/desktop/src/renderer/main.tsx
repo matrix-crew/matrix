@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './contexts/ThemeProvider';
+import { ShortcutProvider } from './contexts/ShortcutProvider';
 import App from './App';
 import './index.css';
 
@@ -13,7 +14,9 @@ const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ThemeProvider>
-      <App />
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

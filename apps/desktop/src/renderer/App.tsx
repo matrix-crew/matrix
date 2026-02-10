@@ -14,6 +14,9 @@ import { MCPControl } from '@/components/agent/MCPControl';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
 import { DevToolsModal } from '@/components/devtools/DevToolsModal';
+import { useShortcutAction } from '@/hooks/useShortcutAction';
+import { useShortcuts } from '@/contexts/ShortcutProvider';
+import type { ShortcutActionId } from '@shared/types/shortcuts';
 
 /**
  * Main App component for Maxtix desktop application
@@ -192,6 +195,71 @@ const App: React.FC = () => {
       }
     },
     [matrices, activeMatrixId]
+  );
+
+  // ── Keyboard shortcut registrations ──
+  const noModal = !showGlobalSettings && !showDevTools && !isFormOpen;
+  const canSwitchContext = !!activeMatrixId && !isHomeActive && noModal;
+
+  // Tab shortcuts: ⌘1 = Home, ⌘2–⌘9 = matrix tabs by position, ⌘9 = last tab
+  const { registerAction } = useShortcuts();
+  useEffect(() => {
+    if (!noModal) return;
+
+    const cleanups: (() => void)[] = [];
+    for (let i = 1; i <= 9; i++) {
+      const actionId = `tab-${i}` as ShortcutActionId;
+      cleanups.push(
+        registerAction(actionId, () => {
+          if (i === 1) {
+            handleSelectHome();
+          } else if (i === 9) {
+            // ⌘9 = last tab
+            if (matrices.length > 0) {
+              handleSelectMatrix(matrices[matrices.length - 1].id);
+            }
+          } else {
+            const idx = i - 2; // tab-2 = matrices[0]
+            if (idx < matrices.length) {
+              handleSelectMatrix(matrices[idx].id);
+            }
+          }
+        })
+      );
+    }
+    return () => cleanups.forEach((c) => c());
+  }, [registerAction, matrices, handleSelectHome, handleSelectMatrix, noModal]);
+
+  // Navigation shortcuts
+  useShortcutAction('toggle-settings', handleToggleSettings);
+  useShortcutAction('toggle-devtools', handleToggleDevTools, noModal);
+  useShortcutAction('create-matrix', handleOpenCreateForm, noModal);
+
+  // Context sidebar shortcuts (⌘+letter)
+  useShortcutAction(
+    'context-sources',
+    useCallback(() => setActiveContextItem('sources'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-kanban',
+    useCallback(() => setActiveContextItem('kanban'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-pipeline',
+    useCallback(() => setActiveContextItem('pipeline'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-console',
+    useCallback(() => setActiveContextItem('console'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-mcp',
+    useCallback(() => setActiveContextItem('mcp'), []),
+    canSwitchContext
   );
 
   /**
