@@ -18,18 +18,7 @@ interface SidebarSection {
   items: SidebarItem[];
 }
 
-const SIDEBAR_SECTIONS: SidebarSection[] = [
-  {
-    title: 'Overview',
-    items: [
-      {
-        id: 'sources',
-        label: 'Sources',
-        icon: <FolderOpen className="size-4" />,
-        actionId: 'context-sources',
-      },
-    ],
-  },
+const sections: SidebarSection[] = [
   {
     title: 'Workflow',
     items: [
@@ -52,7 +41,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     items: [
       {
         id: 'console',
-        label: 'Console',
+        label: 'Terminal',
         icon: <Terminal className="size-4" />,
         actionId: 'context-console',
       },
@@ -61,6 +50,17 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
         label: 'MCP',
         icon: <Zap className="size-4" />,
         actionId: 'context-mcp',
+      },
+    ],
+  },
+  {
+    title: 'Source',
+    items: [
+      {
+        id: 'sources',
+        label: 'Sources',
+        icon: <FolderOpen className="size-4" />,
+        actionId: 'context-sources',
       },
     ],
   },
@@ -127,7 +127,7 @@ export const ContextSidebar: React.FC<ContextSidebarProps> = ({
     >
       {/* Scrollable sections */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-4">
-        {SIDEBAR_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.title} className="mb-4">
             <h3 className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
               {section.title}
