@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
+import { ShortcutProvider } from './contexts/ShortcutProvider';
 import type { Matrix } from '@shared/types/matrix';
 
 const mockMatrix: Matrix = {
@@ -22,7 +23,11 @@ describe('App', () => {
   it('shows loading state initially', () => {
     vi.mocked(window.api.readConfig).mockReturnValue(new Promise(() => {}));
     vi.mocked(window.api.sendMessage).mockReturnValue(new Promise(() => {}));
-    render(<App />);
+    render(
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
+    );
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
@@ -30,7 +35,11 @@ describe('App', () => {
     vi.mocked(window.api.readConfig).mockResolvedValue({ onboarding_completed: false });
     vi.mocked(window.api.sendMessage).mockResolvedValue({ success: true, data: { matrices: [] } });
 
-    render(<App />);
+    render(
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
+    );
 
     await waitFor(() => {
       // OnboardingWizard should render with a "Welcome to Matrix" heading
@@ -45,7 +54,11 @@ describe('App', () => {
       data: { matrices: [] },
     });
 
-    render(<App />);
+    render(
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
+    );
 
     await waitFor(() => {
       // Should show create matrix prompt (+ button in tab bar)
@@ -63,7 +76,11 @@ describe('App', () => {
       return { success: true, data: { sources: [] } };
     });
 
-    render(<App />);
+    render(
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
+    );
 
     await waitFor(() => {
       // Home view should show the matrix grid
@@ -89,7 +106,11 @@ describe('App', () => {
       return { success: true, data: { sources: [] } };
     });
 
-    render(<App />);
+    render(
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Your Matrices')).toBeInTheDocument();
@@ -114,7 +135,11 @@ describe('App', () => {
       data: { matrices: [] },
     });
 
-    render(<App />);
+    render(
+      <ShortcutProvider>
+        <App />
+      </ShortcutProvider>
+    );
 
     await waitFor(() => {
       expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
