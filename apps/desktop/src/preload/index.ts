@@ -128,6 +128,14 @@ contextBridge.exposeInMainWorld('api', {
     return ipcRenderer.invoke('shell:open-external', url);
   },
 
+  /**
+   * Show directory picker dialog
+   * @returns Selected directory path or null if cancelled
+   */
+  selectDirectory: (): Promise<string | null> => {
+    return ipcRenderer.invoke('dialog:select-directory');
+  },
+
   // ── Terminal PTY APIs ─────────────────────────────────────────
 
   terminal: {

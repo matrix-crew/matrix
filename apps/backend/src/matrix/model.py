@@ -28,9 +28,15 @@ class Matrix:
     id: str
     name: str
     source_ids: list[str]
-    workspace_path: str
     created_at: str
     updated_at: str
+
+    @property
+    def workspace_path(self) -> str:
+        """Compute workspace path from name and id."""
+        from src.config.paths import get_matrix_space_path
+
+        return get_matrix_space_path(self.name, self.id)
 
     @classmethod
     def create(cls, name: str, source_ids: list[str] | None = None) -> "Matrix":
@@ -43,15 +49,11 @@ class Matrix:
         Returns:
             A new Matrix instance with generated UUID and current timestamps
         """
-        from src.config.paths import get_matrix_space_path
-
         now = datetime.now(UTC).isoformat()
-        matrix_id = str(uuid.uuid4())
         return cls(
-            id=matrix_id,
+            id=str(uuid.uuid4()),
             name=name,
             source_ids=source_ids if source_ids is not None else [],
-            workspace_path=get_matrix_space_path(name, matrix_id),
             created_at=now,
             updated_at=now,
         )
@@ -88,7 +90,6 @@ class Matrix:
             id=data["id"],
             name=data["name"],
             source_ids=data.get("source_ids", []),
-            workspace_path=data["workspace_path"],
             created_at=data["created_at"],
             updated_at=data["updated_at"],
         )

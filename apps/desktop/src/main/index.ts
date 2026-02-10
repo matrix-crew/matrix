@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
 import { join } from 'path';
+import { setupDialogHandlers } from './dialogs';
 import { setupIPCHandlers } from './ipc';
 import { setupSystemCheckHandlers } from './system-check';
 import { setupTerminalHandlers } from './terminal-manager';
@@ -54,6 +55,9 @@ app.whenReady().then(() => {
 
   // Initialize system check handlers for onboarding & config
   setupSystemCheckHandlers();
+
+  // Initialize dialog handlers for file/directory selection
+  setupDialogHandlers();
 
   // Initialize terminal PTY handlers
   setupTerminalHandlers();

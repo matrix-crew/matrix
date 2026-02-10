@@ -1,6 +1,7 @@
 """Unit tests for matrix.space module."""
 
 import os
+from unittest.mock import patch
 
 import pytest
 
@@ -14,17 +15,28 @@ from src.source.model import Source
 
 
 @pytest.fixture
-def tmp_matrix(tmp_path):
-    """Create a Matrix with workspace_path pointing to a temp directory."""
-    matrix = Matrix(
+def test_workspace(tmp_path):
+    """Return a temporary workspace path string."""
+    return str(tmp_path / "test-project-a1b2c3d4")
+
+
+@pytest.fixture(autouse=True)
+def patch_workspace_path(test_workspace):
+    """Patch get_matrix_space_path to return test workspace for all tests."""
+    with patch("src.config.paths.get_matrix_space_path", return_value=test_workspace):
+        yield
+
+
+@pytest.fixture
+def tmp_matrix():
+    """Create a Matrix pointing to the patched workspace."""
+    return Matrix(
         id="a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         name="Test Project",
         source_ids=[],
-        workspace_path=str(tmp_path / "test-project-a1b2c3d4"),
         created_at="2024-01-15T10:30:00+00:00",
         updated_at="2024-01-15T10:30:00+00:00",
     )
-    return matrix
 
 
 @pytest.fixture
@@ -36,6 +48,7 @@ def sample_sources():
             name="frontend",
             path="/home/user/repos/frontend",
             url="https://github.com/user/frontend",
+            source_type="remote",
             created_at="2024-01-15T10:30:00+00:00",
         ),
         Source(
@@ -43,6 +56,7 @@ def sample_sources():
             name="backend",
             path="/home/user/repos/backend",
             url=None,
+            source_type="local",
             created_at="2024-01-15T10:30:00+00:00",
         ),
     ]

@@ -6,6 +6,11 @@
  */
 
 /**
+ * Source type discriminator: local directory or cloned remote repository
+ */
+export type SourceType = 'local' | 'remote';
+
+/**
  * A Matrix represents a collection of Sources.
  *
  * Matrices allow users to organize related git repositories into logical
@@ -27,10 +32,11 @@ export interface Matrix {
 }
 
 /**
- * A Source represents a git repository reference.
+ * A Source represents a local directory or cloned git repository.
  *
- * Sources are the fundamental units that can be organized into Matrices.
- * Each Source tracks a repository's location (path) and optional remote URL.
+ * Sources can be either:
+ * - local: Existing directory symlinked into matrix workspace
+ * - remote: Git repository cloned to ~/.matrix/repositories/ and symlinked
  */
 export interface Source {
   /** Unique identifier (UUID v4) */
@@ -41,6 +47,8 @@ export interface Source {
   path: string;
   /** Optional remote URL (e.g., GitHub URL) */
   url: string | null;
+  /** Source type: "local" or "remote" */
+  source_type: SourceType;
   /** ISO 8601 timestamp of when the Source was created */
   created_at: string;
 }
@@ -72,7 +80,7 @@ export interface MatrixUpdateData {
 }
 
 /**
- * Data for creating a new Source
+ * Data for creating a new Source (generic, backward-compatible)
  */
 export interface SourceCreateData {
   /** Human-readable name for the repository */
@@ -81,6 +89,34 @@ export interface SourceCreateData {
   path: string;
   /** Optional remote URL for the repository */
   url?: string;
+  /** Source type */
+  source_type?: SourceType;
+}
+
+/**
+ * Data for creating a local source (directory picker)
+ */
+export interface LocalSourceCreateData {
+  /** Human-readable name for the directory */
+  name: string;
+  /** Absolute filesystem path to the directory */
+  path: string;
+  /** Source type discriminator */
+  source_type: 'local';
+  /** Optional git remote URL */
+  url?: string;
+}
+
+/**
+ * Data for creating a remote source (git clone)
+ */
+export interface RemoteSourceCreateData {
+  /** Human-readable name for the repository */
+  name: string;
+  /** Git clone URL (required) */
+  url: string;
+  /** Source type discriminator */
+  source_type: 'remote';
 }
 
 /**
@@ -99,4 +135,43 @@ export interface MatrixSourceData {
   matrixId: string;
   /** Source UUID */
   sourceId: string;
+}
+
+// ============================================================================
+// Reconciliation Types
+// ============================================================================
+
+/**
+ * Status of a single source reconciliation
+ */
+export type SourceReconcileStatus = 'ok' | 'repaired' | 'skipped' | 'error';
+
+/**
+ * Result of reconciling a single source
+ */
+export interface SourceReconcileResult {
+  /** Source UUID */
+  source_id: string;
+  /** Source name */
+  source_name: string;
+  /** Reconciliation status */
+  status: SourceReconcileStatus;
+  /** Description of action taken */
+  action: string;
+}
+
+/**
+ * Report of a full matrix reconciliation
+ */
+export interface ReconcileReport {
+  /** Whether the workspace folder was recreated */
+  workspace_recreated: boolean;
+  /** Whether MATRIX.md was recreated */
+  matrix_md_recreated: boolean;
+  /** Per-source reconciliation results */
+  sources_reconciled: SourceReconcileResult[];
+  /** Source IDs in matrix but not found in DB */
+  orphaned_source_ids: string[];
+  /** Whether any repairs were made */
+  has_repairs: boolean;
 }

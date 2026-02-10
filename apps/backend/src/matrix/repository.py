@@ -24,7 +24,6 @@ class MatrixRepository:
         entity = MatrixEntity(
             id=matrix.id,
             name=matrix.name,
-            workspace_path=matrix.workspace_path,
             created_at=matrix.created_at,
             updated_at=matrix.updated_at,
         )
@@ -55,7 +54,6 @@ class MatrixRepository:
             return
 
         entity.name = matrix.name
-        entity.workspace_path = matrix.workspace_path
         entity.updated_at = matrix.updated_at
 
         # Re-sync junction table: delete old links, insert new ones
@@ -97,7 +95,6 @@ class MatrixRepository:
             id=entity.id,
             name=entity.name,
             source_ids=source_ids,
-            workspace_path=entity.workspace_path,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

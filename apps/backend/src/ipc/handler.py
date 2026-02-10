@@ -4,13 +4,27 @@ This module provides the core message handling functionality for processing
 JSON-based IPC messages from the Electron frontend.
 """
 
+import os
 import sys
 from datetime import UTC, datetime
 from typing import Any
 
 from src.db import get_engine, get_session, init_db
-from src.matrix import Matrix, MatrixRepository, create_matrix_space, update_matrix_md
-from src.source import Source, SourceRepository
+from src.matrix import (
+    Matrix,
+    MatrixReconciler,
+    MatrixRepository,
+    create_matrix_space,
+    update_matrix_md,
+)
+from src.source import (
+    CloneError,
+    RepositoryCloner,
+    Source,
+    SourceLinker,
+    SourceRepository,
+    SymlinkError,
+)
 
 
 def handle_message(message: dict[str, Any]) -> dict[str, Any]:
@@ -67,6 +81,12 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
         if message_type == "source-create":
             return _handle_source_create(message, source_repo)
 
+        if message_type == "source-create-local":
+            return _handle_source_create_local(message, source_repo)
+
+        if message_type == "source-create-remote":
+            return _handle_source_create_remote(message, source_repo)
+
         if message_type == "source-list":
             return _handle_source_list(source_repo)
 
@@ -78,6 +98,9 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
 
         if message_type == "matrix-remove-source":
             return _handle_matrix_remove_source(message, matrix_repo, source_repo)
+
+        if message_type == "matrix-reconcile":
+            return _handle_matrix_reconcile(message, matrix_repo, source_repo)
 
     # Unknown message type
     return {
@@ -177,6 +200,7 @@ def _handle_source_create(message: dict[str, Any], repo: SourceRepository) -> di
     name = data.get("name", "")
     path = data.get("path", "")
     url = data.get("url")
+    source_type = data.get("source_type", "local")
 
     if not name or not name.strip():
         return {"success": False, "error": "Source name is required"}
@@ -184,10 +208,58 @@ def _handle_source_create(message: dict[str, Any], repo: SourceRepository) -> di
     if not path or not path.strip():
         return {"success": False, "error": "Source path is required"}
 
-    source = Source.create(name.strip(), path.strip(), url)
+    source = Source.create(name.strip(), path.strip(), source_type, url)
     repo.create(source)
 
     return {"success": True, "data": {"source": source.to_json()}}
+
+
+def _handle_source_create_local(message: dict[str, Any], repo: SourceRepository) -> dict[str, Any]:
+    data = message.get("data", {})
+    name = data.get("name", "")
+    path = data.get("path", "")
+    url = data.get("url")
+
+    if not name or not name.strip():
+        return {"success": False, "error": "Source name is required"}
+
+    if not path or not path.strip():
+        return {"success": False, "error": "Source path is required"}
+
+    if not os.path.exists(path):
+        return {"success": False, "error": f"Path does not exist: {path}"}
+
+    source = Source.create(name.strip(), path.strip(), "local", url)
+    repo.create(source)
+
+    return {"success": True, "data": {"source": source.to_json()}}
+
+
+def _handle_source_create_remote(message: dict[str, Any], repo: SourceRepository) -> dict[str, Any]:
+    data = message.get("data", {})
+    name = data.get("name", "")
+    url = data.get("url", "")
+
+    if not url or not url.strip():
+        return {"success": False, "error": "Repository URL is required"}
+
+    cloner = RepositoryCloner()
+
+    if not name or not name.strip():
+        name = cloner.extract_repo_name(url)
+
+    try:
+        clone_path = cloner.clone_repository(url.strip(), name.strip())
+    except CloneError as e:
+        return {"success": False, "error": str(e)}
+
+    source = Source.create(name.strip(), clone_path, "remote", url.strip())
+    repo.create(source)
+
+    return {
+        "success": True,
+        "data": {"source": source.to_json(), "clonePath": clone_path},
+    }
 
 
 def _handle_source_list(repo: SourceRepository) -> dict[str, Any]:
@@ -233,10 +305,22 @@ def _handle_matrix_add_source(
     if matrix is None:
         return {"success": False, "error": f"Matrix not found: {matrix_id}"}
 
+    source = source_repo.get(source_id)
+
+    if source is None:
+        return {"success": False, "error": f"Source not found: {source_id}"}
+
     if source_id not in matrix.source_ids:
         matrix.source_ids.append(source_id)
         matrix.updated_at = datetime.now(UTC).isoformat()
         matrix_repo.update(matrix)
+
+        # Create symlink in matrix workspace (best-effort)
+        linker = SourceLinker()
+        try:
+            linker.link_source_to_matrix(source, matrix.workspace_path)
+        except SymlinkError as e:
+            print(f"Warning: Failed to create symlink: {e}", file=sys.stderr)
 
         # Update MATRIX.md with current sources (best-effort)
         try:
@@ -268,10 +352,20 @@ def _handle_matrix_remove_source(
     if matrix is None:
         return {"success": False, "error": f"Matrix not found: {matrix_id}"}
 
+    source = source_repo.get(source_id)
+
     if source_id in matrix.source_ids:
         matrix.source_ids.remove(source_id)
         matrix.updated_at = datetime.now(UTC).isoformat()
         matrix_repo.update(matrix)
+
+        # Remove symlink from matrix workspace (best-effort)
+        if source is not None:
+            linker = SourceLinker()
+            try:
+                linker.unlink_source_from_matrix(source, matrix.workspace_path)
+            except SymlinkError as e:
+                print(f"Warning: Failed to remove symlink: {e}", file=sys.stderr)
 
         # Update MATRIX.md with remaining sources (best-effort)
         try:
@@ -281,6 +375,36 @@ def _handle_matrix_remove_source(
             print(f"Warning: Failed to update MATRIX.md: {e}", file=sys.stderr)
 
     return {"success": True, "data": {"matrix": matrix.to_json()}}
+
+
+def _handle_matrix_reconcile(
+    message: dict[str, Any],
+    matrix_repo: MatrixRepository,
+    source_repo: SourceRepository,
+) -> dict[str, Any]:
+    data = message.get("data", {})
+    matrix_id = data.get("id", "")
+
+    if not matrix_id:
+        return {"success": False, "error": "Matrix ID is required"}
+
+    matrix = matrix_repo.get(matrix_id)
+
+    if matrix is None:
+        return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+    sources = _resolve_sources(matrix.source_ids, source_repo)
+
+    reconciler = MatrixReconciler()
+    report = reconciler.reconcile(matrix, sources)
+
+    return {
+        "success": True,
+        "data": {
+            "matrix": matrix.to_json(),
+            "report": report.to_json(),
+        },
+    }
 
 
 def _resolve_sources(source_ids: list[str], source_repo: SourceRepository) -> list[Source]:
