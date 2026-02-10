@@ -25,7 +25,7 @@ const features = [
 
 export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
   return (
-    <div className="flex flex-col items-center gap-10 animate-fade-in">
+    <div className="my-auto flex flex-col items-center gap-10 animate-fade-in">
       {/* Matrix grid logo */}
       <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-accent-cyan/20 bg-gradient-to-br from-accent-cyan/20 to-accent-lime/10">
         <div className="grid grid-cols-3 gap-1">
