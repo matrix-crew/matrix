@@ -9,8 +9,13 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    name: Run Tests
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: Build (${{ matrix.display_name }})
+    needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
