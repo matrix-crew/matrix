@@ -74,12 +74,12 @@ class TestSource:
 
     def test_create_source_with_url(self):
         """Test Source.create() accepts optional URL."""
-        source = Source.create("repo", "/path", "https://github.com/user/repo")
+        source = Source.create("repo", "/path", url="https://github.com/user/repo")
         assert source.url == "https://github.com/user/repo"
 
     def test_source_to_json(self):
         """Test Source serialization to JSON."""
-        source = Source.create("repo", "/path", "https://example.com")
+        source = Source.create("repo", "/path", url="https://example.com")
         json_data = source.to_json()
         assert json_data["name"] == "repo"
         assert json_data["path"] == "/path"

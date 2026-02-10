@@ -14,6 +14,8 @@ import type {
   SourceCreateData,
   SourceIdData,
   MatrixSourceData,
+  LocalSourceCreateData,
+  RemoteSourceCreateData,
 } from './matrix';
 
 /**
@@ -207,6 +209,46 @@ export interface SourceGetResponse extends IPCResponse<{ source: Source }> {
   };
 }
 
+/**
+ * Message to create a local source (directory picker)
+ */
+export interface SourceCreateLocalMessage extends IPCMessage<LocalSourceCreateData> {
+  type: 'source-create-local';
+  data: LocalSourceCreateData;
+}
+
+/**
+ * Response for source-create-local message
+ */
+export interface SourceCreateLocalResponse extends IPCResponse<{ source: Source }> {
+  success: true;
+  data: {
+    source: Source;
+  };
+}
+
+/**
+ * Message to create a remote source (git clone)
+ */
+export interface SourceCreateRemoteMessage extends IPCMessage<RemoteSourceCreateData> {
+  type: 'source-create-remote';
+  data: RemoteSourceCreateData;
+}
+
+/**
+ * Response for source-create-remote message
+ */
+export interface SourceCreateRemoteResponse extends IPCResponse<{
+  source: Source;
+  clonePath: string;
+}> {
+  success: true;
+  data: {
+    source: Source;
+    clonePath: string;
+  };
+}
+
 // ============================================================================
 // Matrix-Source Relationship Messages
 // ============================================================================
@@ -262,6 +304,8 @@ export type IPCMessageTypes =
   | MatrixUpdateMessage
   | MatrixDeleteMessage
   | SourceCreateMessage
+  | SourceCreateLocalMessage
+  | SourceCreateRemoteMessage
   | SourceListMessage
   | SourceGetMessage
   | MatrixAddSourceMessage
@@ -278,6 +322,8 @@ export type IPCResponseTypes =
   | MatrixUpdateResponse
   | MatrixDeleteResponse
   | SourceCreateResponse
+  | SourceCreateLocalResponse
+  | SourceCreateRemoteResponse
   | SourceListResponse
   | SourceGetResponse
   | MatrixAddSourceResponse

@@ -20,6 +20,7 @@ if (typeof window !== 'undefined') {
     readConfig: vi.fn().mockResolvedValue({ onboarding_completed: true }),
     writeConfig: vi.fn().mockResolvedValue({ success: true }),
     openExternal: vi.fn().mockResolvedValue(undefined),
+    selectDirectory: vi.fn().mockResolvedValue(null),
     terminal: {
       create: vi
         .fn()

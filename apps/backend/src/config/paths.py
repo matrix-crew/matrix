@@ -56,6 +56,9 @@ def generate_matrix_folder_name(matrix_name: str, matrix_id: str) -> str:
 def get_matrix_space_path(matrix_name: str, matrix_id: str) -> str:
     """Get full path to a matrix space folder.
 
+    Matrix spaces live under ~/.matrix/matrices/ to keep them separated
+    from other data (DB, repositories, config).
+
     Args:
         matrix_name: Human-readable matrix name.
         matrix_id: Full UUID of the matrix.
@@ -64,4 +67,4 @@ def get_matrix_space_path(matrix_name: str, matrix_id: str) -> str:
         Absolute path to the matrix workspace folder.
     """
     folder_name = generate_matrix_folder_name(matrix_name, matrix_id)
-    return os.path.join(get_workspace_root(), folder_name)
+    return os.path.join(get_workspace_root(), "matrices", folder_name)

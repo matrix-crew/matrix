@@ -25,6 +25,7 @@ class SourceEntity(SQLModel, table=True):
     name: str
     path: str
     url: str | None = None
+    source_type: str = Field(default="local")
     created_at: str
 
     matrices: list["MatrixEntity"] = Relationship(

@@ -92,6 +92,12 @@ export interface ElectronAPI {
    */
   openExternal: (url: string) => Promise<void>;
 
+  /**
+   * Show directory picker dialog
+   * @returns Selected directory path or null if cancelled
+   */
+  selectDirectory: () => Promise<string | null>;
+
   // ── Terminal PTY APIs ─────────────────────────────────────────
 
   terminal: {

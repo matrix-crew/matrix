@@ -36,6 +36,7 @@ def sample_sources():
             name="frontend",
             path="/home/user/repos/frontend",
             url="https://github.com/user/frontend",
+            source_type="remote",
             created_at="2024-01-15T10:30:00+00:00",
         ),
         Source(
@@ -43,6 +44,7 @@ def sample_sources():
             name="backend",
             path="/home/user/repos/backend",
             url=None,
+            source_type="local",
             created_at="2024-01-15T10:30:00+00:00",
         ),
     ]

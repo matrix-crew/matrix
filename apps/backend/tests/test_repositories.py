@@ -147,7 +147,7 @@ class TestSourceRepository:
     def test_create_and_get_source(self, session):
         """Test Source create and get round-trip."""
         repo = SourceRepository(session)
-        source = Source.create("my-repo", "/path/to/repo", "https://github.com/user/repo")
+        source = Source.create("my-repo", "/path/to/repo", url="https://github.com/user/repo")
         repo.create(source)
         session.flush()
 
