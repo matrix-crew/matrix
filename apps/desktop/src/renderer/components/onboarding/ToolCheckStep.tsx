@@ -22,6 +22,7 @@ interface ToolCheckStepProps {
   selectedIDE: string | null;
   onIDEChange: (ide: string) => void;
   onNext: () => void;
+  onBack: () => void;
   onSkip: () => void;
 }
 
@@ -33,6 +34,7 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
   selectedIDE,
   onIDEChange,
   onNext,
+  onBack,
   onSkip,
 }) => {
   const [isCheckingTools, setIsCheckingTools] = useState(false);
@@ -194,7 +196,7 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
   }, []);
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-8 animate-fade-in">
+    <div className="my-auto flex w-full max-w-xl flex-col gap-8 animate-fade-in">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-text-primary">Development Tools</h2>
@@ -290,13 +292,22 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
         >
           Skip for now
         </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="rounded-lg bg-accent-cyan px-5 py-2.5 text-sm font-medium text-base-900 transition-colors hover:bg-accent-cyan/90"
-        >
-          Next
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-lg border border-border-default px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-raised"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            className="rounded-lg bg-accent-cyan px-5 py-2.5 text-sm font-medium text-base-900 transition-colors hover:bg-accent-cyan/90"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -10,9 +10,9 @@ import { AgentAuthStep } from './AgentAuthStep';
 /**
  * Onboarding step order:
  *   0 = Welcome
- *   1 = Tools (dev tools + terminal + IDE selection)
- *   2 = Agent Detection
- *   3 = Agent Authentication
+ *   1 = Agent
+ *   2 = Agent Authentication
+ *   3 = Tools (dev tools + terminal + IDE selection)
  */
 const TOTAL_STEPS = 3; // Steps after welcome
 
@@ -113,10 +113,30 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
 
       {/* Step content */}
-      <div className="flex flex-1 items-center justify-center overflow-auto px-6 pb-8">
+      <div className="flex flex-1 justify-center overflow-auto px-6 py-8">
         {step === 0 && <WelcomeStep onNext={() => setStep(1)} />}
 
         {step === 1 && (
+          <AgentDetectionStep
+            agents={agents}
+            onAgentsChange={setAgents}
+            onNext={() => setStep(2)}
+            onBack={() => setStep(0)}
+            onSkip={handleSkip}
+          />
+        )}
+
+        {step === 2 && (
+          <AgentAuthStep
+            agents={agents}
+            onAgentsChange={setAgents}
+            onNext={() => setStep(3)}
+            onBack={() => setStep(1)}
+            onSkip={handleSkip}
+          />
+        )}
+
+        {step === 3 && (
           <ToolCheckStep
             tools={tools}
             onToolsChange={setTools}
@@ -124,24 +144,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             onTerminalChange={setSelectedTerminal}
             selectedIDE={selectedIDE}
             onIDEChange={setSelectedIDE}
-            onNext={() => setStep(2)}
-            onSkip={handleSkip}
-          />
-        )}
-
-        {step === 2 && (
-          <AgentDetectionStep
-            agents={agents}
-            onAgentsChange={setAgents}
-            onNext={() => setStep(3)}
-            onSkip={handleSkip}
-          />
-        )}
-
-        {step === 3 && (
-          <AgentAuthStep
-            agents={agents}
-            onAgentsChange={setAgents}
             onNext={handleComplete}
             onBack={() => setStep(2)}
             onSkip={handleSkip}
