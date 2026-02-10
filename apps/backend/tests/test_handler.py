@@ -358,6 +358,79 @@ class TestMatrixSourceAssociationWithSymlinks:
         mock_linker.unlink_source_from_matrix.assert_called_once()
 
 
+class TestMatrixReconcileHandler:
+    """Tests for matrix-reconcile IPC handler."""
+
+    def _create_matrix(self, name="Test Matrix"):
+        """Helper: create a matrix and return its ID."""
+        resp = handle_message({"type": "matrix-create", "data": {"name": name}})
+        assert resp["success"] is True
+        return resp["data"]["matrix"]["id"]
+
+    def _create_source(self, name="my-repo", path="/path/to/repo"):
+        """Helper: create a source and return its ID."""
+        resp = handle_message({"type": "source-create", "data": {"name": name, "path": path}})
+        assert resp["success"] is True
+        return resp["data"]["source"]["id"]
+
+    def test_reconcile_missing_id(self):
+        """Test matrix-reconcile rejects missing ID."""
+        response = handle_message({"type": "matrix-reconcile", "data": {}})
+        assert response["success"] is False
+        assert "required" in response["error"].lower()
+
+    def test_reconcile_not_found(self):
+        """Test matrix-reconcile with non-existent matrix."""
+        response = handle_message({"type": "matrix-reconcile", "data": {"id": "nonexistent"}})
+        assert response["success"] is False
+        assert "not found" in response["error"].lower()
+
+    @patch("src.ipc.handler.MatrixReconciler")
+    @patch("src.ipc.handler.SourceLinker")
+    def test_reconcile_success(self, MockLinker, MockReconciler):
+        """Test successful reconcile returns matrix and report."""
+        from src.matrix.reconciler import ReconcileReport
+
+        mock_reconciler = MagicMock()
+        mock_reconciler.reconcile.return_value = ReconcileReport()
+        MockReconciler.return_value = mock_reconciler
+
+        matrix_id = self._create_matrix()
+        source_id = self._create_source()
+
+        # Add source to matrix
+        mock_linker = MagicMock()
+        MockLinker.return_value = mock_linker
+        handle_message(
+            {
+                "type": "matrix-add-source",
+                "data": {"matrixId": matrix_id, "sourceId": source_id},
+            }
+        )
+
+        response = handle_message({"type": "matrix-reconcile", "data": {"id": matrix_id}})
+        assert response["success"] is True
+        assert "matrix" in response["data"]
+        assert "report" in response["data"]
+        assert response["data"]["report"]["has_repairs"] is False
+        mock_reconciler.reconcile.assert_called_once()
+
+    @patch("src.ipc.handler.MatrixReconciler")
+    def test_reconcile_empty_matrix(self, MockReconciler):
+        """Test reconcile works on matrix with no sources."""
+        from src.matrix.reconciler import ReconcileReport
+
+        mock_reconciler = MagicMock()
+        mock_reconciler.reconcile.return_value = ReconcileReport(workspace_recreated=True)
+        MockReconciler.return_value = mock_reconciler
+
+        matrix_id = self._create_matrix()
+
+        response = handle_message({"type": "matrix-reconcile", "data": {"id": matrix_id}})
+        assert response["success"] is True
+        assert response["data"]["report"]["workspace_recreated"] is True
+
+
 class TestUnknownHandler:
     """Tests for unknown message types."""
 

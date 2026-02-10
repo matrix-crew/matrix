@@ -40,7 +40,6 @@ class MatrixEntity(SQLModel, table=True):
 
     id: str = Field(primary_key=True)
     name: str
-    workspace_path: str
     created_at: str
     updated_at: str
 

@@ -13,7 +13,6 @@ class TestMatrix:
         assert matrix.name == "Test Matrix"
         assert len(matrix.id) == 36  # UUID format
         assert matrix.source_ids == []
-        assert matrix.workspace_path.endswith(f"test-matrix-{matrix.id.split('-')[0]}")
         assert matrix.created_at is not None
         assert matrix.updated_at is not None
 
@@ -39,7 +38,6 @@ class TestMatrix:
             "id": "test-uuid",
             "name": "Test Matrix",
             "source_ids": ["s1", "s2"],
-            "workspace_path": "/home/user/.matrix/test-matrix-test",
             "created_at": "2024-01-01T00:00:00+00:00",
             "updated_at": "2024-01-01T00:00:00+00:00",
         }
@@ -47,7 +45,6 @@ class TestMatrix:
         assert matrix.id == "test-uuid"
         assert matrix.name == "Test Matrix"
         assert matrix.source_ids == ["s1", "s2"]
-        assert matrix.workspace_path == "/home/user/.matrix/test-matrix-test"
 
     def test_matrix_json_round_trip(self):
         """Test Matrix survives JSON round-trip."""
@@ -57,7 +54,6 @@ class TestMatrix:
         assert restored.id == original.id
         assert restored.name == original.name
         assert restored.source_ids == original.source_ids
-        assert restored.workspace_path == original.workspace_path
 
 
 class TestSource:

@@ -86,6 +86,38 @@ class SourceLinker:
             except OSError as e:
                 raise SymlinkError(f"Failed to remove symlink: {e}") from e
 
+    def is_linked(self, source: Source, matrix_workspace_path: str) -> bool:
+        """Check if a source is already symlinked in the matrix workspace.
+
+        Checks both the base sanitized name and the ID-suffixed name.
+
+        Args:
+            source: Source to check.
+            matrix_workspace_path: Absolute path to matrix workspace folder.
+
+        Returns:
+            True if a valid symlink exists pointing to the source path.
+        """
+        workspace = Path(matrix_workspace_path)
+        if not workspace.exists():
+            return False
+
+        link_name = self._sanitize_link_name(source.name)
+        candidates = [
+            workspace / link_name,
+            workspace / f"{link_name}-{source.id[:8]}",
+        ]
+
+        source_path = Path(source.path)
+        for link_path in candidates:
+            if link_path.is_symlink():
+                try:
+                    if link_path.resolve() == source_path.resolve():
+                        return True
+                except OSError:
+                    continue
+        return False
+
     def _sanitize_link_name(self, name: str) -> str:
         """Sanitize source name for use as symlink name."""
         return name.replace("/", "_").replace("\\", "_").replace(":", "_").strip()

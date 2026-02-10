@@ -10,7 +10,13 @@ from datetime import UTC, datetime
 from typing import Any
 
 from src.db import get_engine, get_session, init_db
-from src.matrix import Matrix, MatrixRepository, create_matrix_space, update_matrix_md
+from src.matrix import (
+    Matrix,
+    MatrixReconciler,
+    MatrixRepository,
+    create_matrix_space,
+    update_matrix_md,
+)
 from src.source import (
     CloneError,
     RepositoryCloner,
@@ -92,6 +98,9 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
 
         if message_type == "matrix-remove-source":
             return _handle_matrix_remove_source(message, matrix_repo, source_repo)
+
+        if message_type == "matrix-reconcile":
+            return _handle_matrix_reconcile(message, matrix_repo, source_repo)
 
     # Unknown message type
     return {
@@ -366,6 +375,36 @@ def _handle_matrix_remove_source(
             print(f"Warning: Failed to update MATRIX.md: {e}", file=sys.stderr)
 
     return {"success": True, "data": {"matrix": matrix.to_json()}}
+
+
+def _handle_matrix_reconcile(
+    message: dict[str, Any],
+    matrix_repo: MatrixRepository,
+    source_repo: SourceRepository,
+) -> dict[str, Any]:
+    data = message.get("data", {})
+    matrix_id = data.get("id", "")
+
+    if not matrix_id:
+        return {"success": False, "error": "Matrix ID is required"}
+
+    matrix = matrix_repo.get(matrix_id)
+
+    if matrix is None:
+        return {"success": False, "error": f"Matrix not found: {matrix_id}"}
+
+    sources = _resolve_sources(matrix.source_ids, source_repo)
+
+    reconciler = MatrixReconciler()
+    report = reconciler.reconcile(matrix, sources)
+
+    return {
+        "success": True,
+        "data": {
+            "matrix": matrix.to_json(),
+            "report": report.to_json(),
+        },
+    }
 
 
 def _resolve_sources(source_ids: list[str], source_repo: SourceRepository) -> list[Source]:

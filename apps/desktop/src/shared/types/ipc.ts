@@ -8,6 +8,7 @@
 import type {
   Matrix,
   Source,
+  ReconcileReport,
   MatrixCreateData,
   MatrixIdData,
   MatrixUpdateData,
@@ -290,6 +291,32 @@ export interface MatrixRemoveSourceResponse extends IPCResponse<{ matrix: Matrix
 }
 
 // ============================================================================
+// Matrix Reconciliation Messages
+// ============================================================================
+
+/**
+ * Message to reconcile a Matrix's filesystem state with the database
+ */
+export interface MatrixReconcileMessage extends IPCMessage<MatrixIdData> {
+  type: 'matrix-reconcile';
+  data: MatrixIdData;
+}
+
+/**
+ * Response for matrix-reconcile message
+ */
+export interface MatrixReconcileResponse extends IPCResponse<{
+  matrix: Matrix;
+  report: ReconcileReport;
+}> {
+  success: true;
+  data: {
+    matrix: Matrix;
+    report: ReconcileReport;
+  };
+}
+
+// ============================================================================
 // Union Types
 // ============================================================================
 
@@ -309,7 +336,8 @@ export type IPCMessageTypes =
   | SourceListMessage
   | SourceGetMessage
   | MatrixAddSourceMessage
-  | MatrixRemoveSourceMessage;
+  | MatrixRemoveSourceMessage
+  | MatrixReconcileMessage;
 
 /**
  * Union type of all possible IPC response types
@@ -327,4 +355,5 @@ export type IPCResponseTypes =
   | SourceListResponse
   | SourceGetResponse
   | MatrixAddSourceResponse
-  | MatrixRemoveSourceResponse;
+  | MatrixRemoveSourceResponse
+  | MatrixReconcileResponse;

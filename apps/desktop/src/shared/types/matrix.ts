@@ -136,3 +136,42 @@ export interface MatrixSourceData {
   /** Source UUID */
   sourceId: string;
 }
+
+// ============================================================================
+// Reconciliation Types
+// ============================================================================
+
+/**
+ * Status of a single source reconciliation
+ */
+export type SourceReconcileStatus = 'ok' | 'repaired' | 'skipped' | 'error';
+
+/**
+ * Result of reconciling a single source
+ */
+export interface SourceReconcileResult {
+  /** Source UUID */
+  source_id: string;
+  /** Source name */
+  source_name: string;
+  /** Reconciliation status */
+  status: SourceReconcileStatus;
+  /** Description of action taken */
+  action: string;
+}
+
+/**
+ * Report of a full matrix reconciliation
+ */
+export interface ReconcileReport {
+  /** Whether the workspace folder was recreated */
+  workspace_recreated: boolean;
+  /** Whether MATRIX.md was recreated */
+  matrix_md_recreated: boolean;
+  /** Per-source reconciliation results */
+  sources_reconciled: SourceReconcileResult[];
+  /** Source IDs in matrix but not found in DB */
+  orphaned_source_ids: string[];
+  /** Whether any repairs were made */
+  has_repairs: boolean;
+}

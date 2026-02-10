@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import type {
   Matrix,
   Source,
+  ReconcileReport,
   LocalSourceCreateData,
   RemoteSourceCreateData,
 } from '@shared/types/matrix';
@@ -118,6 +119,29 @@ const MatrixView: React.FC<MatrixViewProps> = ({ matrixId, className }) => {
       }
 
       setIsLoading(false);
+
+      // Background reconcile: repair filesystem if needed (non-blocking)
+      window.api
+        .sendMessage({ type: 'matrix-reconcile', data: { id: matrixId } })
+        .then((reconcileResponse) => {
+          if (reconcileResponse.success && reconcileResponse.data) {
+            const report = (reconcileResponse.data as { report: ReconcileReport }).report;
+            if (report.has_repairs) {
+              console.info('[Matrix] Reconciled filesystem:', report);
+              // Refresh data if repairs were made
+              fetchAllSources().then((sources) => {
+                const matrixSources = sources.filter((s) => loadedMatrix.source_ids.includes(s.id));
+                setSourceListState((prev) => ({
+                  ...prev,
+                  sources: matrixSources,
+                }));
+              });
+            }
+          }
+        })
+        .catch(() => {
+          // Reconciliation is best-effort, don't show errors
+        });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to load matrix';
       setErrorMessage(errorMsg);
