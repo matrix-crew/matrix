@@ -1,6 +1,6 @@
 {
   "name": "@maxtix/desktop",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Maxtix Electron desktop application",
   "homepage": "https://github.com/matrix-crew/matrix",
