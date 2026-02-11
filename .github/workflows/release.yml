@@ -90,6 +90,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes from changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -103,9 +115,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.content }}
           files: artifacts/*
           draft: false
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
