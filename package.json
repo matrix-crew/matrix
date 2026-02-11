@@ -25,6 +25,7 @@
     "package:win": "turbo run package:win",
     "package:linux": "turbo run package:linux",
     "package:publish": "turbo run package:publish",
+    "changelog": "git cliff -o CHANGELOG.md",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "prepare": "husky"
   },
