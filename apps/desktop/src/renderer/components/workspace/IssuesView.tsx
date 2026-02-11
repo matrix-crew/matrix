@@ -89,49 +89,53 @@ const IssuesView: React.FC<IssuesViewProps> = ({
   const {
     status,
     isCheckingStatus,
+    hasCheckedOnce,
     isLoading: isGitHubLoading,
     repositories: ghRepositories,
     issues: ghIssues,
     errors,
     refetchAll,
+    refreshIssues,
   } = useGitHubData({ sourceIds });
 
-  const [state, setState] = React.useState<IssuesViewState>(() => {
-    return (
-      initialState ?? {
-        issues: [],
-        repositories: [],
-        selectedRepositoryId: null,
-        filter: {},
-        selectedIssueId: null,
-        isLoading: true,
-        errorMessage: null,
-        currentUser: '',
-      }
-    );
-  });
+  const [selectedRepositoryId, setSelectedRepositoryId] = React.useState<string | null>(
+    initialState?.selectedRepositoryId ?? null
+  );
+  const [filter, setFilter] = React.useState<IssueFilter>(initialState?.filter ?? {});
+  const [selectedIssueId, setSelectedIssueId] = React.useState<string | null>(
+    initialState?.selectedIssueId ?? null
+  );
 
-  // Sync hook data into view state
-  React.useEffect(() => {
-    setState((prev) => ({
-      ...prev,
-      issues: ghIssues,
-      repositories: ghRepositories,
-      isLoading: isGitHubLoading,
-      errorMessage: errors.length > 0 ? errors.join('; ') : null,
-      currentUser: status.user ?? '',
-    }));
-  }, [ghIssues, ghRepositories, isGitHubLoading, errors, status.user]);
+  const currentUser = status.user ?? '';
 
   /**
-   * Update state and notify parent
+   * Notify parent of state changes
    */
-  const updateState = React.useCallback(
-    (newState: IssuesViewState) => {
-      setState(newState);
-      onStateChange?.(newState);
+  const notifyStateChange = React.useCallback(
+    (overrides: Partial<IssuesViewState>) => {
+      onStateChange?.({
+        issues: ghIssues,
+        repositories: ghRepositories,
+        selectedRepositoryId,
+        filter,
+        selectedIssueId,
+        isLoading: isGitHubLoading,
+        errorMessage: errors.length > 0 ? errors.join('; ') : null,
+        currentUser,
+        ...overrides,
+      });
     },
-    [onStateChange]
+    [
+      onStateChange,
+      ghIssues,
+      ghRepositories,
+      selectedRepositoryId,
+      filter,
+      selectedIssueId,
+      isGitHubLoading,
+      errors,
+      currentUser,
+    ]
   );
 
   /**
@@ -139,17 +143,19 @@ const IssuesView: React.FC<IssuesViewProps> = ({
    */
   const handleSelectRepository = React.useCallback(
     (repositoryId: string | null) => {
-      updateState({
-        ...state,
-        selectedRepositoryId: repositoryId === state.selectedRepositoryId ? null : repositoryId,
-        filter: {
-          ...state.filter,
-          repositoryId:
-            repositoryId === state.selectedRepositoryId ? undefined : (repositoryId ?? undefined),
-        },
-      });
+      const newRepoId = repositoryId === selectedRepositoryId ? null : repositoryId;
+      const newFilter = {
+        ...filter,
+        repositoryId: newRepoId ?? undefined,
+      };
+      setSelectedRepositoryId(newRepoId);
+      setFilter(newFilter);
+      notifyStateChange({ selectedRepositoryId: newRepoId, filter: newFilter });
+
+      // Background refresh: show cached data first, then update with fresh data
+      refreshIssues();
     },
-    [state, updateState]
+    [selectedRepositoryId, filter, notifyStateChange, refreshIssues]
   );
 
   /**
@@ -157,12 +163,11 @@ const IssuesView: React.FC<IssuesViewProps> = ({
    */
   const handleSelectIssue = React.useCallback(
     (issueId: string) => {
-      updateState({
-        ...state,
-        selectedIssueId: state.selectedIssueId === issueId ? null : issueId,
-      });
+      const newId = selectedIssueId === issueId ? null : issueId;
+      setSelectedIssueId(newId);
+      notifyStateChange({ selectedIssueId: newId });
     },
-    [state, updateState]
+    [selectedIssueId, notifyStateChange]
   );
 
   /**
@@ -170,31 +175,23 @@ const IssuesView: React.FC<IssuesViewProps> = ({
    */
   const handleSearchChange = React.useCallback(
     (searchQuery: string) => {
-      updateState({
-        ...state,
-        filter: {
-          ...state.filter,
-          searchQuery: searchQuery || undefined,
-        },
-      });
+      const newFilter = { ...filter, searchQuery: searchQuery || undefined };
+      setFilter(newFilter);
+      notifyStateChange({ filter: newFilter });
     },
-    [state, updateState]
+    [filter, notifyStateChange]
   );
 
   /**
    * Handle filter change
    */
   const handleFilterChange = React.useCallback(
-    (filter: Partial<IssueFilter>) => {
-      updateState({
-        ...state,
-        filter: {
-          ...state.filter,
-          ...filter,
-        },
-      });
+    (partial: Partial<IssueFilter>) => {
+      const newFilter = { ...filter, ...partial };
+      setFilter(newFilter);
+      notifyStateChange({ filter: newFilter });
     },
-    [state, updateState]
+    [filter, notifyStateChange]
   );
 
   /**
@@ -202,23 +199,22 @@ const IssuesView: React.FC<IssuesViewProps> = ({
    */
   const handleStateFilterChange = React.useCallback(
     (issueState: IssueState | undefined) => {
-      updateState({
-        ...state,
-        filter: {
-          ...state.filter,
-          state: state.filter.state === issueState ? undefined : issueState,
-        },
-      });
+      const newFilter = {
+        ...filter,
+        state: filter.state === issueState ? undefined : issueState,
+      };
+      setFilter(newFilter);
+      notifyStateChange({ filter: newFilter });
     },
-    [state, updateState]
+    [filter, notifyStateChange]
   );
 
   /**
    * Get filtered issues
    */
   const filteredIssues = React.useMemo(() => {
-    return filterIssues(state.issues, state.filter, state.currentUser);
-  }, [state.issues, state.filter, state.currentUser]);
+    return filterIssues(ghIssues, filter, currentUser);
+  }, [ghIssues, filter, currentUser]);
 
   /**
    * Get issues grouped by repository
@@ -231,34 +227,35 @@ const IssuesView: React.FC<IssuesViewProps> = ({
    * Get the currently selected issue
    */
   const selectedIssue = React.useMemo(() => {
-    return state.issues.find((i) => i.id === state.selectedIssueId);
-  }, [state.issues, state.selectedIssueId]);
+    return ghIssues.find((i) => i.id === selectedIssueId);
+  }, [ghIssues, selectedIssueId]);
 
   /**
    * Get repository by ID
    */
   const getRepository = React.useCallback(
     (repoId: string): Repository | undefined => {
-      return state.repositories.find((r) => r.id === repoId);
+      return ghRepositories.find((r) => r.id === repoId);
     },
-    [state.repositories]
+    [ghRepositories]
   );
 
   /**
    * Count issues by state
    */
   const issueCountByState = React.useMemo(() => {
-    const openCount = state.issues.filter((i) => i.state === 'open').length;
-    const closedCount = state.issues.filter((i) => i.state === 'closed').length;
+    const openCount = ghIssues.filter((i) => i.state === 'open').length;
+    const closedCount = ghIssues.filter((i) => i.state === 'closed').length;
     return { open: openCount, closed: closedCount };
-  }, [state.issues]);
+  }, [ghIssues]);
 
   // Show gh CLI setup prompt if not installed or not authenticated
-  if (isCheckingStatus || !status.installed || !status.authenticated) {
+  if (!hasCheckedOnce || !status.installed || !status.authenticated) {
     return (
       <GitHubSetupPrompt
         status={status}
         isCheckingStatus={isCheckingStatus}
+        hasCheckedOnce={hasCheckedOnce}
         onRetry={refetchAll}
         className={className}
       />
@@ -276,7 +273,7 @@ const IssuesView: React.FC<IssuesViewProps> = ({
         <div className="border-b border-gray-200 p-3 dark:border-gray-700">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repositories</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {state.repositories.length} repos in matrix
+            {ghRepositories.length} repos in matrix
           </p>
         </div>
 
@@ -287,10 +284,10 @@ const IssuesView: React.FC<IssuesViewProps> = ({
               type="button"
               onClick={() => handleSelectRepository(null)}
               className={cn(
-                repoItemVariants({ selected: state.selectedRepositoryId === null }),
+                repoItemVariants({ selected: selectedRepositoryId === null }),
                 'w-full border text-left'
               )}
-              aria-selected={state.selectedRepositoryId === null}
+              aria-selected={selectedRepositoryId === null}
               role="option"
             >
               <svg
@@ -306,22 +303,21 @@ const IssuesView: React.FC<IssuesViewProps> = ({
                   All Repositories
                 </div>
                 <div className="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {state.issues.length} issues total
+                  {ghIssues.length} issues total
                 </div>
               </div>
             </button>
 
             {/* Individual repos */}
-            {state.repositories.map((repo) => (
+            {ghRepositories.map((repo) => (
               <RepositoryListItem
                 key={repo.id}
                 repository={repo}
-                issueCount={state.issues.filter((i) => i.repository.id === repo.id).length}
+                issueCount={ghIssues.filter((i) => i.repository.id === repo.id).length}
                 openCount={
-                  state.issues.filter((i) => i.repository.id === repo.id && i.state === 'open')
-                    .length
+                  ghIssues.filter((i) => i.repository.id === repo.id && i.state === 'open').length
                 }
-                selected={repo.id === state.selectedRepositoryId}
+                selected={repo.id === selectedRepositoryId}
                 onClick={() => handleSelectRepository(repo.id)}
               />
             ))}
@@ -351,7 +347,7 @@ const IssuesView: React.FC<IssuesViewProps> = ({
                 <input
                   type="text"
                   placeholder="Search issues..."
-                  value={state.filter.searchQuery ?? ''}
+                  value={filter.searchQuery ?? ''}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
                 />
@@ -363,21 +359,21 @@ const IssuesView: React.FC<IssuesViewProps> = ({
               <StateFilterButton
                 label="Open"
                 count={issueCountByState.open}
-                active={state.filter.state === 'open'}
+                active={filter.state === 'open'}
                 onClick={() => handleStateFilterChange('open')}
               />
               <StateFilterButton
                 label="Closed"
                 count={issueCountByState.closed}
-                active={state.filter.state === 'closed'}
+                active={filter.state === 'closed'}
                 onClick={() => handleStateFilterChange('closed')}
               />
               <FilterButton
                 label="Assigned to me"
-                active={state.filter.assignedToMe ?? false}
+                active={filter.assignedToMe ?? false}
                 onClick={() =>
                   handleFilterChange({
-                    assignedToMe: !state.filter.assignedToMe,
+                    assignedToMe: !filter.assignedToMe,
                   })
                 }
               />
@@ -391,7 +387,7 @@ const IssuesView: React.FC<IssuesViewProps> = ({
 
         {/* Issue list */}
         <div className="flex-1 overflow-y-auto p-4">
-          {state.isLoading ? (
+          {isGitHubLoading ? (
             <div className="flex h-48 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
             </div>
@@ -414,14 +410,14 @@ const IssuesView: React.FC<IssuesViewProps> = ({
                 Try adjusting your filters
               </p>
             </div>
-          ) : state.selectedRepositoryId ? (
+          ) : selectedRepositoryId ? (
             // Single repository view
             <div className="space-y-2">
               {filteredIssues.map((issue) => (
                 <IssueCard
                   key={issue.id}
                   issue={issue}
-                  selected={issue.id === state.selectedIssueId}
+                  selected={issue.id === selectedIssueId}
                   showRepository={false}
                   onClick={() => handleSelectIssue(issue.id)}
                 />
@@ -458,7 +454,7 @@ const IssuesView: React.FC<IssuesViewProps> = ({
                         <IssueCard
                           key={issue.id}
                           issue={issue}
-                          selected={issue.id === state.selectedIssueId}
+                          selected={issue.id === selectedIssueId}
                           showRepository={false}
                           onClick={() => handleSelectIssue(issue.id)}
                         />

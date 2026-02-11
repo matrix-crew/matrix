@@ -1,30 +1,46 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { getHostPlatform } from '@/lib/platform';
+import { MiniTerminal } from '@/components/terminal/MiniTerminal';
 import type { GitHubStatus } from '@/hooks/useGitHubData';
 
 export interface GitHubSetupPromptProps {
   status: GitHubStatus;
   isCheckingStatus: boolean;
+  /** Whether the initial status check has completed at least once */
+  hasCheckedOnce: boolean;
   onRetry: () => void;
   className?: string;
 }
 
+/** Platform-specific install commands for gh CLI */
+const INSTALL_COMMANDS: Record<ReturnType<typeof getHostPlatform>, string> = {
+  macos: 'brew install gh',
+  windows: 'scoop install gh',
+  linux: 'sudo apt install gh',
+};
+
 /**
  * Prompt shown when gh CLI is not installed or not authenticated.
- * Provides install/auth instructions inline within the Issues/PRs views.
+ * Provides inline MiniTerminals that auto-execute setup commands.
+ *
+ * During the initial status check, shows a minimal placeholder instead
+ * of a full-page spinner to avoid jarring flashes on every tab switch.
  */
 export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
   status,
   isCheckingStatus,
+  hasCheckedOnce,
   onRetry,
   className,
 }) => {
-  if (isCheckingStatus) {
+  // Initial check hasn't completed yet - show minimal placeholder
+  if (!hasCheckedOnce) {
     return (
       <div className={cn('flex h-full items-center justify-center', className)}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Checking GitHub CLI status...</p>
+        <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Checking GitHub CLI...
         </div>
       </div>
     );
@@ -32,6 +48,9 @@ export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
 
   const isNotInstalled = !status.installed;
   const isNotAuthenticated = status.installed && !status.authenticated;
+
+  const platform = getHostPlatform();
+  const installCommand = INSTALL_COMMANDS[platform];
 
   return (
     <div className={cn('flex h-full items-center justify-center', className)}>
@@ -64,23 +83,16 @@ export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
             : 'You need to authenticate with GitHub CLI to access your repositories.'}
         </p>
 
-        {/* Instructions */}
+        {/* Inline terminal */}
         <div className="mb-6 rounded-lg bg-gray-50 p-4 text-left dark:bg-gray-900">
           {isNotInstalled ? (
             <>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Install gh CLI
               </p>
-              <div className="space-y-2">
-                <CodeBlock label="macOS (Homebrew)">brew install gh</CodeBlock>
-                <CodeBlock label="Windows (Scoop)">scoop install gh</CodeBlock>
-                <CodeBlock label="Linux (apt)">sudo apt install gh</CodeBlock>
-              </div>
+              <MiniTerminal command={installCommand} rows={3} />
               <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Then authenticate:{' '}
-                <code className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-gray-700">
-                  gh auth login
-                </code>
+                Then click <strong>Check Again</strong> to continue with authentication.
               </p>
             </>
           ) : isNotAuthenticated ? (
@@ -88,9 +100,9 @@ export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Authenticate with GitHub
               </p>
-              <CodeBlock label="Run in terminal">gh auth login</CodeBlock>
+              <MiniTerminal command="gh auth login" rows={5} />
               <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Follow the prompts to authenticate with your GitHub account.
+                Follow the prompts above to authenticate with your GitHub account.
               </p>
             </>
           ) : null}
@@ -101,29 +113,26 @@ export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
           <p className="mb-4 text-xs text-red-500 dark:text-red-400">{status.error}</p>
         )}
 
-        {/* Retry button */}
+        {/* Retry button - shows inline spinner when re-checking */}
         <button
           type="button"
           onClick={onRetry}
-          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
+          disabled={isCheckingStatus}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+            isCheckingStatus
+              ? 'cursor-not-allowed bg-blue-400 dark:bg-blue-400'
+              : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
+          )}
         >
-          Check Again
+          {isCheckingStatus && (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          )}
+          {isCheckingStatus ? 'Checking...' : 'Check Again'}
         </button>
       </div>
     </div>
   );
 };
-
-/**
- * Code block helper for displaying terminal commands
- */
-const CodeBlock: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div>
-    <span className="text-[10px] text-gray-400 dark:text-gray-500">{label}</span>
-    <code className="mt-0.5 block rounded bg-gray-200 px-3 py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-      {children}
-    </code>
-  </div>
-);
 
 GitHubSetupPrompt.displayName = 'GitHubSetupPrompt';

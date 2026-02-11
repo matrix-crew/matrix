@@ -86,49 +86,53 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
   const {
     status,
     isCheckingStatus,
+    hasCheckedOnce,
     isLoading: isGitHubLoading,
     repositories: ghRepositories,
     pullRequests: ghPullRequests,
     errors,
     refetchAll,
+    refreshPRs,
   } = useGitHubData({ sourceIds });
 
-  const [state, setState] = React.useState<PRsViewState>(() => {
-    return (
-      initialState ?? {
-        pullRequests: [],
-        repositories: [],
-        selectedRepositoryId: null,
-        filter: {},
-        selectedPRId: null,
-        isLoading: true,
-        errorMessage: null,
-        currentUser: '',
-      }
-    );
-  });
+  const [selectedRepositoryId, setSelectedRepositoryId] = React.useState<string | null>(
+    initialState?.selectedRepositoryId ?? null
+  );
+  const [filter, setFilter] = React.useState<PRFilter>(initialState?.filter ?? {});
+  const [selectedPRId, setSelectedPRId] = React.useState<string | null>(
+    initialState?.selectedPRId ?? null
+  );
 
-  // Sync hook data into view state
-  React.useEffect(() => {
-    setState((prev) => ({
-      ...prev,
-      pullRequests: ghPullRequests,
-      repositories: ghRepositories,
-      isLoading: isGitHubLoading,
-      errorMessage: errors.length > 0 ? errors.join('; ') : null,
-      currentUser: status.user ?? '',
-    }));
-  }, [ghPullRequests, ghRepositories, isGitHubLoading, errors, status.user]);
+  const currentUser = status.user ?? '';
 
   /**
-   * Update state and notify parent
+   * Notify parent of state changes
    */
-  const updateState = React.useCallback(
-    (newState: PRsViewState) => {
-      setState(newState);
-      onStateChange?.(newState);
+  const notifyStateChange = React.useCallback(
+    (overrides: Partial<PRsViewState>) => {
+      onStateChange?.({
+        pullRequests: ghPullRequests,
+        repositories: ghRepositories,
+        selectedRepositoryId,
+        filter,
+        selectedPRId,
+        isLoading: isGitHubLoading,
+        errorMessage: errors.length > 0 ? errors.join('; ') : null,
+        currentUser,
+        ...overrides,
+      });
     },
-    [onStateChange]
+    [
+      onStateChange,
+      ghPullRequests,
+      ghRepositories,
+      selectedRepositoryId,
+      filter,
+      selectedPRId,
+      isGitHubLoading,
+      errors,
+      currentUser,
+    ]
   );
 
   /**
@@ -136,17 +140,19 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
    */
   const handleSelectRepository = React.useCallback(
     (repositoryId: string | null) => {
-      updateState({
-        ...state,
-        selectedRepositoryId: repositoryId === state.selectedRepositoryId ? null : repositoryId,
-        filter: {
-          ...state.filter,
-          repositoryId:
-            repositoryId === state.selectedRepositoryId ? undefined : (repositoryId ?? undefined),
-        },
-      });
+      const newRepoId = repositoryId === selectedRepositoryId ? null : repositoryId;
+      const newFilter = {
+        ...filter,
+        repositoryId: newRepoId ?? undefined,
+      };
+      setSelectedRepositoryId(newRepoId);
+      setFilter(newFilter);
+      notifyStateChange({ selectedRepositoryId: newRepoId, filter: newFilter });
+
+      // Background refresh: show cached data first, then update with fresh data
+      refreshPRs();
     },
-    [state, updateState]
+    [selectedRepositoryId, filter, notifyStateChange, refreshPRs]
   );
 
   /**
@@ -154,12 +160,11 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
    */
   const handleSelectPR = React.useCallback(
     (prId: string) => {
-      updateState({
-        ...state,
-        selectedPRId: state.selectedPRId === prId ? null : prId,
-      });
+      const newId = selectedPRId === prId ? null : prId;
+      setSelectedPRId(newId);
+      notifyStateChange({ selectedPRId: newId });
     },
-    [state, updateState]
+    [selectedPRId, notifyStateChange]
   );
 
   /**
@@ -167,31 +172,23 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
    */
   const handleSearchChange = React.useCallback(
     (searchQuery: string) => {
-      updateState({
-        ...state,
-        filter: {
-          ...state.filter,
-          searchQuery: searchQuery || undefined,
-        },
-      });
+      const newFilter = { ...filter, searchQuery: searchQuery || undefined };
+      setFilter(newFilter);
+      notifyStateChange({ filter: newFilter });
     },
-    [state, updateState]
+    [filter, notifyStateChange]
   );
 
   /**
    * Handle filter change
    */
   const handleFilterChange = React.useCallback(
-    (filter: Partial<PRFilter>) => {
-      updateState({
-        ...state,
-        filter: {
-          ...state.filter,
-          ...filter,
-        },
-      });
+    (partial: Partial<PRFilter>) => {
+      const newFilter = { ...filter, ...partial };
+      setFilter(newFilter);
+      notifyStateChange({ filter: newFilter });
     },
-    [state, updateState]
+    [filter, notifyStateChange]
   );
 
   /**
@@ -199,23 +196,22 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
    */
   const handleStateFilterChange = React.useCallback(
     (prState: PRState | undefined) => {
-      updateState({
-        ...state,
-        filter: {
-          ...state.filter,
-          state: state.filter.state === prState ? undefined : prState,
-        },
-      });
+      const newFilter = {
+        ...filter,
+        state: filter.state === prState ? undefined : prState,
+      };
+      setFilter(newFilter);
+      notifyStateChange({ filter: newFilter });
     },
-    [state, updateState]
+    [filter, notifyStateChange]
   );
 
   /**
    * Get filtered PRs
    */
   const filteredPRs = React.useMemo(() => {
-    return filterPRs(state.pullRequests, state.filter, state.currentUser);
-  }, [state.pullRequests, state.filter, state.currentUser]);
+    return filterPRs(ghPullRequests, filter, currentUser);
+  }, [ghPullRequests, filter, currentUser]);
 
   /**
    * Get PRs grouped by repository
@@ -228,35 +224,36 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
    * Get the currently selected PR
    */
   const selectedPR = React.useMemo(() => {
-    return state.pullRequests.find((pr) => pr.id === state.selectedPRId);
-  }, [state.pullRequests, state.selectedPRId]);
+    return ghPullRequests.find((pr) => pr.id === selectedPRId);
+  }, [ghPullRequests, selectedPRId]);
 
   /**
    * Get repository by ID
    */
   const getRepository = React.useCallback(
     (repoId: string): Repository | undefined => {
-      return state.repositories.find((r) => r.id === repoId);
+      return ghRepositories.find((r) => r.id === repoId);
     },
-    [state.repositories]
+    [ghRepositories]
   );
 
   /**
    * Count PRs by state
    */
   const prCountByState = React.useMemo(() => {
-    const openCount = state.pullRequests.filter((pr) => pr.state === 'open').length;
-    const mergedCount = state.pullRequests.filter((pr) => pr.state === 'merged').length;
-    const closedCount = state.pullRequests.filter((pr) => pr.state === 'closed').length;
+    const openCount = ghPullRequests.filter((pr) => pr.state === 'open').length;
+    const mergedCount = ghPullRequests.filter((pr) => pr.state === 'merged').length;
+    const closedCount = ghPullRequests.filter((pr) => pr.state === 'closed').length;
     return { open: openCount, merged: mergedCount, closed: closedCount };
-  }, [state.pullRequests]);
+  }, [ghPullRequests]);
 
   // Show gh CLI setup prompt if not installed or not authenticated
-  if (isCheckingStatus || !status.installed || !status.authenticated) {
+  if (!hasCheckedOnce || !status.installed || !status.authenticated) {
     return (
       <GitHubSetupPrompt
         status={status}
         isCheckingStatus={isCheckingStatus}
+        hasCheckedOnce={hasCheckedOnce}
         onRetry={refetchAll}
         className={className}
       />
@@ -274,7 +271,7 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
         <div className="border-b border-gray-200 p-3 dark:border-gray-700">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repositories</h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {state.repositories.length} repos in matrix
+            {ghRepositories.length} repos in matrix
           </p>
         </div>
 
@@ -285,10 +282,10 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
               type="button"
               onClick={() => handleSelectRepository(null)}
               className={cn(
-                repoItemVariants({ selected: state.selectedRepositoryId === null }),
+                repoItemVariants({ selected: selectedRepositoryId === null }),
                 'w-full border text-left'
               )}
-              aria-selected={state.selectedRepositoryId === null}
+              aria-selected={selectedRepositoryId === null}
               role="option"
             >
               <svg
@@ -304,23 +301,22 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
                   All Repositories
                 </div>
                 <div className="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {state.pullRequests.length} PRs total
+                  {ghPullRequests.length} PRs total
                 </div>
               </div>
             </button>
 
             {/* Individual repos */}
-            {state.repositories.map((repo) => (
+            {ghRepositories.map((repo) => (
               <RepositoryListItem
                 key={repo.id}
                 repository={repo}
-                prCount={state.pullRequests.filter((pr) => pr.repository.id === repo.id).length}
+                prCount={ghPullRequests.filter((pr) => pr.repository.id === repo.id).length}
                 openCount={
-                  state.pullRequests.filter(
-                    (pr) => pr.repository.id === repo.id && pr.state === 'open'
-                  ).length
+                  ghPullRequests.filter((pr) => pr.repository.id === repo.id && pr.state === 'open')
+                    .length
                 }
-                selected={repo.id === state.selectedRepositoryId}
+                selected={repo.id === selectedRepositoryId}
                 onClick={() => handleSelectRepository(repo.id)}
               />
             ))}
@@ -350,7 +346,7 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
                 <input
                   type="text"
                   placeholder="Search pull requests..."
-                  value={state.filter.searchQuery ?? ''}
+                  value={filter.searchQuery ?? ''}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
                 />
@@ -362,23 +358,23 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
               <StateFilterButton
                 label="Open"
                 count={prCountByState.open}
-                active={state.filter.state === 'open'}
+                active={filter.state === 'open'}
                 onClick={() => handleStateFilterChange('open')}
                 variant="open"
               />
               <StateFilterButton
                 label="Merged"
                 count={prCountByState.merged}
-                active={state.filter.state === 'merged'}
+                active={filter.state === 'merged'}
                 onClick={() => handleStateFilterChange('merged')}
                 variant="merged"
               />
               <FilterButton
                 label="Review requested"
-                active={state.filter.reviewRequestedFromMe ?? false}
+                active={filter.reviewRequestedFromMe ?? false}
                 onClick={() =>
                   handleFilterChange({
-                    reviewRequestedFromMe: !state.filter.reviewRequestedFromMe,
+                    reviewRequestedFromMe: !filter.reviewRequestedFromMe,
                   })
                 }
               />
@@ -392,7 +388,7 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
 
         {/* PR list */}
         <div className="flex-1 overflow-y-auto p-4">
-          {state.isLoading ? (
+          {isGitHubLoading ? (
             <div className="flex h-48 items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
             </div>
@@ -415,14 +411,14 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
                 Try adjusting your filters
               </p>
             </div>
-          ) : state.selectedRepositoryId ? (
+          ) : selectedRepositoryId ? (
             // Single repository view
             <div className="space-y-2">
               {filteredPRs.map((pr) => (
                 <PRCard
                   key={pr.id}
                   pr={pr}
-                  selected={pr.id === state.selectedPRId}
+                  selected={pr.id === selectedPRId}
                   showRepository={false}
                   onClick={() => handleSelectPR(pr.id)}
                 />
@@ -459,7 +455,7 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
                         <PRCard
                           key={pr.id}
                           pr={pr}
-                          selected={pr.id === state.selectedPRId}
+                          selected={pr.id === selectedPRId}
                           showRepository={false}
                           onClick={() => handleSelectPR(pr.id)}
                         />

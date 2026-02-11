@@ -5,7 +5,7 @@
  * matrix sources, and issue/PR fetching with data transformation.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import type {
   Issue,
   PullRequest,
@@ -38,6 +38,8 @@ export interface UseGitHubDataResult {
   // Status
   status: GitHubStatus;
   isCheckingStatus: boolean;
+  /** True after the initial gh CLI status check has completed at least once */
+  hasCheckedOnce: boolean;
   isLoading: boolean;
 
   // Data
@@ -52,6 +54,10 @@ export interface UseGitHubDataResult {
   refetchIssues: () => Promise<void>;
   refetchPRs: () => Promise<void>;
   refetchAll: () => Promise<void>;
+  /** Refresh issues in background (no loading spinner) */
+  refreshIssues: () => Promise<void>;
+  /** Refresh PRs in background (no loading spinner) */
+  refreshPRs: () => Promise<void>;
 }
 
 // ============================================================================
@@ -197,6 +203,94 @@ function transformPR(
 }
 
 // ============================================================================
+// Persistent status cache (localStorage — survives HMR + app restart)
+// ============================================================================
+
+const STATUS_CACHE_KEY = 'matrix:gh-status-cache';
+/** Cache TTL: 5 minutes - within TTL, skip background revalidation entirely */
+const STATUS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface StatusCacheEntry {
+  status: GitHubStatus;
+  timestamp: number;
+}
+
+/** Read cache synchronously from localStorage */
+function readStatusCache(): StatusCacheEntry | null {
+  try {
+    const raw = localStorage.getItem(STATUS_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StatusCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+/** Write cache to localStorage */
+function writeStatusCache(entry: StatusCacheEntry): void {
+  try {
+    localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    // Storage full or unavailable — ignore
+  }
+}
+
+// ============================================================================
+// Persistent data cache (issues, PRs, repos — keyed by sourceIds)
+// ============================================================================
+
+/** Build a cache key from sorted source IDs */
+function dataCacheKey(sourceIds: string[], suffix: string): string {
+  const sorted = [...sourceIds].sort().join(',');
+  return `matrix:gh-${suffix}:${sorted}`;
+}
+
+interface DataCacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+function readDataCache<T>(key: string): DataCacheEntry<T> | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as DataCacheEntry<T>;
+  } catch {
+    return null;
+  }
+}
+
+function writeDataCache<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch {
+    // Storage full or unavailable — ignore
+  }
+}
+
+/** Revive Date fields that were serialized as ISO strings by JSON.stringify */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function reviveIssue(raw: any): Issue {
+  return {
+    ...raw,
+    createdAt: new Date(raw.createdAt),
+    updatedAt: new Date(raw.updatedAt),
+    closedAt: raw.closedAt ? new Date(raw.closedAt) : undefined,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function revivePR(raw: any): PullRequest {
+  return {
+    ...raw,
+    createdAt: new Date(raw.createdAt),
+    updatedAt: new Date(raw.updatedAt),
+    mergedAt: raw.mergedAt ? new Date(raw.mergedAt) : undefined,
+    closedAt: raw.closedAt ? new Date(raw.closedAt) : undefined,
+  };
+}
+
+// ============================================================================
 // Hook
 // ============================================================================
 
@@ -204,13 +298,18 @@ export function useGitHubData({
   sourceIds,
   enabled = true,
 }: UseGitHubDataOptions): UseGitHubDataResult {
-  const [status, setStatus] = useState<GitHubStatus>({
-    installed: false,
-    authenticated: false,
-    user: null,
-    error: null,
-  });
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const initialCache = readStatusCache();
+
+  const [status, setStatus] = useState<GitHubStatus>(
+    initialCache?.status ?? {
+      installed: false,
+      authenticated: false,
+      user: null,
+      error: null,
+    }
+  );
+  const [isCheckingStatus, setIsCheckingStatus] = useState(initialCache === null);
+  const [hasCheckedOnce, setHasCheckedOnce] = useState(initialCache !== null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -223,9 +322,8 @@ export function useGitHubData({
   // Track detected repos for fetching
   const detectedReposRef = useRef<GitHubRepoDetection[]>([]);
 
-  // ---- Check gh CLI status ----
-  const checkStatus = useCallback(async () => {
-    setIsCheckingStatus(true);
+  // ---- Fetch status from backend and update cache ----
+  const fetchStatus = useCallback(async (): Promise<GitHubStatus> => {
     try {
       const response = await window.api.sendMessage({ type: 'github-check' });
       if (response.success && response.data) {
@@ -235,24 +333,44 @@ export function useGitHubData({
           user: string | null;
           error: string | null;
         };
-        setStatus({
+        return {
           installed: d.installed,
           authenticated: d.authenticated,
           user: d.user,
           error: d.error,
-        });
+        };
       }
     } catch {
-      setStatus({
-        installed: false,
-        authenticated: false,
-        user: null,
-        error: 'Failed to check gh CLI status',
-      });
+      // fall through
+    }
+    return {
+      installed: false,
+      authenticated: false,
+      user: null,
+      error: 'Failed to check gh CLI status',
+    };
+  }, []);
+
+  // ---- Foreground check (used by "Check Again" button) ----
+  const checkStatus = useCallback(async () => {
+    setIsCheckingStatus(true);
+    try {
+      const result = await fetchStatus();
+      writeStatusCache({ status: result, timestamp: Date.now() });
+      setStatus(result);
     } finally {
       setIsCheckingStatus(false);
+      setHasCheckedOnce(true);
     }
-  }, []);
+  }, [fetchStatus]);
+
+  // ---- Background revalidate (no loading indicator) ----
+  const revalidateStatus = useCallback(async () => {
+    const result = await fetchStatus();
+    writeStatusCache({ status: result, timestamp: Date.now() });
+    setStatus(result);
+    setHasCheckedOnce(true);
+  }, [fetchStatus]);
 
   // ---- Detect repos from sources ----
   const detectRepos = useCallback(async () => {
@@ -277,6 +395,7 @@ export function useGitHubData({
         const map = buildRepoMap(detections);
         repoMapRef.current = map;
         setRepositories(Array.from(map.values()));
+        writeDataCache(dataCacheKey(sourceIds, 'repos'), detections);
       }
     } catch {
       setErrors((prev) => [...prev, 'Failed to detect GitHub repositories']);
@@ -307,6 +426,7 @@ export function useGitHubData({
           transformIssue(raw, repoMapRef.current)
         );
         setIssues(transformed);
+        writeDataCache(dataCacheKey(sourceIds, 'issues'), transformed);
         if (data.errors) {
           setErrors((prev) => [...prev, ...data.errors!]);
         }
@@ -314,7 +434,7 @@ export function useGitHubData({
     } catch {
       setErrors((prev) => [...prev, 'Failed to fetch issues']);
     }
-  }, []);
+  }, [sourceIds]);
 
   // ---- Fetch PRs ----
   const fetchPRs = useCallback(async () => {
@@ -338,6 +458,7 @@ export function useGitHubData({
         };
         const transformed = (data.prs ?? []).map((raw) => transformPR(raw, repoMapRef.current));
         setPullRequests(transformed);
+        writeDataCache(dataCacheKey(sourceIds, 'prs'), transformed);
         if (data.errors) {
           setErrors((prev) => [...prev, ...data.errors!]);
         }
@@ -345,20 +466,25 @@ export function useGitHubData({
     } catch {
       setErrors((prev) => [...prev, 'Failed to fetch pull requests']);
     }
-  }, []);
+  }, [sourceIds]);
 
   // ---- Full data load pipeline ----
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    setErrors([]);
-    try {
-      await detectRepos();
-      // fetchIssues/fetchPRs use detectedReposRef set by detectRepos
-      await Promise.all([fetchIssues(), fetchPRs()]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [detectRepos, fetchIssues, fetchPRs]);
+  const loadData = useCallback(
+    async (background: boolean) => {
+      if (!background) {
+        setIsLoading(true);
+      }
+      setErrors([]);
+      try {
+        await detectRepos();
+        // fetchIssues/fetchPRs use detectedReposRef set by detectRepos
+        await Promise.all([fetchIssues(), fetchPRs()]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [detectRepos, fetchIssues, fetchPRs]
+  );
 
   // ---- Refetch actions ----
   const refetchIssues = useCallback(async () => {
@@ -381,29 +507,82 @@ export function useGitHubData({
     }
   }, [fetchPRs]);
 
+  // Background refresh (no loading spinner — keeps showing cached data)
+  const refreshIssues = useCallback(async () => {
+    await fetchIssues();
+  }, [fetchIssues]);
+
+  const refreshPRs = useCallback(async () => {
+    await fetchPRs();
+  }, [fetchPRs]);
+
   const refetchAll = useCallback(async () => {
     await checkStatus();
-    await loadData();
+    await loadData(false);
   }, [checkStatus, loadData]);
 
   // ---- Effects ----
-  // Check status on mount
+  // Stale-while-revalidate: use cache immediately, refresh in background
   useEffect(() => {
-    if (enabled) {
-      checkStatus();
-    }
-  }, [enabled, checkStatus]);
+    if (!enabled) return;
 
-  // Load data when authenticated and sourceIds change
-  useEffect(() => {
-    if (enabled && status.authenticated && sourceIds.length > 0) {
-      loadData();
+    const cached = readStatusCache();
+    if (cached) {
+      // Show cached status immediately (already set via useState initializer)
+      setStatus(cached.status);
+      setIsCheckingStatus(false);
+      setHasCheckedOnce(true);
+
+      // Background revalidate if cache is stale
+      if (Date.now() - cached.timestamp >= STATUS_CACHE_TTL_MS) {
+        revalidateStatus();
+      }
+      return;
     }
+
+    // No cache at all - first-ever check (foreground with loading indicator)
+    checkStatus();
+  }, [enabled, checkStatus, revalidateStatus]);
+
+  // Sync cache restore: runs BEFORE paint so the user never sees stale data
+  // from a previous repo when switching matrices
+  useLayoutEffect(() => {
+    if (!enabled || !status.authenticated || sourceIds.length === 0) {
+      setIssues([]);
+      setPullRequests([]);
+      setRepositories([]);
+      return;
+    }
+
+    const cachedRepos = readDataCache<GitHubRepoDetection[]>(dataCacheKey(sourceIds, 'repos'));
+    const cachedIssues = readDataCache<Issue[]>(dataCacheKey(sourceIds, 'issues'));
+    const cachedPRs = readDataCache<PullRequest[]>(dataCacheKey(sourceIds, 'prs'));
+
+    if (cachedRepos) {
+      detectedReposRef.current = cachedRepos.data;
+      const map = buildRepoMap(cachedRepos.data);
+      repoMapRef.current = map;
+      setRepositories(Array.from(map.values()));
+    }
+    if (cachedIssues) setIssues(cachedIssues.data.map(reviveIssue));
+    if (cachedPRs) setPullRequests(cachedPRs.data.map(revivePR));
+  }, [enabled, status.authenticated, sourceIds]);
+
+  // Async background refresh: fetch fresh data after cache is shown
+  useEffect(() => {
+    if (!enabled || !status.authenticated || sourceIds.length === 0) return;
+
+    const hasCachedData =
+      readDataCache(dataCacheKey(sourceIds, 'issues')) !== null ||
+      readDataCache(dataCacheKey(sourceIds, 'prs')) !== null;
+
+    loadData(hasCachedData);
   }, [enabled, status.authenticated, sourceIds, loadData]);
 
   return {
     status,
     isCheckingStatus,
+    hasCheckedOnce,
     isLoading,
     repositories,
     issues,
@@ -412,5 +591,7 @@ export function useGitHubData({
     refetchIssues,
     refetchPRs,
     refetchAll,
+    refreshIssues,
+    refreshPRs,
   };
 }

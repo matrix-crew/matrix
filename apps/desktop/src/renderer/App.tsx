@@ -25,26 +25,60 @@ import type { ShortcutActionId } from '@shared/types/shortcuts';
  * New layout: MatrixTabBar on top, ContextSidebar + main content in flex row.
  * Each matrix is a tab; selecting a tab shows its contextual sidebar.
  */
+// ── Persistent matrices cache (localStorage — survives HMR + app restart) ──
+const MATRICES_CACHE_KEY = 'matrix:matrices-cache';
+
+interface MatricesCacheEntry {
+  matrices: Matrix[];
+  timestamp: number;
+}
+
+function readMatricesCache(): MatricesCacheEntry | null {
+  try {
+    const raw = localStorage.getItem(MATRICES_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as MatricesCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function writeMatricesCache(entry: MatricesCacheEntry): void {
+  try {
+    localStorage.setItem(MATRICES_CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    // Storage full or unavailable — ignore
+  }
+}
+
 const App: React.FC = () => {
+  const initialMatricesCache = readMatricesCache();
+
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
-  const [matrices, setMatrices] = useState<Matrix[]>([]);
+  const [matrices, setMatrices] = useState<Matrix[]>(initialMatricesCache?.matrices ?? []);
   const [activeMatrixId, setActiveMatrixId] = useState<string | null>(null);
   const [isHomeActive, setIsHomeActive] = useState(false);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [showDevTools, setShowDevTools] = useState(false);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(initialMatricesCache === null);
 
   /**
-   * Fetch matrices from backend and optionally navigate to Home
+   * Fetch matrices from backend and optionally navigate to Home.
+   * Uses stale-while-revalidate: if cache exists, skip the loading screen
+   * and refresh in the background.
    */
   const fetchMatrices = useCallback(async (navigateToHome = false) => {
-    try {
+    // Only show full-screen loading on the very first load (no cache)
+    if (!readMatricesCache()) {
       setIsLoading(true);
+    }
+    try {
       const response = await window.api.sendMessage({ type: 'matrix-list' });
       if (response.success && response.data) {
         const loaded = (response.data as { matrices: Matrix[] }).matrices || [];
+        writeMatricesCache({ matrices: loaded, timestamp: Date.now() });
         setMatrices(loaded);
         if (navigateToHome && loaded.length > 0) {
           setIsHomeActive(true);
@@ -68,6 +102,11 @@ const App: React.FC = () => {
         setShowOnboarding(needsOnboarding);
 
         if (!needsOnboarding) {
+          // If we have cached matrices, navigate immediately and refresh in background
+          const cached = readMatricesCache();
+          if (cached && cached.matrices.length > 0) {
+            setIsHomeActive(true);
+          }
           fetchMatrices(true);
         }
       } catch {
@@ -333,11 +372,17 @@ const App: React.FC = () => {
         );
       case 'pr':
         return (
-          <PRsView sourceIds={matrices.find((m) => m.id === activeMatrixId)?.source_ids ?? []} />
+          <PRsView
+            key={activeMatrixId}
+            sourceIds={matrices.find((m) => m.id === activeMatrixId)?.source_ids ?? []}
+          />
         );
       case 'issue':
         return (
-          <IssuesView sourceIds={matrices.find((m) => m.id === activeMatrixId)?.source_ids ?? []} />
+          <IssuesView
+            key={activeMatrixId}
+            sourceIds={matrices.find((m) => m.id === activeMatrixId)?.source_ids ?? []}
+          />
         );
       default:
         return <KanbanBoard />;
