@@ -39,6 +39,13 @@ export interface ElectronAPI {
   checkCommand: (command: string) => Promise<{ exists: boolean; path?: string; version?: string }>;
 
   /**
+   * Execute a whitelisted command and return output + exit code
+   */
+  execCommand: (
+    command: string
+  ) => Promise<{ success: boolean; stdout: string; stderr: string; exitCode: number }>;
+
+  /**
    * Validate that a file path points to an executable
    */
   validateExecutable: (

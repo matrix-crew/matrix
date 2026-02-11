@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Copy, Check, Terminal } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AgentConfig, AgentState } from './types';
 import { AGENT_CONFIGS } from './types';
+import { MiniTerminal } from '@/components/ui/MiniTerminal';
 
 interface AgentAuthStepProps {
   agents: Record<string, AgentState>;
@@ -111,13 +112,6 @@ const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
   onAuthMethodChange,
 }) => {
   const [showKey, setShowKey] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(config.authCommand);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised p-4">
@@ -164,18 +158,8 @@ const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
         <div className="h-px flex-1 bg-border-subtle" />
       </div>
 
-      {/* CLI auth command */}
-      <div className="flex items-center gap-2 rounded-lg bg-base-800 px-3 py-2">
-        <Terminal className="size-3.5 flex-shrink-0 text-text-muted" />
-        <code className="flex-1 font-mono text-xs text-text-secondary">{config.authCommand}</code>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="flex-shrink-0 text-text-muted transition-colors hover:text-text-secondary"
-        >
-          {copied ? <Check className="size-3.5 text-accent-lime" /> : <Copy className="size-3.5" />}
-        </button>
-      </div>
+      {/* CLI auth command (MiniTerminal) */}
+      <MiniTerminal command={config.authCommand} />
     </div>
   );
 };
