@@ -91,6 +91,41 @@ export async function checkCommand(command: string): Promise<CommandCheckResult>
   }
 }
 
+// ── Command Execution (for MiniTerminal) ────────────────────────────────
+
+export interface CommandExecResult {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+}
+
+/**
+ * Execute a whitelisted command and return its output.
+ * Used by the MiniTerminal component for read-only command execution.
+ */
+export async function execCommand(command: string): Promise<CommandExecResult> {
+  // Extract the base command (first word) for whitelist validation
+  const baseCommand = command.split(/\s+/)[0];
+  if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
+    return { success: false, stdout: '', stderr: 'Command not allowed', exitCode: 1 };
+  }
+
+  return new Promise((resolve) => {
+    exec(command, { timeout: 10000, shell: getShell() }, (error, stdout, stderr) => {
+      const exitCode = error
+        ? ((error as NodeJS.ErrnoException & { status?: number }).status ?? 1)
+        : 0;
+      resolve({
+        success: exitCode === 0,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+        exitCode,
+      });
+    });
+  });
+}
+
 export interface ExecutableValidationResult {
   valid: boolean;
   version?: string;
@@ -708,6 +743,11 @@ export function setupSystemCheckHandlers(): void {
   // Check if a CLI command exists and get version info
   ipcMain.handle('system:check-command', async (_event, command: string) => {
     return checkCommand(command);
+  });
+
+  // Execute a whitelisted command and return output (for MiniTerminal)
+  ipcMain.handle('system:exec-command', async (_event, command: string) => {
+    return execCommand(command);
   });
 
   // Validate an executable file path

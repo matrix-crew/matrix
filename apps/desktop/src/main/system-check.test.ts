@@ -88,6 +88,7 @@ import {
   IDE_CANDIDATES,
   getShell,
   checkCommand,
+  execCommand,
   validateExecutablePath,
   pathExists,
   detectMacOSTerminals,
@@ -272,6 +273,87 @@ describe('system-check', () => {
       execFails('not found');
       const result = await checkCommand('git');
       expect(result).toEqual({ exists: false });
+    });
+  });
+
+  // ── execCommand ────────────────────────────────────────────────
+
+  describe('execCommand', () => {
+    it('rejects commands with base not in whitelist', async () => {
+      const result = await execCommand('rm -rf /');
+      expect(result).toEqual({
+        success: false,
+        stdout: '',
+        stderr: 'Command not allowed',
+        exitCode: 1,
+      });
+      expect(mockExec).not.toHaveBeenCalled();
+    });
+
+    it('rejects commands with special characters', async () => {
+      const result = await execCommand('git; rm -rf /');
+      expect(result).toEqual({
+        success: false,
+        stdout: '',
+        stderr: 'Command not allowed',
+        exitCode: 1,
+      });
+    });
+
+    it('rejects commands with pipe characters', async () => {
+      const result = await execCommand('git log | cat');
+      expect(result).toEqual({
+        success: false,
+        stdout: '',
+        stderr: 'Command not allowed',
+        exitCode: 1,
+      });
+    });
+
+    it('executes whitelisted command and returns output', async () => {
+      mockExec.mockImplementation((_cmd: string, _opts: unknown, cb: ExecCallback) => {
+        cb(null, 'uv 0.5.11', '');
+      });
+
+      const result = await execCommand('uv --version');
+      expect(result).toEqual({
+        success: true,
+        stdout: 'uv 0.5.11',
+        stderr: '',
+        exitCode: 0,
+      });
+    });
+
+    it('captures stderr alongside stdout', async () => {
+      mockExec.mockImplementation((_cmd: string, _opts: unknown, cb: ExecCallback) => {
+        cb(null, 'output', 'warning: something');
+      });
+
+      const result = await execCommand('git --version');
+      expect(result.stdout).toBe('output');
+      expect(result.stderr).toBe('warning: something');
+    });
+
+    it('returns correct exit code on failure', async () => {
+      const error = new Error('not found') as NodeJS.ErrnoException & { status?: number };
+      error.status = 127;
+      mockExec.mockImplementation((_cmd: string, _opts: unknown, cb: ExecCallback) => {
+        cb(error, '', 'command not found');
+      });
+
+      const result = await execCommand('claude --version');
+      expect(result.success).toBe(false);
+      expect(result.exitCode).toBe(127);
+      expect(result.stderr).toBe('command not found');
+    });
+
+    it('defaults exit code to 1 when error has no status', async () => {
+      mockExec.mockImplementation((_cmd: string, _opts: unknown, cb: ExecCallback) => {
+        cb(new Error('generic error'), '', '');
+      });
+
+      const result = await execCommand('node --version');
+      expect(result.exitCode).toBe(1);
     });
   });
 
@@ -830,6 +912,7 @@ describe('system-check', () => {
 
       const registeredChannels = mockHandle.mock.calls.map((call: unknown[]) => call[0] as string);
       expect(registeredChannels).toContain('system:check-command');
+      expect(registeredChannels).toContain('system:exec-command');
       expect(registeredChannels).toContain('system:validate-executable');
       expect(registeredChannels).toContain('system:detect-terminals');
       expect(registeredChannels).toContain('system:detect-shells');

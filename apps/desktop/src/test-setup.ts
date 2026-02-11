@@ -14,6 +14,7 @@ if (typeof window !== 'undefined') {
     on: vi.fn(),
     off: vi.fn(),
     checkCommand: vi.fn().mockResolvedValue({ exists: false }),
+    execCommand: vi.fn().mockResolvedValue({ success: true, stdout: '', stderr: '', exitCode: 0 }),
     detectTerminals: vi.fn().mockResolvedValue([]),
     detectShells: vi.fn().mockResolvedValue([]),
     detectIDEs: vi.fn().mockResolvedValue([]),

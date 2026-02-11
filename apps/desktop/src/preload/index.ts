@@ -55,6 +55,17 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Execute a whitelisted command and return output + exit code
+   * @param command - Command to execute (e.g., "uv --version")
+   * @returns Execution result with stdout, stderr, and exit code
+   */
+  execCommand: (
+    command: string
+  ): Promise<{ success: boolean; stdout: string; stderr: string; exitCode: number }> => {
+    return ipcRenderer.invoke('system:exec-command', command);
+  },
+
+  /**
    * Validate that a file path points to an executable
    * @param filePath - Absolute path to check
    * @returns Validation result with optional version info
