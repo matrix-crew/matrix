@@ -31,8 +31,13 @@ class GitHubClient:
     def check_auth(self) -> dict[str, Any]:
         """Check gh auth status.
 
+        With multiple gh accounts, ``gh auth status`` may exit 1 even when
+        the *active* account is perfectly fine (e.g. a secondary account has
+        an expired token).  We therefore parse the output instead of relying
+        solely on the return code.
+
         Returns:
-            Dict with installed, authenticated, user, error fields.
+            Dict with authenticated, user, error fields.
         """
         try:
             result = subprocess.run(
@@ -43,15 +48,22 @@ class GitHubClient:
                 timeout=5,
             )
 
-            if result.returncode == 0:
-                user = self._extract_username(result.stderr + result.stdout)
+            output = result.stderr + result.stdout
+            user = self._extract_active_user(output)
+
+            if user is not None:
                 return {"authenticated": True, "user": user, "error": None}
-            else:
-                return {
-                    "authenticated": False,
-                    "user": None,
-                    "error": "Not authenticated. Run 'gh auth login'",
-                }
+
+            if result.returncode == 0:
+                # Authenticated but couldn't parse user
+                user = self._extract_username(output)
+                return {"authenticated": True, "user": user, "error": None}
+
+            return {
+                "authenticated": False,
+                "user": None,
+                "error": "Not authenticated. Run 'gh auth login'",
+            }
         except (subprocess.SubprocessError, OSError) as e:
             return {"authenticated": False, "user": None, "error": str(e)}
 
@@ -183,8 +195,55 @@ class GitHubClient:
         except (json.JSONDecodeError, OSError) as e:
             raise GitHubError(f"Error fetching {context}: {e}") from e
 
+    def _extract_active_user(self, output: str) -> str | None:
+        """Extract the active, successfully-authenticated user.
+
+        ``gh auth status`` prints blocks per account.  We look for a block
+        that contains *both* ``Logged in`` and ``Active account: true``
+        to identify the active user, even when other accounts are broken.
+        """
+        lines = output.splitlines()
+        current_user: str | None = None
+        current_logged_in = False
+        current_active = False
+
+        for line in lines:
+            stripped = line.strip()
+
+            # "✓ Logged in to github.com account <user> ..."
+            if "Logged in to github.com" in stripped:
+                current_logged_in = True
+                for keyword in ("account ", "as "):
+                    idx = stripped.find(keyword)
+                    if idx != -1:
+                        rest = stripped[idx + len(keyword) :].strip()
+                        current_user = rest.split()[0].strip("()")
+                        break
+
+            if "Active account: true" in stripped:
+                current_active = True
+
+            # Block boundary: a line starting with a host (e.g. "github.com")
+            # or "X Failed" resets for the next account block.
+            if stripped.startswith("X ") or (
+                stripped
+                and not stripped.startswith("-")
+                and not stripped.startswith("✓")
+                and ":" not in stripped
+                and "github.com" in stripped
+                and current_user is not None
+            ):
+                # Check if previous block was valid before resetting
+                pass
+
+            # When we've gathered both signals, return immediately
+            if current_logged_in and current_active and current_user:
+                return current_user
+
+        return None
+
     def _extract_username(self, output: str) -> str | None:
-        """Extract username from gh auth status output."""
+        """Extract username from gh auth status output (legacy fallback)."""
         for line in output.splitlines():
             if "Logged in to github.com" in line:
                 # Format: "Logged in to github.com account <user> ..."

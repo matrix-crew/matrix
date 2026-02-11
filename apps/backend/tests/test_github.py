@@ -169,12 +169,39 @@ class TestGitHubClient:
         mock_run.return_value = MagicMock(
             returncode=0,
             stdout="",
-            stderr="Logged in to github.com account octocat",
+            stderr=(
+                "github.com\n"
+                "  ✓ Logged in to github.com account octocat (keyring)\n"
+                "  - Active account: true\n"
+            ),
         )
         client = GitHubClient()
         result = client.check_auth()
         assert result["authenticated"] is True
         assert result["user"] == "octocat"
+        assert result["error"] is None
+
+    @patch("src.github.client.subprocess.run")
+    def test_check_auth_multi_account_active_ok(self, mock_run):
+        """Active account is valid even when another account has expired token."""
+        mock_run.return_value = MagicMock(
+            returncode=1,
+            stdout="",
+            stderr=(
+                "github.com\n"
+                "  ✓ Logged in to github.com account activeuser (keyring)\n"
+                "  - Active account: true\n"
+                "  - Git operations protocol: https\n"
+                "\n"
+                "  X Failed to log in to github.com account expireduser (default)\n"
+                "  - Active account: false\n"
+                "  - The token in default is invalid.\n"
+            ),
+        )
+        client = GitHubClient()
+        result = client.check_auth()
+        assert result["authenticated"] is True
+        assert result["user"] == "activeuser"
         assert result["error"] is None
 
     @patch("src.github.client.subprocess.run")
@@ -259,3 +286,31 @@ class TestGitHubClient:
         client = GitHubClient()
         output = "Not logged in\n"
         assert client._extract_username(output) is None
+
+    def test_extract_active_user_single_account(self):
+        client = GitHubClient()
+        output = (
+            "github.com\n"
+            "  ✓ Logged in to github.com account octocat (keyring)\n"
+            "  - Active account: true\n"
+        )
+        assert client._extract_active_user(output) == "octocat"
+
+    def test_extract_active_user_multi_account(self):
+        client = GitHubClient()
+        output = (
+            "github.com\n"
+            "  ✓ Logged in to github.com account activeuser (keyring)\n"
+            "  - Active account: true\n"
+            "  - Git operations protocol: https\n"
+            "\n"
+            "  X Failed to log in to github.com account expireduser (default)\n"
+            "  - Active account: false\n"
+            "  - The token in default is invalid.\n"
+        )
+        assert client._extract_active_user(output) == "activeuser"
+
+    def test_extract_active_user_no_active(self):
+        client = GitHubClient()
+        output = "You are not logged into any GitHub hosts.\n"
+        assert client._extract_active_user(output) is None
