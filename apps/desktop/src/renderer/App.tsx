@@ -468,7 +468,12 @@ const App: React.FC = () => {
         <div className="relative flex-1 overflow-hidden">
           {/* Regular content (non-terminal views, or Home view) */}
           {(isHomeActive || activeContextItem !== 'console') && (
-            <main className={cn('h-full overflow-auto animate-fade-in', showSidebar && 'p-4')}>
+            <main
+              className={cn(
+                'h-full overflow-auto animate-fade-in',
+                showSidebar && activeContextItem !== 'issue' && activeContextItem !== 'pr' && 'p-4'
+              )}
+            >
               {renderContent()}
             </main>
           )}

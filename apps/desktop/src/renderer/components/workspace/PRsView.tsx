@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import {
   type PRsViewState,
@@ -9,7 +8,6 @@ import {
   type PRState,
   filterPRs,
   groupPRsByRepository,
-  getPRStateBgClass,
   getPRCIStatusBgClass,
   getPRCIStatusText,
   getPRReviewSummary,
@@ -18,70 +16,13 @@ import {
 import { useGitHubData } from '@/hooks/useGitHubData';
 import { GitHubSetupPrompt } from './GitHubSetupPrompt';
 
-/**
- * Repository list item variants using class-variance-authority
- */
-const repoItemVariants = cva(
-  'flex items-center gap-3 rounded-lg p-3 transition-all cursor-pointer',
-  {
-    variants: {
-      selected: {
-        true: 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700',
-        false:
-          'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750',
-      },
-    },
-    defaultVariants: {
-      selected: false,
-    },
-  }
-);
-
-/**
- * PR card variants using class-variance-authority
- */
-const prCardVariants = cva('rounded-lg border p-3 transition-all cursor-pointer', {
-  variants: {
-    selected: {
-      true: 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700',
-      false:
-        'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800',
-    },
-    state: {
-      open: '',
-      merged: 'opacity-75',
-      closed: 'opacity-60',
-    },
-  },
-  defaultVariants: {
-    selected: false,
-    state: 'open',
-  },
-});
-
-export interface PRsViewProps extends VariantProps<typeof repoItemVariants> {
-  /** Source IDs from the active matrix (used to detect GitHub repos) */
+export interface PRsViewProps {
   sourceIds: string[];
-  /** Initial state for the PRs view */
   initialState?: PRsViewState;
-  /** Callback when state changes */
   onStateChange?: (state: PRsViewState) => void;
-  /** Additional CSS classes for the view container */
   className?: string;
 }
 
-/**
- * PRsView component
- *
- * Aggregated pull requests workflow view across matrix repositories.
- * Displays consolidated PR view from all repos in the matrix with
- * filtering, search, and PR status visualization.
- *
- * @example
- * <PRsView
- *   onStateChange={(state) => saveToBackend(state)}
- * />
- */
 const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChange, className }) => {
   const {
     status,
@@ -98,16 +39,13 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
   const [selectedRepositoryId, setSelectedRepositoryId] = React.useState<string | null>(
     initialState?.selectedRepositoryId ?? null
   );
-  const [filter, setFilter] = React.useState<PRFilter>(initialState?.filter ?? {});
+  const [filter, setFilter] = React.useState<PRFilter>(initialState?.filter ?? { state: 'open' });
   const [selectedPRId, setSelectedPRId] = React.useState<string | null>(
     initialState?.selectedPRId ?? null
   );
 
   const currentUser = status.user ?? '';
 
-  /**
-   * Notify parent of state changes
-   */
   const notifyStateChange = React.useCallback(
     (overrides: Partial<PRsViewState>) => {
       onStateChange?.({
@@ -135,29 +73,18 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     ]
   );
 
-  /**
-   * Handle repository selection
-   */
   const handleSelectRepository = React.useCallback(
     (repositoryId: string | null) => {
       const newRepoId = repositoryId === selectedRepositoryId ? null : repositoryId;
-      const newFilter = {
-        ...filter,
-        repositoryId: newRepoId ?? undefined,
-      };
+      const newFilter = { ...filter, repositoryId: newRepoId ?? undefined };
       setSelectedRepositoryId(newRepoId);
       setFilter(newFilter);
       notifyStateChange({ selectedRepositoryId: newRepoId, filter: newFilter });
-
-      // Background refresh: show cached data first, then update with fresh data
       refreshPRs();
     },
     [selectedRepositoryId, filter, notifyStateChange, refreshPRs]
   );
 
-  /**
-   * Handle PR selection
-   */
   const handleSelectPR = React.useCallback(
     (prId: string) => {
       const newId = selectedPRId === prId ? null : prId;
@@ -167,9 +94,6 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     [selectedPRId, notifyStateChange]
   );
 
-  /**
-   * Handle search query change
-   */
   const handleSearchChange = React.useCallback(
     (searchQuery: string) => {
       const newFilter = { ...filter, searchQuery: searchQuery || undefined };
@@ -179,9 +103,6 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     [filter, notifyStateChange]
   );
 
-  /**
-   * Handle filter change
-   */
   const handleFilterChange = React.useCallback(
     (partial: Partial<PRFilter>) => {
       const newFilter = { ...filter, ...partial };
@@ -191,14 +112,12 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     [filter, notifyStateChange]
   );
 
-  /**
-   * Handle state filter change
-   */
   const handleStateFilterChange = React.useCallback(
     (prState: PRState | undefined) => {
+      if (filter.state === prState) return;
       const newFilter = {
         ...filter,
-        state: filter.state === prState ? undefined : prState,
+        state: prState,
       };
       setFilter(newFilter);
       notifyStateChange({ filter: newFilter });
@@ -206,30 +125,18 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     [filter, notifyStateChange]
   );
 
-  /**
-   * Get filtered PRs
-   */
   const filteredPRs = React.useMemo(() => {
     return filterPRs(ghPullRequests, filter, currentUser);
   }, [ghPullRequests, filter, currentUser]);
 
-  /**
-   * Get PRs grouped by repository
-   */
   const groupedPRs = React.useMemo(() => {
     return groupPRsByRepository(filteredPRs);
   }, [filteredPRs]);
 
-  /**
-   * Get the currently selected PR
-   */
   const selectedPR = React.useMemo(() => {
     return ghPullRequests.find((pr) => pr.id === selectedPRId);
   }, [ghPullRequests, selectedPRId]);
 
-  /**
-   * Get repository by ID
-   */
   const getRepository = React.useCallback(
     (repoId: string): Repository | undefined => {
       return ghRepositories.find((r) => r.id === repoId);
@@ -237,17 +144,16 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     [ghRepositories]
   );
 
-  /**
-   * Count PRs by state
-   */
   const prCountByState = React.useMemo(() => {
-    const openCount = ghPullRequests.filter((pr) => pr.state === 'open').length;
-    const mergedCount = ghPullRequests.filter((pr) => pr.state === 'merged').length;
-    const closedCount = ghPullRequests.filter((pr) => pr.state === 'closed').length;
+    const scoped = selectedRepositoryId
+      ? ghPullRequests.filter((pr) => pr.repository.id === selectedRepositoryId)
+      : ghPullRequests;
+    const openCount = scoped.filter((pr) => pr.state === 'open').length;
+    const mergedCount = scoped.filter((pr) => pr.state === 'merged').length;
+    const closedCount = scoped.filter((pr) => pr.state === 'closed').length;
     return { open: openCount, merged: mergedCount, closed: closedCount };
-  }, [ghPullRequests]);
+  }, [ghPullRequests, selectedRepositoryId]);
 
-  // Show gh CLI setup prompt if not installed or not authenticated
   if (!hasCheckedOnce || !status.installed || !status.authenticated) {
     return (
       <GitHubSetupPrompt
@@ -262,201 +168,149 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
 
   return (
     <div
-      className={cn('flex h-full gap-4 overflow-hidden', className)}
+      className={cn('flex h-full flex-col overflow-hidden', className)}
       role="region"
       aria-label="Pull Requests View"
     >
-      {/* Left panel - Repository list */}
-      <div className="flex w-64 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
-        <div className="border-b border-gray-200 p-3 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Repositories</h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {ghRepositories.length} repos in matrix
-          </p>
+      {/* Header bar — wraps to 2 lines when narrow */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-border-default bg-base-800 px-4 py-1.5 flex-shrink-0">
+        {/* Repo tabs — takes full width when wrapped */}
+        <div className="flex items-center gap-2 overflow-x-auto min-w-0 scrollbar-none flex-1 basis-48">
+          <button
+            type="button"
+            onClick={() => handleSelectRepository(null)}
+            className={cn(
+              'flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-colors flex-shrink-0',
+              selectedRepositoryId === null
+                ? 'bg-accent-primary/10 text-accent-primary'
+                : 'text-text-muted hover:text-text-secondary hover:bg-base-700'
+            )}
+          >
+            All
+            <span className="text-[11px] opacity-60">{ghPullRequests.length}</span>
+          </button>
+          {ghRepositories.map((repo) => {
+            const count = ghPullRequests.filter((pr) => pr.repository.id === repo.id).length;
+            return (
+              <button
+                key={repo.id}
+                type="button"
+                onClick={() => handleSelectRepository(repo.id)}
+                className={cn(
+                  'flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium transition-colors flex-shrink-0',
+                  selectedRepositoryId === repo.id
+                    ? 'bg-accent-primary/10 text-accent-primary'
+                    : 'text-text-muted hover:text-text-secondary hover:bg-base-700'
+                )}
+              >
+                {repo.name}
+                <span className="text-[11px] opacity-60">{count}</span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-2">
-            {/* All repos option */}
-            <button
-              type="button"
-              onClick={() => handleSelectRepository(null)}
-              className={cn(
-                repoItemVariants({ selected: selectedRepositoryId === null }),
-                'w-full border text-left'
-              )}
-              aria-selected={selectedRepositoryId === null}
-              role="option"
+        {/* Search + filters group — wraps below repo tabs when narrow */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Search */}
+          <div className="relative">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-                className="h-4 w-4 flex-shrink-0 text-gray-500"
-              >
-                <path d="M2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4Zm4.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 1 0v-3a.5.5 0 0 0-.5-.5Zm3 0a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 1 0v-3a.5.5 0 0 0-.5-.5Z" />
-              </svg>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                  All Repositories
-                </div>
-                <div className="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {ghPullRequests.length} PRs total
-                </div>
-              </div>
-            </button>
-
-            {/* Individual repos */}
-            {ghRepositories.map((repo) => (
-              <RepositoryListItem
-                key={repo.id}
-                repository={repo}
-                prCount={ghPullRequests.filter((pr) => pr.repository.id === repo.id).length}
-                openCount={
-                  ghPullRequests.filter((pr) => pr.repository.id === repo.id && pr.state === 'open')
-                    .length
-                }
-                selected={repo.id === selectedRepositoryId}
-                onClick={() => handleSelectRepository(repo.id)}
+              <path
+                fillRule="evenodd"
+                d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+                clipRule="evenodd"
               />
-            ))}
+            </svg>
+            <input
+              type="text"
+              placeholder="Search PRs..."
+              value={filter.searchQuery ?? ''}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="h-9 w-48 bg-transparent pl-8 pr-3 text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none"
+            />
           </div>
+
+          <div className="h-4 w-px bg-border-default" />
+
+          {/* State filters */}
+          <div className="flex items-center gap-2.5">
+            <StateFilterPill
+              label="Open"
+              count={prCountByState.open}
+              active={filter.state === 'open'}
+              onClick={() => handleStateFilterChange('open')}
+              activeClass="bg-green-500/15 text-green-400 border-green-500/30"
+              icon={<PROpenIcon className="h-3.5 w-3.5" />}
+            />
+            <StateFilterPill
+              label="Merged"
+              count={prCountByState.merged}
+              active={filter.state === 'merged'}
+              onClick={() => handleStateFilterChange('merged')}
+              activeClass="bg-violet-500/15 text-violet-400 border-violet-500/30"
+              icon={<PRMergedIcon className="h-3.5 w-3.5" />}
+            />
+            <StateFilterPill
+              label="Closed"
+              count={prCountByState.closed}
+              active={filter.state === 'closed'}
+              onClick={() => handleStateFilterChange('closed')}
+              activeClass="bg-rose-500/15 text-rose-400 border-rose-500/30"
+              icon={<PRClosedIcon className="h-3.5 w-3.5" />}
+            />
+          </div>
+
+          <div className="h-4 w-px bg-border-default" />
+
+          {/* Extra filters */}
+          <FilterPill
+            label="Review requested"
+            active={filter.reviewRequestedFromMe ?? false}
+            onClick={() =>
+              handleFilterChange({ reviewRequestedFromMe: !filter.reviewRequestedFromMe })
+            }
+          />
         </div>
       </div>
 
-      {/* Center panel - PR list */}
-      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        {/* Header with search and filters */}
-        <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search pull requests..."
-                  value={filter.searchQuery ?? ''}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
-                />
-              </div>
-            </div>
-
-            {/* Filter buttons */}
-            <div className="flex items-center gap-2">
-              <StateFilterButton
-                label="Open"
-                count={prCountByState.open}
-                active={filter.state === 'open'}
-                onClick={() => handleStateFilterChange('open')}
-                variant="open"
-              />
-              <StateFilterButton
-                label="Merged"
-                count={prCountByState.merged}
-                active={filter.state === 'merged'}
-                onClick={() => handleStateFilterChange('merged')}
-                variant="merged"
-              />
-              <FilterButton
-                label="Review requested"
-                active={filter.reviewRequestedFromMe ?? false}
-                onClick={() =>
-                  handleFilterChange({
-                    reviewRequestedFromMe: !filter.reviewRequestedFromMe,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {filteredPRs.length} pull request{filteredPRs.length !== 1 ? 's' : ''} found
-          </p>
-        </div>
-
+      {/* Main content — list + detail panel */}
+      <div className="flex flex-1 overflow-hidden">
         {/* PR list */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-3">
           {isGitHubLoading ? (
-            <div className="flex h-48 items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-            </div>
+            <SkeletonCards />
           ) : filteredPRs.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center text-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="mb-2 h-12 w-12 text-gray-300 dark:text-gray-600"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M15.75 4.5a3 3 0 1 1 .825 2.066l-8.421 4.679a3.002 3.002 0 0 1 0 1.51l8.421 4.679a3 3 0 1 1-.729 1.31l-8.421-4.678a3 3 0 1 1 0-4.132l8.421-4.679a3 3 0 0 1-.096-.755Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <p className="text-gray-500 dark:text-gray-400">No pull requests found</p>
-              <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
-                Try adjusting your filters
-              </p>
-            </div>
+            <EmptyState />
           ) : selectedRepositoryId ? (
-            // Single repository view
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {filteredPRs.map((pr) => (
                 <PRCard
                   key={pr.id}
                   pr={pr}
                   selected={pr.id === selectedPRId}
-                  showRepository={false}
                   onClick={() => handleSelectPR(pr.id)}
                 />
               ))}
             </div>
           ) : (
-            // Grouped by repository view
-            <div className="space-y-6">
+            <div className="space-y-5">
               {Object.entries(groupedPRs).map(([repoId, prs]) => {
                 const repo = getRepository(repoId);
                 if (!repo) return null;
                 return (
                   <div key={repoId}>
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 16 16"
-                        fill="currentColor"
-                        className="h-4 w-4"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1-.234 1.238 4.992 4.992 0 0 1-3.064 0 .75.75 0 0 1-.234-1.238c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {repo.fullName}
-                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                        ({prs.length})
-                      </span>
-                    </h3>
-                    <div className="space-y-2">
+                    <RepoGroupHeader repo={repo} count={prs.length} />
+                    <div className="mt-1.5 space-y-1.5">
                       {prs.map((pr) => (
                         <PRCard
                           key={pr.id}
                           pr={pr}
                           selected={pr.id === selectedPRId}
-                          showRepository={false}
                           onClick={() => handleSelectPR(pr.id)}
                         />
                       ))}
@@ -467,135 +321,18 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
             </div>
           )}
         </div>
-      </div>
 
-      {/* Right panel - PR details */}
-      {selectedPR && (
-        <PRDetailsPanel pr={selectedPR} onClose={() => handleSelectPR(selectedPR.id)} />
-      )}
+        {/* Right detail panel */}
+        {selectedPR && (
+          <PRDetailsPanel pr={selectedPR} onClose={() => handleSelectPR(selectedPR.id)} />
+        )}
+      </div>
     </div>
   );
 };
 
-/**
- * Repository list item component
- */
-interface RepositoryListItemProps {
-  repository: Repository;
-  prCount: number;
-  openCount: number;
-  selected: boolean;
-  onClick: () => void;
-}
+/* ── Icons ──────────────────────────────────────────────────── */
 
-const RepositoryListItem: React.FC<RepositoryListItemProps> = ({
-  repository,
-  prCount,
-  openCount,
-  selected,
-  onClick,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={cn(repoItemVariants({ selected }), 'w-full border text-left')}
-    aria-selected={selected}
-    role="option"
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className="h-4 w-4 flex-shrink-0 text-gray-500"
-    >
-      <path
-        fillRule="evenodd"
-        d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1-.234 1.238 4.992 4.992 0 0 1-3.064 0 .75.75 0 0 1-.234-1.238c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z"
-        clipRule="evenodd"
-      />
-    </svg>
-    <div className="min-w-0 flex-1">
-      <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-        {repository.name}
-      </div>
-      <div className="truncate text-xs text-gray-500 dark:text-gray-400">
-        {prCount} PRs ({openCount} open)
-      </div>
-    </div>
-  </button>
-);
-
-/**
- * Filter button component
- */
-interface FilterButtonProps {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}
-
-const FilterButton: React.FC<FilterButtonProps> = ({ label, active, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={cn(
-      'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-      active
-        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
-    )}
-  >
-    {label}
-  </button>
-);
-
-/**
- * State filter button component
- */
-interface StateFilterButtonProps {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-  variant: 'open' | 'merged' | 'closed';
-}
-
-const StateFilterButton: React.FC<StateFilterButtonProps> = ({
-  label,
-  count,
-  active,
-  onClick,
-  variant,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={cn(
-      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-      active
-        ? variant === 'open'
-          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-          : variant === 'merged'
-            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
-    )}
-  >
-    {variant === 'open' ? (
-      <PROpenIcon className="h-3 w-3" />
-    ) : variant === 'merged' ? (
-      <PRMergedIcon className="h-3 w-3" />
-    ) : (
-      <PRClosedIcon className="h-3 w-3" />
-    )}
-    {label}
-    <span className="text-[10px] opacity-75">({count})</span>
-  </button>
-);
-
-/**
- * PR Open icon component
- */
 const PROpenIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -607,9 +344,6 @@ const PROpenIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-/**
- * PR Merged icon component
- */
 const PRMergedIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -621,9 +355,6 @@ const PRMergedIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-/**
- * PR Closed icon component
- */
 const PRClosedIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -635,17 +366,71 @@ const PRClosedIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-/**
- * PR card component
- */
-interface PRCardProps {
-  pr: PullRequest;
-  selected: boolean;
-  showRepository: boolean;
+/* ── Filter components ──────────────────────────────────────── */
+
+interface StateFilterPillProps {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+  activeClass: string;
+  icon: React.ReactNode;
+}
+
+const StateFilterPill: React.FC<StateFilterPillProps> = ({
+  label,
+  count,
+  active,
+  onClick,
+  activeClass,
+  icon,
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      'flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
+      active
+        ? activeClass
+        : 'border-transparent text-text-muted hover:text-text-secondary hover:bg-base-700'
+    )}
+  >
+    {icon}
+    {label}
+    <span className="text-xs opacity-70">{count}</span>
+  </button>
+);
+
+interface FilterPillProps {
+  label: string;
+  active: boolean;
   onClick: () => void;
 }
 
-const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }) => {
+const FilterPill: React.FC<FilterPillProps> = ({ label, active, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      'rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
+      active
+        ? 'bg-accent-primary/15 text-accent-primary border-accent-primary/30'
+        : 'border-transparent text-text-muted hover:text-text-secondary hover:bg-base-700'
+    )}
+  >
+    {label}
+  </button>
+);
+
+/* ── PR Card ────────────────────────────────────────────────── */
+
+interface PRCardProps {
+  pr: PullRequest;
+  selected: boolean;
+  onClick: () => void;
+}
+
+const PRCard: React.FC<PRCardProps> = ({ pr, selected, onClick }) => {
   const relativeTime = getRelativeTimeString(pr.updatedAt);
   const reviewSummary = getPRReviewSummary(pr.reviews);
 
@@ -653,34 +438,37 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
     <button
       type="button"
       onClick={onClick}
-      className={cn(prCardVariants({ selected, state: pr.state }), 'w-full text-left')}
+      className={cn(
+        'w-full rounded-lg border px-3.5 py-2.5 text-left transition-colors cursor-pointer',
+        selected
+          ? 'bg-accent-primary/8 border-accent-primary/25'
+          : 'border-border-subtle hover:border-border-default hover:bg-base-800',
+        pr.state === 'merged' && !selected && 'opacity-60',
+        pr.state === 'closed' && !selected && 'opacity-50'
+      )}
       aria-selected={selected}
       role="option"
     >
-      <div className="flex items-start justify-between gap-2">
+      {/* Top row: icon + title + badges + CI/reviews */}
+      <div className="flex items-start gap-2.5">
+        {pr.state === 'open' ? (
+          <PROpenIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
+        ) : pr.state === 'merged' ? (
+          <PRMergedIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-500" />
+        ) : (
+          <PRClosedIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-rose-500" />
+        )}
+
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            {/* PR state icon */}
-            {pr.state === 'open' ? (
-              <PROpenIcon className="h-4 w-4 flex-shrink-0 text-green-500" />
-            ) : pr.state === 'merged' ? (
-              <PRMergedIcon className="h-4 w-4 flex-shrink-0 text-purple-500" />
-            ) : (
-              <PRClosedIcon className="h-4 w-4 flex-shrink-0 text-red-500" />
-            )}
-
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{pr.title}</span>
-
-            {/* Draft badge */}
+            <span className="text-sm font-medium text-text-primary truncate">{pr.title}</span>
             {pr.isDraft && (
-              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+              <span className="flex-shrink-0 rounded px-1.5 py-0.5 text-xs font-medium bg-base-600 text-text-muted">
                 Draft
               </span>
             )}
-
-            {/* Conflict badge */}
             {pr.hasConflicts && (
-              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              <span className="flex-shrink-0 flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium bg-rose-500/15 text-rose-400">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 16 16"
@@ -698,19 +486,12 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
             )}
           </div>
 
-          {/* Repository name (if showing) */}
-          {showRepository && (
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {pr.repository.fullName}
-            </p>
-          )}
-
           {/* Branch info */}
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-1 text-xs text-text-muted">
             <span className="font-mono">{pr.sourceBranch}</span>
             {' \u2192 '}
             <span className="font-mono">{pr.targetBranch}</span>
-          </p>
+          </div>
 
           {/* Labels */}
           {pr.labels.length > 0 && (
@@ -718,11 +499,11 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
               {pr.labels.map((label) => (
                 <span
                   key={label.name}
-                  className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  className="rounded-full px-2 py-0.5 text-xs font-medium"
                   style={{
                     backgroundColor: `${label.color}20`,
                     color: label.color,
-                    border: `1px solid ${label.color}40`,
+                    border: `1px solid ${label.color}30`,
                   }}
                 >
                   {label.name}
@@ -731,30 +512,27 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
             </div>
           )}
 
-          {/* Meta info */}
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            #{pr.number} opened by <span className="font-medium">{pr.author}</span>
-            {' \u2022 '}
-            {relativeTime}
+          {/* Meta row */}
+          <div className="mt-1.5 flex items-center gap-3 text-xs text-text-muted">
+            <span className="font-mono">#{pr.number}</span>
+            <span>@{pr.author}</span>
+            <span>{relativeTime}</span>
             {pr.commitCount > 0 && (
-              <>
-                {' \u2022 '}
+              <span>
                 {pr.commitCount} commit{pr.commitCount !== 1 ? 's' : ''}
-              </>
+              </span>
             )}
-          </p>
+          </div>
         </div>
 
-        {/* Right side: CI status and reviews */}
-        <div className="flex flex-col items-end gap-1">
-          {/* CI Status */}
+        {/* Right side: CI + reviews + reviewers */}
+        <div className="flex flex-col items-end gap-1.5 flex-shrink-0 mt-0.5">
           <CIStatusBadge status={pr.ciStatus} />
 
-          {/* Reviews summary */}
           {pr.reviews.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {reviewSummary.approved > 0 && (
-                <span className="flex items-center gap-0.5 text-xs text-green-600 dark:text-green-400">
+                <span className="flex items-center gap-0.5 text-xs text-green-400">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 16 16"
@@ -771,7 +549,7 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
                 </span>
               )}
               {reviewSummary.changesRequested > 0 && (
-                <span className="flex items-center gap-0.5 text-xs text-red-600 dark:text-red-400">
+                <span className="flex items-center gap-0.5 text-xs text-rose-400">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 16 16"
@@ -790,13 +568,12 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
             </div>
           )}
 
-          {/* Reviewers */}
           {pr.reviewers.length > 0 && (
             <div className="flex -space-x-1">
               {pr.reviewers.slice(0, 3).map((reviewer, index) => (
                 <div
                   key={reviewer}
-                  className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium text-gray-600 ring-2 ring-white dark:bg-gray-600 dark:text-gray-300 dark:ring-gray-800"
+                  className="flex h-5 w-5 items-center justify-center rounded-full bg-base-600 text-[10px] font-medium text-text-secondary ring-1 ring-base-900"
                   title={reviewer}
                   style={{ zIndex: 3 - index }}
                 >
@@ -804,7 +581,7 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
                 </div>
               ))}
               {pr.reviewers.length > 3 && (
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium text-gray-600 ring-2 ring-white dark:bg-gray-600 dark:text-gray-300 dark:ring-gray-800">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-base-600 text-[10px] font-medium text-text-muted ring-1 ring-base-900">
                   +{pr.reviewers.length - 3}
                 </div>
               )}
@@ -816,25 +593,20 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, showRepository, onClick }
   );
 };
 
-/**
- * CI Status badge component
- */
-interface CIStatusBadgeProps {
-  status: PullRequest['ciStatus'];
-}
+/* ── CI Status Badge ────────────────────────────────────────── */
 
-const CIStatusBadge: React.FC<CIStatusBadgeProps> = ({ status }) => (
+const CIStatusBadge: React.FC<{ status: PullRequest['ciStatus'] }> = ({ status }) => (
   <span
     className={cn(
       'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
       getPRCIStatusBgClass(status),
       status === 'success'
-        ? 'text-green-700 dark:text-green-400'
+        ? 'text-green-400'
         : status === 'failure'
-          ? 'text-red-700 dark:text-red-400'
+          ? 'text-rose-400'
           : status === 'running'
-            ? 'text-yellow-700 dark:text-yellow-400'
-            : 'text-gray-700 dark:text-gray-400'
+            ? 'text-amber-400'
+            : 'text-text-muted'
     )}
   >
     {status === 'success' ? (
@@ -895,72 +667,53 @@ const CIStatusBadge: React.FC<CIStatusBadgeProps> = ({ status }) => (
   </span>
 );
 
-/**
- * PR details panel component
- */
+/* ── Detail Panel (right sidebar) ───────────────────────────── */
+
 interface PRDetailsPanelProps {
   pr: PullRequest;
   onClose: () => void;
 }
 
 const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
+  const reviewSummary = getPRReviewSummary(pr.reviews);
+
   return (
-    <div className="flex w-80 flex-shrink-0 flex-col rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="flex w-80 flex-shrink-0 flex-col border-l border-border-default bg-base-800 animate-slide-in">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
+      <div className="flex items-start justify-between gap-3 border-b border-border-subtle p-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             {pr.state === 'open' ? (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                  getPRStateBgClass(pr.state),
-                  'text-green-700 dark:text-green-400'
-                )}
-              >
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-2 py-0.5 text-xs font-medium text-green-400">
                 <PROpenIcon className="h-3 w-3" />
                 Open
               </span>
             ) : pr.state === 'merged' ? (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                  getPRStateBgClass(pr.state),
-                  'text-purple-700 dark:text-purple-400'
-                )}
-              >
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-medium text-violet-400">
                 <PRMergedIcon className="h-3 w-3" />
                 Merged
               </span>
             ) : (
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-                  getPRStateBgClass(pr.state),
-                  'text-red-700 dark:text-red-400'
-                )}
-              >
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400">
                 <PRClosedIcon className="h-3 w-3" />
                 Closed
               </span>
             )}
             {pr.isDraft && (
-              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+              <span className="rounded px-1.5 py-0.5 text-xs font-medium bg-base-600 text-text-muted">
                 Draft
               </span>
             )}
           </div>
-          <h3 className="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {pr.title}
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <h3 className="mt-2 text-sm font-semibold text-text-primary">{pr.title}</h3>
+          <p className="mt-0.5 text-xs text-text-muted">
             #{pr.number} in {pr.repository.fullName}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          className="rounded p-1 text-text-muted transition-colors hover:bg-base-700 hover:text-text-secondary"
           aria-label="Close PR details"
         >
           <svg
@@ -974,23 +727,21 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
         </button>
       </div>
 
-      {/* Details */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-4">
-          {/* Branch info */}
+        <div className="space-y-5">
+          {/* Branches */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Branches
-            </h4>
+            <SectionLabel>Branches</SectionLabel>
             <div className="flex items-center gap-2 text-sm">
-              <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-gray-700">
+              <span className="rounded bg-base-700 px-2 py-0.5 font-mono text-xs text-text-secondary">
                 {pr.sourceBranch}
               </span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 16 16"
                 fill="currentColor"
-                className="h-3 w-3 text-gray-400"
+                className="h-3 w-3 text-text-muted"
               >
                 <path
                   fillRule="evenodd"
@@ -998,12 +749,12 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
                   clipRule="evenodd"
                 />
               </svg>
-              <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-gray-700">
+              <span className="rounded bg-base-700 px-2 py-0.5 font-mono text-xs text-text-secondary">
                 {pr.targetBranch}
               </span>
             </div>
             {pr.hasConflicts && (
-              <p className="mt-2 flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+              <p className="mt-2 flex items-center gap-1 text-xs text-rose-400">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 16 16"
@@ -1023,19 +774,15 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
 
           {/* CI Status */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              CI Status
-            </h4>
+            <SectionLabel>CI Status</SectionLabel>
             <CIStatusBadge status={pr.ciStatus} />
           </div>
 
           {/* Description */}
           {pr.body && (
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Description
-              </h4>
-              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              <SectionLabel>Description</SectionLabel>
+              <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
                 {pr.body}
               </p>
             </div>
@@ -1044,18 +791,16 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
           {/* Labels */}
           {pr.labels.length > 0 && (
             <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Labels
-              </h4>
-              <div className="flex flex-wrap gap-1">
+              <SectionLabel>Labels</SectionLabel>
+              <div className="flex flex-wrap gap-1.5">
                 {pr.labels.map((label) => (
                   <span
                     key={label.name}
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                    className="rounded-full px-2 py-0.5 text-xs font-medium"
                     style={{
                       backgroundColor: `${label.color}20`,
                       color: label.color,
-                      border: `1px solid ${label.color}40`,
+                      border: `1px solid ${label.color}30`,
                     }}
                     title={label.description}
                   >
@@ -1068,9 +813,7 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
 
           {/* Reviewers */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Reviewers
-            </h4>
+            <SectionLabel>Reviewers</SectionLabel>
             {pr.reviewers.length > 0 ? (
               <div className="space-y-2">
                 {pr.reviewers.map((reviewer) => {
@@ -1078,22 +821,22 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
                   return (
                     <div key={reviewer} className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-base-600 text-xs font-medium text-text-secondary">
                           {reviewer[0].toUpperCase()}
                         </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{reviewer}</span>
+                        <span className="text-sm text-text-secondary">{reviewer}</span>
                       </div>
                       {review && (
                         <span
                           className={cn(
                             'text-xs font-medium',
                             review.state === 'approved'
-                              ? 'text-green-600 dark:text-green-400'
+                              ? 'text-green-400'
                               : review.state === 'changes_requested'
-                                ? 'text-red-600 dark:text-red-400'
+                                ? 'text-rose-400'
                                 : review.state === 'commented'
-                                  ? 'text-gray-600 dark:text-gray-400'
-                                  : 'text-yellow-600 dark:text-yellow-400'
+                                  ? 'text-text-muted'
+                                  : 'text-amber-400'
                           )}
                         >
                           {review.state === 'approved'
@@ -1108,29 +851,37 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
                     </div>
                   );
                 })}
+                {(reviewSummary.approved > 0 || reviewSummary.changesRequested > 0) && (
+                  <div className="flex items-center gap-3 pt-0.5 text-xs">
+                    {reviewSummary.approved > 0 && (
+                      <span className="text-green-400">{reviewSummary.approved} approved</span>
+                    )}
+                    {reviewSummary.changesRequested > 0 && (
+                      <span className="text-rose-400">
+                        {reviewSummary.changesRequested} changes requested
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No reviewers assigned</p>
+              <p className="text-sm text-text-muted">No reviewers assigned</p>
             )}
           </div>
 
-          {/* Changes summary */}
+          {/* Changes */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Changes
-            </h4>
+            <SectionLabel>Changes</SectionLabel>
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-600 dark:text-gray-400">{pr.filesChanged} files</span>
-              <span className="text-green-600 dark:text-green-400">+{pr.additions}</span>
-              <span className="text-red-600 dark:text-red-400">-{pr.deletions}</span>
+              <span className="text-text-muted">{pr.filesChanged} files</span>
+              <span className="text-green-400">+{pr.additions}</span>
+              <span className="text-rose-400">-{pr.deletions}</span>
             </div>
           </div>
 
-          {/* Meta info */}
+          {/* Details */}
           <div>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Details
-            </h4>
+            <SectionLabel>Details</SectionLabel>
             <div className="space-y-2">
               <DetailRow label="Author" value={pr.author} />
               <DetailRow label="Commits" value={pr.commitCount.toString()} />
@@ -1169,18 +920,18 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
       </div>
 
       {/* Actions */}
-      <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+      <div className="border-t border-border-subtle p-4">
         <div className="space-y-2">
           <button
             type="button"
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
+            className="w-full rounded-lg bg-accent-primary px-4 py-2 text-sm font-medium text-base-900 transition-colors hover:bg-accent-primary/90"
           >
             View in Browser
           </button>
           {pr.state === 'open' && (
             <button
               type="button"
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              className="w-full rounded-lg border border-border-default bg-base-700 px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-base-600"
             >
               Checkout Branch
             </button>
@@ -1191,24 +942,83 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
   );
 };
 
-/**
- * Detail row component
- */
-interface DetailRowProps {
-  label: string;
-  value: string;
-  mono?: boolean;
+/* ── Shared sub-components ──────────────────────────────────── */
+
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">{children}</h4>
+);
+
+const DetailRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-xs text-text-muted">{label}</span>
+    <span className="text-sm text-text-primary">{value}</span>
+  </div>
+);
+
+interface RepoGroupHeaderProps {
+  repo: Repository;
+  count: number;
 }
 
-const DetailRow: React.FC<DetailRowProps> = ({ label, value, mono }) => (
-  <div className="flex items-center justify-between gap-2">
-    <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-    <span className={cn('text-sm text-gray-900 dark:text-gray-100', mono && 'font-mono text-xs')}>
-      {value}
+const RepoGroupHeader: React.FC<RepoGroupHeaderProps> = ({ repo, count }) => (
+  <div className="flex items-center gap-2 px-1 pb-1">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className="h-3.5 w-3.5 text-text-muted"
+    >
+      <path
+        fillRule="evenodd"
+        d="M2 4.25A2.25 2.25 0 0 1 4.25 2h7.5A2.25 2.25 0 0 1 14 4.25v5.5A2.25 2.25 0 0 1 11.75 12h-1.312c.1.128.21.248.328.36a.75.75 0 0 1-.234 1.238 4.992 4.992 0 0 1-3.064 0 .75.75 0 0 1-.234-1.238c.118-.111.228-.232.328-.36H4.25A2.25 2.25 0 0 1 2 9.75v-5.5Zm2.25-.75a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h7.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75h-7.5Z"
+        clipRule="evenodd"
+      />
+    </svg>
+    <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+      {repo.fullName}
     </span>
+    <span className="text-xs text-text-muted/70">({count})</span>
+  </div>
+);
+
+/* ── Loading / Empty states ─────────────────────────────────── */
+
+const SkeletonCards: React.FC = () => (
+  <div className="space-y-1.5">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <div key={i} className="rounded-lg border border-border-subtle p-3.5">
+        <div className="flex items-start gap-2.5">
+          <div className="mt-0.5 h-4 w-4 rounded-full bg-base-700 animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-3/4 rounded bg-base-700 animate-pulse" />
+            <div className="h-3 w-2/5 rounded bg-base-700/60 animate-pulse" />
+            <div className="h-3 w-1/2 rounded bg-base-700/60 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const EmptyState: React.FC = () => (
+  <div className="flex flex-col items-center justify-center h-64">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="h-12 w-12 text-base-500"
+    >
+      <path
+        fillRule="evenodd"
+        d="M15.75 4.5a3 3 0 1 1 .825 2.066l-8.421 4.679a3.002 3.002 0 0 1 0 1.51l8.421 4.679a3 3 0 1 1-.729 1.31l-8.421-4.678a3 3 0 1 1 0-4.132l8.421-4.679a3 3 0 0 1-.096-.755Z"
+        clipRule="evenodd"
+      />
+    </svg>
+    <p className="text-sm text-text-muted mt-3">No pull requests found</p>
+    <p className="text-xs text-text-muted/70 mt-1">Try adjusting your filters</p>
   </div>
 );
 
 PRsView.displayName = 'PRsView';
 
-export { PRsView, repoItemVariants, prCardVariants };
+export { PRsView };
