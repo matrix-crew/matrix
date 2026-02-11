@@ -1,0 +1,55 @@
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project will be documented in this file.\n
+"""
+body = """
+{% if version %}\
+    ## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## [Unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        - {{ commit.message | split(pat="\n") | first | trim }}\
+    {% endfor %}
+{% endfor %}\n
+"""
+trim = true
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = false
+sort_commits = "newest"
+tag_pattern = "v[0-9].*"
+commit_parsers = [
+    { message = "^[Mm]erge", skip = true },
+    { message = "^docs: update CHANGELOG", skip = true },
+
+    { message = "^[Aa]dd ", group = "Added" },
+    { message = "^[Ii]mplement", group = "Added" },
+    { message = "^[Ss]upport", group = "Added" },
+
+    { message = "^[Ff]ix", group = "Fixed" },
+
+    { message = "^[Ii]mprove", group = "Changed" },
+    { message = "^[Rr]efactor", group = "Changed" },
+    { message = "^[Rr]eorganize", group = "Changed" },
+    { message = "^[Rr]ename", group = "Changed" },
+    { message = "^[Uu]pdate", group = "Changed" },
+    { message = "^[Rr]eplace", group = "Changed" },
+    { message = "^[Rr]edesign", group = "Changed" },
+    { message = "^[Rr]estructure", group = "Changed" },
+    { message = "^[Cc]onsolidate", group = "Changed" },
+    { message = "^[Mm]ove", group = "Changed" },
+    { message = "^[Uu]se ", group = "Changed" },
+    { message = "^[Bb]ump", group = "Changed" },
+
+    { message = "^[Rr]emove", group = "Removed" },
+    { message = "^[Dd]elete", group = "Removed" },
+
+    { message = ".*", group = "Other" },
+]
