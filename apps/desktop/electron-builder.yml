@@ -1,6 +1,7 @@
 appId: com.maxtix.app
 productName: Maxtix
 copyright: Copyright © 2026 Maxtix
+artifactName: '${productName}-${version}-${arch}.${ext}'
 
 # node-pty is already rebuilt by postinstall (electron-rebuild -f -w node-pty)
 # Disable electron-builder's own rebuild to avoid distutils issues on Python 3.12+
