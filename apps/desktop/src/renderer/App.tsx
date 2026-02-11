@@ -6,11 +6,12 @@ import { ContextSidebar, type ContextItemId } from '@/components/layout/ContextS
 import { OnboardingView } from '@/components/layout/OnboardingView';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { HomeView } from '@/components/home/HomeView';
-import { MatrixView } from '@/components/matrix/MatrixView';
 import { KanbanBoard } from '@/components/workflow/KanbanBoard';
 import { PipelineEditor } from '@/components/workflow/PipelineEditor';
 import { TerminalManager } from '@/components/terminal/TerminalManager';
 import { MCPControl } from '@/components/agent/MCPControl';
+import { PRsView } from '@/components/workspace/PRsView';
+import { IssuesView } from '@/components/workspace/IssuesView';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
 import { DevToolsModal } from '@/components/devtools/DevToolsModal';
@@ -31,7 +32,7 @@ const App: React.FC = () => {
   const [isHomeActive, setIsHomeActive] = useState(false);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [showDevTools, setShowDevTools] = useState(false);
-  const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
+  const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -237,11 +238,6 @@ const App: React.FC = () => {
 
   // Context sidebar shortcuts (⌘+letter)
   useShortcutAction(
-    'context-sources',
-    useCallback(() => setActiveContextItem('sources'), []),
-    canSwitchContext
-  );
-  useShortcutAction(
     'context-kanban',
     useCallback(() => setActiveContextItem('kanban'), []),
     canSwitchContext
@@ -252,6 +248,16 @@ const App: React.FC = () => {
     canSwitchContext
   );
   useShortcutAction(
+    'context-ideation',
+    useCallback(() => setActiveContextItem('ideation'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-ctx',
+    useCallback(() => setActiveContextItem('ctx'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
     'context-console',
     useCallback(() => setActiveContextItem('console'), []),
     canSwitchContext
@@ -259,6 +265,21 @@ const App: React.FC = () => {
   useShortcutAction(
     'context-mcp',
     useCallback(() => setActiveContextItem('mcp'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-worktree',
+    useCallback(() => setActiveContextItem('worktree'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-pr',
+    useCallback(() => setActiveContextItem('pr'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-issue',
+    useCallback(() => setActiveContextItem('issue'), []),
     canSwitchContext
   );
 
@@ -280,19 +301,42 @@ const App: React.FC = () => {
     if (!activeMatrixId) return null;
 
     switch (activeContextItem) {
-      case 'sources':
-        return <MatrixView matrixId={activeMatrixId} key={activeMatrixId} />;
+      // Task
       case 'kanban':
         return <KanbanBoard />;
       case 'pipeline':
         return <PipelineEditor />;
+      case 'ideation':
+        return (
+          <div className="flex h-full items-center justify-center text-text-muted">
+            Ideation — Coming soon
+          </div>
+        );
+      // Agent
+      case 'ctx':
+        return (
+          <div className="flex h-full items-center justify-center text-text-muted">
+            Context — Coming soon
+          </div>
+        );
       case 'console':
         // Terminal is rendered separately (always mounted) — return null here
         return null;
       case 'mcp':
         return <MCPControl />;
+      // Source
+      case 'worktree':
+        return (
+          <div className="flex h-full items-center justify-center text-text-muted">
+            Worktree — Coming soon
+          </div>
+        );
+      case 'pr':
+        return <PRsView />;
+      case 'issue':
+        return <IssuesView />;
       default:
-        return <MatrixView matrixId={activeMatrixId} key={activeMatrixId} />;
+        return <KanbanBoard />;
     }
   };
 

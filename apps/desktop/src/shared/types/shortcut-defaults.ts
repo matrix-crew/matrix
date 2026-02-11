@@ -102,14 +102,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     category: 'navigation',
     defaultBinding: { modifiers: ['meta'], key: 'n' },
   },
-  // Context sidebar (⌘+letter)
-  {
-    id: 'context-sources',
-    label: 'Sources',
-    description: 'Switch to Sources context',
-    category: 'context',
-    defaultBinding: { modifiers: ['meta'], key: 's' },
-  },
+  // Context sidebar — Task
   {
     id: 'context-kanban',
     label: 'Kanban',
@@ -125,9 +118,24 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     defaultBinding: { modifiers: ['meta'], key: 'p' },
   },
   {
+    id: 'context-ideation',
+    label: 'Ideation',
+    description: 'Switch to Ideation context',
+    category: 'context',
+    defaultBinding: { modifiers: ['meta'], key: 'i' },
+  },
+  // Context sidebar — Agent
+  {
+    id: 'context-ctx',
+    label: 'Context',
+    description: 'Switch to Agent Context view',
+    category: 'context',
+    defaultBinding: { modifiers: ['meta'], key: 'l' },
+  },
+  {
     id: 'context-console',
-    label: 'Console',
-    description: 'Switch to Console context',
+    label: 'Terminal',
+    description: 'Switch to Terminal context',
     category: 'context',
     defaultBinding: { modifiers: ['meta'], key: 'j' },
   },
@@ -137,6 +145,28 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     description: 'Switch to MCP context',
     category: 'context',
     defaultBinding: { modifiers: ['meta'], key: 'm' },
+  },
+  // Context sidebar — Source
+  {
+    id: 'context-worktree',
+    label: 'Worktree',
+    description: 'Switch to Worktree context',
+    category: 'context',
+    defaultBinding: { modifiers: ['meta'], key: 't' },
+  },
+  {
+    id: 'context-pr',
+    label: 'PR',
+    description: 'Switch to Pull Request context',
+    category: 'context',
+    defaultBinding: { modifiers: ['meta'], key: 'r' },
+  },
+  {
+    id: 'context-issue',
+    label: 'Issue',
+    description: 'Switch to Issue context',
+    category: 'context',
+    defaultBinding: { modifiers: ['meta'], key: 'u' },
   },
 ];
 
@@ -157,11 +187,15 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     id: 'context',
     label: 'Context Panel',
     actions: [
-      'context-sources',
       'context-kanban',
       'context-pipeline',
+      'context-ideation',
+      'context-ctx',
       'context-console',
       'context-mcp',
+      'context-worktree',
+      'context-pr',
+      'context-issue',
     ],
   },
 ];

@@ -13,29 +13,28 @@ function renderSidebar(activeItem: string = 'kanban', onItemSelect = vi.fn()) {
 }
 
 describe('ContextSidebar', () => {
-  it('renders group titles: Workflow, Agent, Source', () => {
+  it('renders group titles: Task, Agent, Source', () => {
     renderSidebar();
 
     const headings = screen.getAllByRole('heading', { level: 3 });
-    expect(headings.map((h) => h.textContent)).toEqual(['Workflow', 'Agent', 'Source']);
-    expect(screen.queryByText('Overview')).not.toBeInTheDocument();
-  });
-
-  it('renders Terminal label instead of Console', () => {
-    renderSidebar('console');
-
-    expect(screen.getByText('Terminal')).toBeInTheDocument();
-    expect(screen.queryByText('Console')).not.toBeInTheDocument();
+    expect(headings.map((h) => h.textContent)).toEqual(['Task', 'Agent', 'Source']);
   });
 
   it('renders all items with correct labels', () => {
     renderSidebar();
 
+    // Task group
     expect(screen.getByText('Kanban')).toBeInTheDocument();
     expect(screen.getByText('Pipeline')).toBeInTheDocument();
+    expect(screen.getByText('Ideation')).toBeInTheDocument();
+    // Agent group
+    expect(screen.getByText('Context')).toBeInTheDocument();
     expect(screen.getByText('Terminal')).toBeInTheDocument();
     expect(screen.getByText('MCP')).toBeInTheDocument();
-    expect(screen.getByText('Sources')).toBeInTheDocument();
+    // Source group
+    expect(screen.getByText('Worktree')).toBeInTheDocument();
+    expect(screen.getByText('PR')).toBeInTheDocument();
+    expect(screen.getByText('Issue')).toBeInTheDocument();
   });
 
   it('highlights active item', () => {
@@ -55,5 +54,8 @@ describe('ContextSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /Terminal/i }));
     expect(onItemSelect).toHaveBeenCalledWith('console');
+
+    await user.click(screen.getByRole('button', { name: /PR/i }));
+    expect(onItemSelect).toHaveBeenCalledWith('pr');
   });
 });

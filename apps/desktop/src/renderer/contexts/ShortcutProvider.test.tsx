@@ -24,7 +24,7 @@ function ShortcutConsumer() {
       <span data-testid="override-count">{Object.keys(overrides).length}</span>
       <span data-testid="conflict-count">{conflicts.size}</span>
       <span data-testid="tab1-display">{getDisplayString('tab-1')}</span>
-      <span data-testid="sources-display">{getDisplayString('context-sources')}</span>
+      <span data-testid="kanban-display">{getDisplayString('context-kanban')}</span>
       <button
         data-testid="set-custom"
         onClick={() => setShortcut('tab-1', { modifiers: ['meta', 'shift'], key: '1' })}
@@ -64,7 +64,7 @@ describe('ShortcutProvider', () => {
       </ShortcutProvider>
     );
 
-    expect(screen.getByTestId('shortcut-count').textContent).toBe('17');
+    expect(screen.getByTestId('shortcut-count').textContent).toBe('21');
     expect(screen.getByTestId('override-count').textContent).toBe('0');
     expect(screen.getByTestId('conflict-count').textContent).toBe('0');
   });
@@ -78,8 +78,8 @@ describe('ShortcutProvider', () => {
 
     // ⌘1 for tab-1 on Mac
     expect(screen.getByTestId('tab1-display').textContent).toBe('\u23181');
-    // ⌘S for context-sources on Mac
-    expect(screen.getByTestId('sources-display').textContent).toBe('\u2318S');
+    // ⌘K for context-kanban on Mac
+    expect(screen.getByTestId('kanban-display').textContent).toBe('\u2318K');
   });
 
   it('loads overrides from config', async () => {
@@ -256,7 +256,7 @@ describe('ShortcutProvider', () => {
           <span data-testid="conflict-count">{conflicts.size}</span>
           <button
             data-testid="create-conflict"
-            onClick={() => setShortcut('context-sources', { modifiers: ['meta'], key: '1' })}
+            onClick={() => setShortcut('context-kanban', { modifiers: ['meta'], key: '1' })}
           >
             Conflict
           </button>
@@ -272,7 +272,7 @@ describe('ShortcutProvider', () => {
 
     expect(screen.getByTestId('conflict-count').textContent).toBe('0');
 
-    // Set context-sources to meta+1 (same as tab-1 default)
+    // Set context-kanban to meta+1 (same as tab-1 default)
     await user.click(screen.getByTestId('create-conflict'));
     expect(screen.getByTestId('conflict-count').textContent).toBe('1');
   });

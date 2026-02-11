@@ -22,12 +22,18 @@ export type ShortcutActionId =
   | 'toggle-settings'
   | 'toggle-devtools'
   | 'create-matrix'
-  // Context sidebar (⌘+letter)
-  | 'context-sources'
+  // Context sidebar — Task
   | 'context-kanban'
   | 'context-pipeline'
+  | 'context-ideation'
+  // Context sidebar — Agent
+  | 'context-ctx'
   | 'context-console'
-  | 'context-mcp';
+  | 'context-mcp'
+  // Context sidebar — Source
+  | 'context-worktree'
+  | 'context-pr'
+  | 'context-issue';
 
 /**
  * Modifier keys for shortcuts
