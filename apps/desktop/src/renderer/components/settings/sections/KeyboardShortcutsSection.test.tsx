@@ -43,7 +43,7 @@ describe('KeyboardShortcutsSection', () => {
     expect(screen.getByText('Context Panel')).toBeInTheDocument();
   });
 
-  it('renders all 17 default shortcuts', () => {
+  it('renders all 21 default shortcuts', () => {
     renderSection();
 
     // Tab shortcuts
@@ -56,12 +56,18 @@ describe('KeyboardShortcutsSection', () => {
     expect(screen.getByText('Toggle DevTools')).toBeInTheDocument();
     expect(screen.getByText('Create Matrix')).toBeInTheDocument();
 
-    // Context panel
-    expect(screen.getByText('Sources')).toBeInTheDocument();
+    // Context panel — Task
     expect(screen.getByText('Kanban')).toBeInTheDocument();
     expect(screen.getByText('Pipeline')).toBeInTheDocument();
-    expect(screen.getByText('Console')).toBeInTheDocument();
+    expect(screen.getByText('Ideation')).toBeInTheDocument();
+    // Context panel — Agent
+    expect(screen.getByText('Context')).toBeInTheDocument();
+    expect(screen.getByText('Terminal')).toBeInTheDocument();
     expect(screen.getByText('MCP')).toBeInTheDocument();
+    // Context panel — Source
+    expect(screen.getByText('Worktree')).toBeInTheDocument();
+    expect(screen.getByText('PR')).toBeInTheDocument();
+    expect(screen.getByText('Issue')).toBeInTheDocument();
   });
 
   it('does not show "Reset All" when no overrides exist', () => {
@@ -78,9 +84,9 @@ describe('KeyboardShortcutsSection', () => {
     const user = userEvent.setup();
     renderSection();
 
-    // Find the ⌘S button (Sources context shortcut)
+    // Find the ⌘K button (Kanban context shortcut)
     const allButtons = screen.getAllByRole('button');
-    const bindingButton = allButtons.find((btn) => btn.textContent?.includes('\u2318S'));
+    const bindingButton = allButtons.find((btn) => btn.textContent?.includes('\u2318K'));
     expect(bindingButton).toBeDefined();
     await user.click(bindingButton!);
 
@@ -96,8 +102,8 @@ describe('KeyboardShortcutsSection', () => {
   });
 
   it('shows conflict warning when overrides create duplicates', () => {
-    // Set context-sources to same binding as tab-1 (meta+1)
-    localStorage.setItem('matrix-shortcuts', JSON.stringify({ 'context-sources': 'meta+1' }));
+    // Set context-kanban to same binding as tab-1 (meta+1)
+    localStorage.setItem('matrix-shortcuts', JSON.stringify({ 'context-kanban': 'meta+1' }));
 
     renderSection();
     expect(screen.getByText(/conflicting key bindings/)).toBeInTheDocument();

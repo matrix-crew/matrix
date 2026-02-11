@@ -163,9 +163,9 @@ describe('shortcut-defaults', () => {
     });
 
     it('detects conflicts when two actions share the same binding', () => {
-      // Override context-sources to same as tab-1 (meta+1)
+      // Override context-kanban to same as tab-1 (meta+1)
       const overrides: SerializedShortcuts = {
-        'context-sources': 'meta+1',
+        'context-kanban': 'meta+1',
       };
       const resolved = resolveShortcuts(overrides);
       const conflicts = detectConflicts(resolved);
@@ -174,7 +174,7 @@ describe('shortcut-defaults', () => {
       const conflicting = conflicts.get('meta+1');
       expect(conflicting).toBeDefined();
       expect(conflicting).toContain('tab-1');
-      expect(conflicting).toContain('context-sources');
+      expect(conflicting).toContain('context-kanban');
     });
   });
 
@@ -205,8 +205,8 @@ describe('shortcut-defaults', () => {
   });
 
   describe('DEFAULT_SHORTCUTS', () => {
-    it('has 17 shortcuts defined (9 tabs + 3 nav + 5 context)', () => {
-      expect(DEFAULT_SHORTCUTS).toHaveLength(17);
+    it('has 21 shortcuts defined (9 tabs + 3 nav + 9 context)', () => {
+      expect(DEFAULT_SHORTCUTS).toHaveLength(21);
     });
 
     it('all actions are covered by categories', () => {
