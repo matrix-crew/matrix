@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.3] - 2026-02-11
+
+### Added
+
+- Add CHANGELOG.md with git-cliff and update CI/release workflows (#44)
+
+### Changed
+
+- Restructure sidebar into Task/Agent/Source groups with new views (#43)
+
 ## [v0.0.2] - 2026-02-11
 
 ### Fixed
@@ -55,5 +65,6 @@ All notable changes to this project will be documented in this file.
 - Fix node-pty posix_spawnp error by rebuilding for Electron (#21)
 - Fix pnpm compatibility for Electron development
 
+[v0.0.3]: https://github.com/matrix-crew/matrix/compare/v0.0.2...v0.0.3
 [v0.0.2]: https://github.com/matrix-crew/matrix/compare/v0.0.1...v0.0.2
 [v0.0.1]: https://github.com/matrix-crew/matrix/releases/tag/v0.0.1
