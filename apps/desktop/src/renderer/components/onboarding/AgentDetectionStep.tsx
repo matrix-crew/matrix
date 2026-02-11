@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
-import type { AgentConfig, AgentState, CommandCheckResult } from './types';
+import { CheckCircle2, XCircle, Loader2, RefreshCw } from 'lucide-react';
+import type { AgentConfig, AgentState, CommandCheckResult, Platform } from './types';
 import { AGENT_CONFIGS } from './types';
 import { PathInput } from './PathInput';
+import { InlineTabs } from '../common/InlineTabs';
+import { MiniTerminal } from '../terminal/MiniTerminal';
 
 interface AgentDetectionStepProps {
   agents: Record<string, AgentState>;
@@ -189,6 +191,15 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
 
 AgentDetectionStep.displayName = 'AgentDetectionStep';
 
+// ── Platform Detection ────────────────────────────────────────────────────
+
+function detectPlatform(): Platform {
+  const p = navigator.platform.toLowerCase();
+  if (p.startsWith('mac')) return 'mac';
+  if (p.startsWith('win')) return 'windows';
+  return 'linux';
+}
+
 // ── Agent Card ────────────────────────────────────────────────────────────
 
 interface AgentCardProps {
@@ -206,6 +217,23 @@ const AgentCard: React.FC<AgentCardProps> = ({
   onPathChange,
   onValidate,
 }) => {
+  const [showPathInput, setShowPathInput] = useState(false);
+  const platform = useMemo(detectPlatform, []);
+
+  const installTabs = useMemo(
+    () =>
+      config.installMethods
+        .filter((m) => m.platform.includes(platform))
+        .map((m) => ({
+          label: m.label,
+          content: <MiniTerminal command={m.command} maxLines={5} />,
+        })),
+    [config.installMethods, platform]
+  );
+
+  const notFound = !isChecking && !state.detected;
+  const showInstall = notFound && installTabs.length > 0;
+
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised p-4">
       <div className="flex items-center justify-between">
@@ -226,32 +254,36 @@ const AgentCard: React.FC<AgentCardProps> = ({
               <span className="text-xs font-medium">Detected</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-amber-400">
-                <XCircle className="size-4" />
-                <span className="text-xs font-medium">Not found</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => window.api.openExternal(config.installUrl)}
-                className="flex items-center gap-1 text-xs text-accent-cyan transition-colors hover:text-accent-cyan/80"
-              >
-                Install
-                <ExternalLink className="size-3" />
-              </button>
+            <div className="flex items-center gap-1.5 text-amber-400">
+              <XCircle className="size-4" />
+              <span className="text-xs font-medium">Not found</span>
             </div>
           )}
         </div>
       </div>
 
-      <PathInput
-        detectedPath={state.path}
-        customPath={state.customPath}
-        validating={state.validating}
-        validationError={state.validationError}
-        onPathChange={(path) => onPathChange(config.id, path)}
-        onValidate={(path) => onValidate(config.id, path)}
-      />
+      {showInstall && <InlineTabs tabs={installTabs} className="mt-3" />}
+
+      {notFound && !showPathInput && (
+        <button
+          type="button"
+          onClick={() => setShowPathInput(true)}
+          className="mt-2 text-xs text-text-muted transition-colors hover:text-text-secondary"
+        >
+          Already installed?
+        </button>
+      )}
+
+      {(state.detected || showPathInput) && (
+        <PathInput
+          detectedPath={state.path}
+          customPath={state.customPath}
+          validating={state.validating}
+          validationError={state.validationError}
+          onPathChange={(path) => onPathChange(config.id, path)}
+          onValidate={(path) => onValidate(config.id, path)}
+        />
+      )}
     </div>
   );
 };

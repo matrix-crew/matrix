@@ -8,6 +8,14 @@
 // Agent Configuration
 // ============================================================================
 
+export type Platform = 'mac' | 'linux' | 'windows';
+
+export interface InstallMethod {
+  label: string;
+  command: string;
+  platform: Platform[];
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
@@ -16,6 +24,7 @@ export interface AgentConfig {
   installUrl: string;
   envVar: string;
   authCommand: string;
+  installMethods: InstallMethod[];
 }
 
 export interface AgentState {
@@ -38,6 +47,25 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     installUrl: 'https://docs.anthropic.com/en/docs/claude-code',
     envVar: 'ANTHROPIC_API_KEY',
     authCommand: 'claude auth login',
+    installMethods: [
+      {
+        label: 'Native Install (Recommended)',
+        command: 'curl -fsSL https://claude.ai/install.sh | bash',
+        platform: ['mac', 'linux'],
+      },
+      { label: 'Homebrew', command: 'brew install --cask claude-code', platform: ['mac'] },
+      {
+        label: 'PowerShell (Recommended)',
+        command: 'irm https://claude.ai/install.ps1 | iex',
+        platform: ['windows'],
+      },
+      {
+        label: 'CMD',
+        command:
+          'curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd',
+        platform: ['windows'],
+      },
+    ],
   },
   {
     id: 'gemini',
@@ -47,6 +75,18 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     installUrl: 'https://github.com/google-gemini/gemini-cli',
     envVar: 'GEMINI_API_KEY',
     authCommand: 'gemini auth login',
+    installMethods: [
+      {
+        label: 'npm (Recommended)',
+        command: 'npm i -g @google/gemini-cli',
+        platform: ['mac', 'linux', 'windows'],
+      },
+      {
+        label: 'npx',
+        command: 'npx @google/gemini-cli',
+        platform: ['mac', 'linux', 'windows'],
+      },
+    ],
   },
   {
     id: 'codex',
@@ -56,6 +96,14 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     installUrl: 'https://github.com/openai/codex',
     envVar: 'OPENAI_API_KEY',
     authCommand: 'codex auth',
+    installMethods: [
+      {
+        label: 'npm (Recommended)',
+        command: 'npm i -g @openai/codex',
+        platform: ['mac', 'linux', 'windows'],
+      },
+      { label: 'Homebrew', command: 'brew install --cask codex', platform: ['mac'] },
+    ],
   },
 ];
 

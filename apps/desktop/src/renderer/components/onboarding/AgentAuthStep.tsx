@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AgentConfig, AgentState } from './types';
 import { AGENT_CONFIGS } from './types';
-import { MiniTerminal } from '@/components/ui/MiniTerminal';
+import { MiniTerminal } from '@/components/terminal/MiniTerminal';
 
 interface AgentAuthStepProps {
   agents: Record<string, AgentState>;

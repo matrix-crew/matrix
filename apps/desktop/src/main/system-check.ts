@@ -100,19 +100,41 @@ export interface CommandExecResult {
   exitCode: number;
 }
 
+/** Exact install commands allowed to bypass the simple-command regex. */
+export const ALLOWED_INSTALL_COMMANDS = new Set([
+  'curl -fsSL https://claude.ai/install.sh | bash',
+  'brew install --cask claude-code',
+  'irm https://claude.ai/install.ps1 | iex',
+  'curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd',
+  'npm i -g @google/gemini-cli',
+  'npx @google/gemini-cli',
+  'npm i -g @openai/codex',
+  'brew install --cask codex',
+]);
+
 /**
  * Execute a whitelisted command and return its output.
  * Used by the MiniTerminal component for read-only command execution.
+ *
+ * Accepts either:
+ * - Simple commands whose base command is in ALLOWED_COMMANDS (regex-validated)
+ * - Exact install commands from ALLOWED_INSTALL_COMMANDS (longer timeout)
  */
 export async function execCommand(command: string): Promise<CommandExecResult> {
-  // Extract the base command (first word) for whitelist validation
-  const baseCommand = command.split(/\s+/)[0];
-  if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
-    return { success: false, stdout: '', stderr: 'Command not allowed', exitCode: 1 };
+  const isInstall = ALLOWED_INSTALL_COMMANDS.has(command);
+
+  if (!isInstall) {
+    // Simple command validation (original path)
+    const baseCommand = command.split(/\s+/)[0];
+    if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
+      return { success: false, stdout: '', stderr: 'Command not allowed', exitCode: 1 };
+    }
   }
 
+  const timeout = isInstall ? 120_000 : 10_000;
+
   return new Promise((resolve) => {
-    exec(command, { timeout: 10000, shell: getShell() }, (error, stdout, stderr) => {
+    exec(command, { timeout, shell: getShell() }, (error, stdout, stderr) => {
       const exitCode = error
         ? ((error as NodeJS.ErrnoException & { status?: number }).status ?? 1)
         : 0;
