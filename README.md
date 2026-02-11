@@ -26,7 +26,25 @@
 
 **Themes** — Light and dark modes with a customizable color system.
 
-## Quick Start
+## Installation
+
+Download the latest release from [GitHub Releases](https://github.com/matrix-crew/matrix/releases).
+
+### macOS
+
+The app is not yet code-signed. After downloading, macOS may show **"Matrix is damaged and can't be opened."** To fix this, run:
+
+```bash
+xattr -cr /Applications/Matrix.app
+```
+
+Or if you opened the DMG without moving to Applications:
+
+```bash
+xattr -cr ~/Downloads/Matrix.app
+```
+
+### Quick Start
 
 ```bash
 # Download the latest release
