@@ -1,10 +1,10 @@
-# @maxtix/desktop
+# @matrix/desktop
 
-Maxtix Electron desktop application - AI agent execution interface.
+Matrix Electron desktop application - AI agent execution interface.
 
 ## Overview
 
-The Maxtix desktop application is an Electron-based UI that provides a modern, responsive interface for AI agent execution. It features:
+The Matrix desktop application is an Electron-based UI that provides a modern, responsive interface for AI agent execution. It features:
 
 - Electron 28+ for cross-platform desktop support
 - React 18 with TypeScript for type-safe UI development
@@ -182,18 +182,18 @@ export function MyComponent() {
 
 ### Using Shared Packages
 
-#### @maxtix/shared (Types)
+#### @matrix/shared (Types)
 
 ```typescript
-import type { IPCMessage, IPCResponse } from '@maxtix/shared';
+import type { IPCMessage, IPCResponse } from '@matrix/shared';
 
 const message: IPCMessage = { type: 'ping' };
 ```
 
-#### @maxtix/ui (Components)
+#### @matrix/ui (Components)
 
 ```typescript
-import { Button } from '@maxtix/ui';
+import { Button } from '@matrix/ui';
 
 export function App() {
   return <Button>Click Me</Button>;
@@ -474,4 +474,4 @@ pnpm build
 
 ## License
 
-Part of the Maxtix monorepo project.
+Part of the Matrix monorepo project.

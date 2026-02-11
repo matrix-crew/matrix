@@ -192,7 +192,7 @@ describe('ThemeProvider', () => {
 
   it('reads cached settings from localStorage', async () => {
     localStorage.setItem(
-      'maxtix-theme',
+      'matrix-theme',
       JSON.stringify({ appearanceMode: 'dark', colorThemeId: 'emerald' })
     );
 

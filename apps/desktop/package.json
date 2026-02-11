@@ -1,12 +1,12 @@
 {
-  "name": "@maxtix/desktop",
+  "name": "@matrix/desktop",
   "version": "0.0.2",
   "private": true,
-  "description": "Maxtix Electron desktop application",
+  "description": "Matrix Electron desktop application",
   "homepage": "https://github.com/matrix-crew/matrix",
   "main": "./out/main/index.js",
   "author": {
-    "name": "Maxtix",
+    "name": "Matrix",
     "email": "thearchitect9927@gmail.com"
   },
   "scripts": {

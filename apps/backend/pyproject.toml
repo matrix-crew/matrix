@@ -1,7 +1,7 @@
 [project]
-name = "maxtix-core"
+name = "matrix-core"
 version = "0.1.0"
-description = "Maxtix Python backend core - AI agent execution engine"
+description = "Matrix Python backend core - AI agent execution engine"
 requires-python = ">=3.12"
 dependencies = [
     "sqlmodel>=0.0.22",

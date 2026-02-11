@@ -83,7 +83,6 @@ jobs:
             apps/desktop/dist/*.AppImage
             apps/desktop/dist/*.deb
             apps/desktop/dist/*.blockmap
-            apps/desktop/dist/latest*.yml
           retention-days: 5
 
   release:
@@ -103,7 +102,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Maxtix ${{ github.ref_name }}
+          name: Matrix ${{ github.ref_name }}
           files: artifacts/*
           draft: false
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}

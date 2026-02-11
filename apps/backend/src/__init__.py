@@ -1,6 +1,6 @@
-"""Maxtix Python Core - AI Agent Execution Engine
+"""Matrix Python Core - AI Agent Execution Engine
 
-This package provides the Python backend for the Maxtix multi-agent system.
+This package provides the Python backend for the Matrix multi-agent system.
 It handles agent orchestration, repository management, and LLM integrations.
 """
 

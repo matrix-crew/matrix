@@ -46,7 +46,7 @@ const ShortcutContext = createContext<ShortcutContextValue | undefined>(undefine
 
 // ─── LocalStorage cache ──────────────────────────────────────────────
 
-const LS_KEY = 'maxtix-shortcuts';
+const LS_KEY = 'matrix-shortcuts';
 
 function readCache(): SerializedShortcuts | null {
   try {

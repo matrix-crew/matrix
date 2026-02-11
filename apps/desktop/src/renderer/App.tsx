@@ -19,7 +19,7 @@ import { useShortcuts } from '@/contexts/ShortcutProvider';
 import type { ShortcutActionId } from '@shared/types/shortcuts';
 
 /**
- * Main App component for Maxtix desktop application
+ * Main App component for Matrix desktop application
  *
  * New layout: MatrixTabBar on top, ContextSidebar + main content in flex row.
  * Each matrix is a tab; selecting a tab shows its contextual sidebar.

@@ -1,4 +1,4 @@
-"""Main entry point for Maxtix Python backend.
+"""Main entry point for Matrix Python backend.
 
 This module serves as the entry point for IPC communication between the Electron
 main process and the Python backend. It handles incoming JSON messages from the

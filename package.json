@@ -1,5 +1,5 @@
 {
-  "name": "maxtix",
+  "name": "matrix",
   "version": "0.0.2",
   "private": true,
   "description": "Automated multi-source, multi-session AI agent system with Electron desktop interface",

@@ -1,10 +1,10 @@
-# Maxtix Python Core
+# Matrix Python Core
 
-Maxtix Python backend core - AI agent execution engine
+Matrix Python backend core - AI agent execution engine
 
 ## Overview
 
-The Python core package provides the foundation for the Maxtix agent execution system. It handles the core business logic and IPC communication with the Electron frontend.
+The Python core package provides the foundation for the Matrix agent execution system. It handles the core business logic and IPC communication with the Electron frontend.
 
 ## Requirements
 

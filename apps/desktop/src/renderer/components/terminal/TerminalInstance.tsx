@@ -7,7 +7,7 @@
  * - Addon loading (FitAddon, WebLinksAddon)
  * - PTY data flow (input → IPC, IPC → output)
  * - Auto-resize on container changes
- * - Custom theme matching the Maxtix design system
+ * - Custom theme matching the Matrix design system
  */
 
 import * as React from 'react';

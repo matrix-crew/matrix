@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Maxtix is an Electron desktop application with a Python backend, featuring type-safe IPC communication. The project is a **Turborepo monorepo** using **pnpm workspaces** with two apps:
+Matrix is an Electron desktop application with a Python backend, featuring type-safe IPC communication. The project is a **Turborepo monorepo** using **pnpm workspaces** with two apps:
 
 - `apps/desktop` - Electron application (React + TailwindCSS v4)
 - `apps/backend` - Python backend (managed with uv)
