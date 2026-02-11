@@ -1,6 +1,6 @@
 {
   "name": "matrix",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "Automated multi-source, multi-session AI agent system with Electron desktop interface",
   "repository": {
@@ -25,6 +25,7 @@
     "package:win": "turbo run package:win",
     "package:linux": "turbo run package:linux",
     "package:publish": "turbo run package:publish",
+    "changelog": "git cliff -o CHANGELOG.md",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "prepare": "husky"
   },

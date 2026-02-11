@@ -1,6 +1,6 @@
 {
   "name": "@matrix/desktop",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "Matrix Electron desktop application",
   "homepage": "https://github.com/matrix-crew/matrix",

@@ -1,10 +1,29 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { FolderOpen, LayoutDashboard, GitBranch, Terminal, Zap } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Workflow,
+  Lightbulb,
+  Brain,
+  Terminal,
+  Zap,
+  GitFork,
+  GitPullRequest,
+  CircleDot,
+} from 'lucide-react';
 import { useShortcuts } from '@/contexts/ShortcutProvider';
 import type { ShortcutActionId } from '@shared/types/shortcuts';
 
-export type ContextItemId = 'sources' | 'kanban' | 'pipeline' | 'console' | 'mcp';
+export type ContextItemId =
+  | 'kanban'
+  | 'pipeline'
+  | 'ideation'
+  | 'ctx'
+  | 'console'
+  | 'mcp'
+  | 'worktree'
+  | 'pr'
+  | 'issue';
 
 interface SidebarItem {
   id: ContextItemId;
@@ -20,7 +39,7 @@ interface SidebarSection {
 
 const sections: SidebarSection[] = [
   {
-    title: 'Workflow',
+    title: 'Task',
     items: [
       {
         id: 'kanban',
@@ -31,14 +50,26 @@ const sections: SidebarSection[] = [
       {
         id: 'pipeline',
         label: 'Pipeline',
-        icon: <GitBranch className="size-4" />,
+        icon: <Workflow className="size-4" />,
         actionId: 'context-pipeline',
+      },
+      {
+        id: 'ideation',
+        label: 'Ideation',
+        icon: <Lightbulb className="size-4" />,
+        actionId: 'context-ideation',
       },
     ],
   },
   {
     title: 'Agent',
     items: [
+      {
+        id: 'ctx',
+        label: 'Context',
+        icon: <Brain className="size-4" />,
+        actionId: 'context-ctx',
+      },
       {
         id: 'console',
         label: 'Terminal',
@@ -57,10 +88,22 @@ const sections: SidebarSection[] = [
     title: 'Source',
     items: [
       {
-        id: 'sources',
-        label: 'Sources',
-        icon: <FolderOpen className="size-4" />,
-        actionId: 'context-sources',
+        id: 'worktree',
+        label: 'Worktree',
+        icon: <GitFork className="size-4" />,
+        actionId: 'context-worktree',
+      },
+      {
+        id: 'pr',
+        label: 'PR',
+        icon: <GitPullRequest className="size-4" />,
+        actionId: 'context-pr',
+      },
+      {
+        id: 'issue',
+        label: 'Issue',
+        icon: <CircleDot className="size-4" />,
+        actionId: 'context-issue',
       },
     ],
   },
