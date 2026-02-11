@@ -89,7 +89,7 @@ describe('KeyboardShortcutsSection', () => {
   });
 
   it('shows "Reset All" when overrides exist', async () => {
-    localStorage.setItem('maxtix-shortcuts', JSON.stringify({ 'tab-1': 'meta+shift+1' }));
+    localStorage.setItem('matrix-shortcuts', JSON.stringify({ 'tab-1': 'meta+shift+1' }));
 
     renderSection();
     expect(screen.getByText('Reset All')).toBeInTheDocument();
@@ -97,7 +97,7 @@ describe('KeyboardShortcutsSection', () => {
 
   it('shows conflict warning when overrides create duplicates', () => {
     // Set context-sources to same binding as tab-1 (meta+1)
-    localStorage.setItem('maxtix-shortcuts', JSON.stringify({ 'context-sources': 'meta+1' }));
+    localStorage.setItem('matrix-shortcuts', JSON.stringify({ 'context-sources': 'meta+1' }));
 
     renderSection();
     expect(screen.getByText(/conflicting key bindings/)).toBeInTheDocument();

@@ -1,6 +1,6 @@
-appId: com.maxtix.app
-productName: Maxtix
-copyright: Copyright © 2026 Maxtix
+appId: com.matrix.app
+productName: Matrix
+copyright: Copyright © 2026 Matrix
 artifactName: '${productName}-${version}-${arch}.${ext}'
 
 # node-pty is already rebuilt by postinstall (electron-rebuild -f -w node-pty)
@@ -23,7 +23,7 @@ files:
   - node_modules/python-shell/**/*
   - node_modules/nan/**/*
   # Exclude everything else in node_modules
-  - '!node_modules/@maxtix/**'
+  - '!node_modules/@matrix/**'
   - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'
   - '!**/node_modules/.bin'
 
@@ -91,7 +91,7 @@ nsis:
   allowToChangeInstallationDirectory: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: Maxtix
+  shortcutName: Matrix
 
 # Linux
 linux:

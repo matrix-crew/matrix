@@ -1,7 +1,7 @@
 /**
- * xterm.js Theme for Maxtix
+ * xterm.js Theme for Matrix
  *
- * Custom terminal theme matching the Maxtix design system.
+ * Custom terminal theme matching the Matrix design system.
  * Colors are derived from the TailwindCSS v4 design tokens
  * defined in apps/desktop/src/renderer/index.css.
  */
@@ -9,7 +9,7 @@
 /**
  * xterm.js theme configuration
  *
- * Maps to the Maxtix design system:
+ * Maps to the Matrix design system:
  * - Background: base-900 (#0a0a0f)
  * - Foreground: text-primary (#e2e8f0)
  * - Cursor: accent-lime (#a3e635)
@@ -47,7 +47,7 @@ export const matrixXtermTheme = {
 };
 
 /**
- * xterm.js terminal options for Maxtix
+ * xterm.js terminal options for Matrix
  *
  * Font configuration uses JetBrains Mono Variable for consistency
  * with the app's monospace font.

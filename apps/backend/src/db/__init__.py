@@ -1,4 +1,4 @@
-"""Database utilities for Maxtix Python backend.
+"""Database utilities for Matrix Python backend.
 
 Provides SQLite database engine creation, session management, and schema initialization
 using SQLModel (Pydantic + SQLAlchemy).

@@ -156,7 +156,7 @@ describe('ShortcutProvider', () => {
   });
 
   it('uses localStorage cache for instant load', () => {
-    localStorage.setItem('maxtix-shortcuts', JSON.stringify({ 'tab-1': 'meta+shift+1' }));
+    localStorage.setItem('matrix-shortcuts', JSON.stringify({ 'tab-1': 'meta+shift+1' }));
 
     render(
       <ShortcutProvider>

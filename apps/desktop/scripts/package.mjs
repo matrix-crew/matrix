@@ -24,17 +24,17 @@ import { execSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appDir = join(__dirname, '..');
-const maxtixModulesDir = join(appDir, 'node_modules', '@maxtix');
+const matrixModulesDir = join(appDir, 'node_modules', '@matrix');
 
 // Save and remove workspace symlinks
 const savedLinks = [];
 
 function removeWorkspaceSymlinks() {
-  if (!existsSync(maxtixModulesDir)) return;
+  if (!existsSync(matrixModulesDir)) return;
 
   const entries = ['shared', 'ui'];
   for (const name of entries) {
-    const linkPath = join(maxtixModulesDir, name);
+    const linkPath = join(matrixModulesDir, name);
     if (existsSync(linkPath) && lstatSync(linkPath).isSymbolicLink()) {
       const target = readlinkSync(linkPath);
       savedLinks.push({ path: linkPath, target });
@@ -43,9 +43,9 @@ function removeWorkspaceSymlinks() {
     }
   }
 
-  // Remove empty @maxtix directory
+  // Remove empty @matrix directory
   try {
-    rmSync(maxtixModulesDir, { recursive: true, force: true });
+    rmSync(matrixModulesDir, { recursive: true, force: true });
   } catch {
     // ignore
   }

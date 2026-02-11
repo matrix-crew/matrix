@@ -40,7 +40,7 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 // ─── LocalStorage cache key ───────────────────────────────────────────
 
-const LS_KEY = 'maxtix-theme';
+const LS_KEY = 'matrix-theme';
 
 function readCache(): ThemeSettings | null {
   try {

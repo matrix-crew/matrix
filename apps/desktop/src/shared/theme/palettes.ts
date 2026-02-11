@@ -1,5 +1,5 @@
 /**
- * Color Theme Palettes for Maxtix
+ * Color Theme Palettes for Matrix
  *
  * Each palette defines colors for both light and dark appearance modes.
  * CSS custom properties are overridden at runtime by the ThemeProvider.
