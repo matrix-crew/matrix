@@ -7,7 +7,6 @@ import {
   type Repository,
   type PRFilter,
   type PRState,
-  createInitialPRsState,
   filterPRs,
   groupPRsByRepository,
   getPRStateBgClass,
@@ -16,6 +15,8 @@ import {
   getPRReviewSummary,
   getRelativeTimeString,
 } from '@/types/workspace';
+import { useGitHubData } from '@/hooks/useGitHubData';
+import { GitHubSetupPrompt } from './GitHubSetupPrompt';
 
 /**
  * Repository list item variants using class-variance-authority
@@ -59,6 +60,8 @@ const prCardVariants = cva('rounded-lg border p-3 transition-all cursor-pointer'
 });
 
 export interface PRsViewProps extends VariantProps<typeof repoItemVariants> {
+  /** Source IDs from the active matrix (used to detect GitHub repos) */
+  sourceIds: string[];
   /** Initial state for the PRs view */
   initialState?: PRsViewState;
   /** Callback when state changes */
@@ -79,10 +82,43 @@ export interface PRsViewProps extends VariantProps<typeof repoItemVariants> {
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const PRsView: React.FC<PRsViewProps> = ({ initialState, onStateChange, className }) => {
+const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChange, className }) => {
+  const {
+    status,
+    isCheckingStatus,
+    isLoading: isGitHubLoading,
+    repositories: ghRepositories,
+    pullRequests: ghPullRequests,
+    errors,
+    refetchAll,
+  } = useGitHubData({ sourceIds });
+
   const [state, setState] = React.useState<PRsViewState>(() => {
-    return initialState ?? createInitialPRsState();
+    return (
+      initialState ?? {
+        pullRequests: [],
+        repositories: [],
+        selectedRepositoryId: null,
+        filter: {},
+        selectedPRId: null,
+        isLoading: true,
+        errorMessage: null,
+        currentUser: '',
+      }
+    );
   });
+
+  // Sync hook data into view state
+  React.useEffect(() => {
+    setState((prev) => ({
+      ...prev,
+      pullRequests: ghPullRequests,
+      repositories: ghRepositories,
+      isLoading: isGitHubLoading,
+      errorMessage: errors.length > 0 ? errors.join('; ') : null,
+      currentUser: status.user ?? '',
+    }));
+  }, [ghPullRequests, ghRepositories, isGitHubLoading, errors, status.user]);
 
   /**
    * Update state and notify parent
@@ -214,6 +250,18 @@ const PRsView: React.FC<PRsViewProps> = ({ initialState, onStateChange, classNam
     const closedCount = state.pullRequests.filter((pr) => pr.state === 'closed').length;
     return { open: openCount, merged: mergedCount, closed: closedCount };
   }, [state.pullRequests]);
+
+  // Show gh CLI setup prompt if not installed or not authenticated
+  if (isCheckingStatus || !status.installed || !status.authenticated) {
+    return (
+      <GitHubSetupPrompt
+        status={status}
+        isCheckingStatus={isCheckingStatus}
+        onRetry={refetchAll}
+        className={className}
+      />
+    );
+  }
 
   return (
     <div

@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from src.db import get_engine, get_session, init_db
+from src.github import GitHubClient, GitHubError, GitHubRepoDetector
 from src.matrix import (
     Matrix,
     MatrixReconciler,
@@ -53,6 +54,10 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
     # Route to appropriate handler based on message type
     if message_type == "ping":
         return {"success": True, "data": {"message": "pong"}}
+
+    # GitHub handlers (no DB session needed for check)
+    if message_type == "github-check":
+        return _handle_github_check()
 
     # All other handlers need DB access
     db_path = message.get("db_path")
@@ -101,6 +106,16 @@ def handle_message(message: dict[str, Any]) -> dict[str, Any]:
 
         if message_type == "matrix-reconcile":
             return _handle_matrix_reconcile(message, matrix_repo, source_repo)
+
+        # GitHub handlers (need DB for source lookup)
+        if message_type == "github-detect-repos":
+            return _handle_github_detect_repos(message, source_repo)
+
+        if message_type == "github-list-issues":
+            return _handle_github_list_issues(message)
+
+        if message_type == "github-list-prs":
+            return _handle_github_list_prs(message)
 
     # Unknown message type
     return {
@@ -415,3 +430,141 @@ def _resolve_sources(source_ids: list[str], source_repo: SourceRepository) -> li
         if source is not None:
             sources.append(source)
     return sources
+
+
+# ============================================================================
+# GitHub Handlers
+# ============================================================================
+
+
+def _handle_github_check() -> dict[str, Any]:
+    """Check if gh CLI is installed and authenticated."""
+    client = GitHubClient()
+
+    installed = client.check_installation()
+    if not installed:
+        return {
+            "success": True,
+            "data": {
+                "installed": False,
+                "authenticated": False,
+                "user": None,
+                "error": "gh CLI not found. Install from https://cli.github.com",
+            },
+        }
+
+    auth_status = client.check_auth()
+    return {
+        "success": True,
+        "data": {
+            "installed": True,
+            "authenticated": auth_status["authenticated"],
+            "user": auth_status.get("user"),
+            "error": auth_status.get("error"),
+        },
+    }
+
+
+def _handle_github_detect_repos(
+    message: dict[str, Any], source_repo: SourceRepository
+) -> dict[str, Any]:
+    """Detect GitHub repos from source IDs."""
+    data = message.get("data", {})
+    source_ids = data.get("source_ids", [])
+
+    if not source_ids:
+        return {"success": False, "error": "source_ids array is required"}
+
+    detector = GitHubRepoDetector()
+    repos = []
+
+    for source_id in source_ids:
+        source = source_repo.get(source_id)
+        if source is None:
+            continue
+
+        repo_info = detector.detect_from_source(source.path, source.url)
+        if repo_info:
+            repos.append(
+                {
+                    "source_id": source.id,
+                    "source_name": source.name,
+                    "owner": repo_info.owner,
+                    "repo": repo_info.name,
+                    "full_name": repo_info.full_name,
+                }
+            )
+
+    return {"success": True, "data": {"repos": repos}}
+
+
+def _handle_github_list_issues(message: dict[str, Any]) -> dict[str, Any]:
+    """Fetch issues for one or more repositories."""
+    data = message.get("data", {})
+    repos = data.get("repos", [])
+    state = data.get("state", "open")
+    limit = data.get("limit", 100)
+
+    if not repos:
+        return {"success": False, "error": "repos array is required"}
+
+    client = GitHubClient()
+    all_issues: list[dict[str, Any]] = []
+    errors: list[str] = []
+
+    for repo_spec in repos:
+        owner = repo_spec.get("owner")
+        repo = repo_spec.get("repo")
+
+        if not owner or not repo:
+            errors.append(f"Invalid repo spec: {repo_spec}")
+            continue
+
+        try:
+            issues = client.list_issues(owner, repo, state, limit)
+            for issue in issues:
+                issue["_repository"] = {"owner": owner, "name": repo}
+            all_issues.extend(issues)
+        except GitHubError as e:
+            errors.append(f"{owner}/{repo}: {e}")
+
+    return {
+        "success": True,
+        "data": {"issues": all_issues, "errors": errors if errors else None},
+    }
+
+
+def _handle_github_list_prs(message: dict[str, Any]) -> dict[str, Any]:
+    """Fetch pull requests for one or more repositories."""
+    data = message.get("data", {})
+    repos = data.get("repos", [])
+    state = data.get("state", "open")
+    limit = data.get("limit", 100)
+
+    if not repos:
+        return {"success": False, "error": "repos array is required"}
+
+    client = GitHubClient()
+    all_prs: list[dict[str, Any]] = []
+    errors: list[str] = []
+
+    for repo_spec in repos:
+        owner = repo_spec.get("owner")
+        repo = repo_spec.get("repo")
+
+        if not owner or not repo:
+            errors.append(f"Invalid repo spec: {repo_spec}")
+            continue
+
+        try:
+            prs = client.list_pull_requests(owner, repo, state, limit)
+            for pr in prs:
+                pr["_repository"] = {"owner": owner, "name": repo}
+            all_prs.extend(prs)
+        except GitHubError as e:
+            errors.append(f"{owner}/{repo}: {e}")
+
+    return {
+        "success": True,
+        "data": {"prs": all_prs, "errors": errors if errors else None},
+    }

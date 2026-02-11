@@ -7,7 +7,6 @@ import {
   type Repository,
   type IssueFilter,
   type IssueState,
-  createInitialIssuesState,
   filterIssues,
   groupIssuesByRepository,
   getIssueStateBgClass,
@@ -15,6 +14,8 @@ import {
   getIssuePriorityText,
   getRelativeTimeString,
 } from '@/types/workspace';
+import { useGitHubData } from '@/hooks/useGitHubData';
+import { GitHubSetupPrompt } from './GitHubSetupPrompt';
 
 /**
  * Repository list item variants using class-variance-authority
@@ -57,6 +58,8 @@ const issueCardVariants = cva('rounded-lg border p-3 transition-all cursor-point
 });
 
 export interface IssuesViewProps extends VariantProps<typeof repoItemVariants> {
+  /** Source IDs from the active matrix (used to detect GitHub repos) */
+  sourceIds: string[];
   /** Initial state for the issues view */
   initialState?: IssuesViewState;
   /** Callback when state changes */
@@ -77,10 +80,48 @@ export interface IssuesViewProps extends VariantProps<typeof repoItemVariants> {
  *   onStateChange={(state) => saveToBackend(state)}
  * />
  */
-const IssuesView: React.FC<IssuesViewProps> = ({ initialState, onStateChange, className }) => {
+const IssuesView: React.FC<IssuesViewProps> = ({
+  sourceIds,
+  initialState,
+  onStateChange,
+  className,
+}) => {
+  const {
+    status,
+    isCheckingStatus,
+    isLoading: isGitHubLoading,
+    repositories: ghRepositories,
+    issues: ghIssues,
+    errors,
+    refetchAll,
+  } = useGitHubData({ sourceIds });
+
   const [state, setState] = React.useState<IssuesViewState>(() => {
-    return initialState ?? createInitialIssuesState();
+    return (
+      initialState ?? {
+        issues: [],
+        repositories: [],
+        selectedRepositoryId: null,
+        filter: {},
+        selectedIssueId: null,
+        isLoading: true,
+        errorMessage: null,
+        currentUser: '',
+      }
+    );
   });
+
+  // Sync hook data into view state
+  React.useEffect(() => {
+    setState((prev) => ({
+      ...prev,
+      issues: ghIssues,
+      repositories: ghRepositories,
+      isLoading: isGitHubLoading,
+      errorMessage: errors.length > 0 ? errors.join('; ') : null,
+      currentUser: status.user ?? '',
+    }));
+  }, [ghIssues, ghRepositories, isGitHubLoading, errors, status.user]);
 
   /**
    * Update state and notify parent
@@ -211,6 +252,18 @@ const IssuesView: React.FC<IssuesViewProps> = ({ initialState, onStateChange, cl
     const closedCount = state.issues.filter((i) => i.state === 'closed').length;
     return { open: openCount, closed: closedCount };
   }, [state.issues]);
+
+  // Show gh CLI setup prompt if not installed or not authenticated
+  if (isCheckingStatus || !status.installed || !status.authenticated) {
+    return (
+      <GitHubSetupPrompt
+        status={status}
+        isCheckingStatus={isCheckingStatus}
+        onRetry={refetchAll}
+        className={className}
+      />
+    );
+  }
 
   return (
     <div

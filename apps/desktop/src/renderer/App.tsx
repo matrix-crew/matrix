@@ -332,9 +332,13 @@ const App: React.FC = () => {
           </div>
         );
       case 'pr':
-        return <PRsView />;
+        return (
+          <PRsView sourceIds={matrices.find((m) => m.id === activeMatrixId)?.source_ids ?? []} />
+        );
       case 'issue':
-        return <IssuesView />;
+        return (
+          <IssuesView sourceIds={matrices.find((m) => m.id === activeMatrixId)?.source_ids ?? []} />
+        );
       default:
         return <KanbanBoard />;
     }
