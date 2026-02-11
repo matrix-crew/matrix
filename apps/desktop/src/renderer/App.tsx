@@ -13,6 +13,10 @@ import { TerminalManager } from '@/components/terminal/TerminalManager';
 import { MCPControl } from '@/components/agent/MCPControl';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
+import { DevToolsModal } from '@/components/devtools/DevToolsModal';
+import { useShortcutAction } from '@/hooks/useShortcutAction';
+import { useShortcuts } from '@/contexts/ShortcutProvider';
+import type { ShortcutActionId } from '@shared/types/shortcuts';
 
 /**
  * Main App component for Maxtix desktop application
@@ -26,6 +30,7 @@ const App: React.FC = () => {
   const [activeMatrixId, setActiveMatrixId] = useState<string | null>(null);
   const [isHomeActive, setIsHomeActive] = useState(false);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
+  const [showDevTools, setShowDevTools] = useState(false);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('sources');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,6 +109,30 @@ const App: React.FC = () => {
     setShowGlobalSettings((prev) => !prev);
   }, []);
 
+  const handleToggleDevTools = useCallback(() => {
+    setShowDevTools((prev) => !prev);
+  }, []);
+
+  /**
+   * Handle data reset from DevTools (refresh matrices list)
+   */
+  const handleDevToolsDataReset = useCallback(() => {
+    fetchMatrices(true);
+  }, [fetchMatrices]);
+
+  /**
+   * Handle onboarding toggle from DevTools (immediately reflect in app)
+   */
+  const handleOnboardingToggle = useCallback(
+    (completed: boolean) => {
+      setShowOnboarding(!completed);
+      if (completed) {
+        fetchMatrices(true);
+      }
+    },
+    [fetchMatrices]
+  );
+
   /**
    * Open create matrix form
    */
@@ -166,6 +195,71 @@ const App: React.FC = () => {
       }
     },
     [matrices, activeMatrixId]
+  );
+
+  // ── Keyboard shortcut registrations ──
+  const noModal = !showGlobalSettings && !showDevTools && !isFormOpen;
+  const canSwitchContext = !!activeMatrixId && !isHomeActive && noModal;
+
+  // Tab shortcuts: ⌘1 = Home, ⌘2–⌘9 = matrix tabs by position, ⌘9 = last tab
+  const { registerAction } = useShortcuts();
+  useEffect(() => {
+    if (!noModal) return;
+
+    const cleanups: (() => void)[] = [];
+    for (let i = 1; i <= 9; i++) {
+      const actionId = `tab-${i}` as ShortcutActionId;
+      cleanups.push(
+        registerAction(actionId, () => {
+          if (i === 1) {
+            handleSelectHome();
+          } else if (i === 9) {
+            // ⌘9 = last tab
+            if (matrices.length > 0) {
+              handleSelectMatrix(matrices[matrices.length - 1].id);
+            }
+          } else {
+            const idx = i - 2; // tab-2 = matrices[0]
+            if (idx < matrices.length) {
+              handleSelectMatrix(matrices[idx].id);
+            }
+          }
+        })
+      );
+    }
+    return () => cleanups.forEach((c) => c());
+  }, [registerAction, matrices, handleSelectHome, handleSelectMatrix, noModal]);
+
+  // Navigation shortcuts
+  useShortcutAction('toggle-settings', handleToggleSettings);
+  useShortcutAction('toggle-devtools', handleToggleDevTools, noModal);
+  useShortcutAction('create-matrix', handleOpenCreateForm, noModal);
+
+  // Context sidebar shortcuts (⌘+letter)
+  useShortcutAction(
+    'context-sources',
+    useCallback(() => setActiveContextItem('sources'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-kanban',
+    useCallback(() => setActiveContextItem('kanban'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-pipeline',
+    useCallback(() => setActiveContextItem('pipeline'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-console',
+    useCallback(() => setActiveContextItem('console'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
+    'context-mcp',
+    useCallback(() => setActiveContextItem('mcp'), []),
+    canSwitchContext
   );
 
   /**
@@ -235,11 +329,13 @@ const App: React.FC = () => {
           activeMatrixId={null}
           isHomeActive={isHomeActive}
           isSettingsActive={showGlobalSettings}
+          isDevToolsActive={showDevTools}
           onSelectMatrix={() => {}}
           onSelectHome={handleSelectHome}
           onCreateMatrix={handleOpenCreateForm}
           onCloseMatrix={() => {}}
           onOpenSettings={handleToggleSettings}
+          onOpenDevTools={handleToggleDevTools}
         />
         <OnboardingView onCreateMatrix={handleOpenCreateForm} />
 
@@ -260,11 +356,13 @@ const App: React.FC = () => {
         activeMatrixId={activeMatrixId}
         isHomeActive={isHomeActive}
         isSettingsActive={showGlobalSettings}
+        isDevToolsActive={showDevTools}
         onSelectMatrix={handleSelectMatrix}
         onSelectHome={handleSelectHome}
         onCreateMatrix={handleOpenCreateForm}
         onCloseMatrix={handleCloseMatrix}
         onOpenSettings={handleToggleSettings}
+        onOpenDevTools={handleToggleDevTools}
       />
 
       {/* Sidebar + Content */}
@@ -316,6 +414,29 @@ const App: React.FC = () => {
             <SettingsPage
               initialSection="appearance"
               onClose={() => setShowGlobalSettings(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* DevTools modal overlay (dev mode only) */}
+      {import.meta.env.DEV && showDevTools && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          aria-label="DevTools"
+          onClick={() => setShowDevTools(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setShowDevTools(false)}
+        >
+          <div
+            className="h-[70vh] w-full max-w-2xl animate-slide-in overflow-hidden rounded-xl border border-border-default bg-base-900 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DevToolsModal
+              onClose={() => setShowDevTools(false)}
+              onDataReset={handleDevToolsDataReset}
+              onOnboardingToggle={handleOnboardingToggle}
             />
           </div>
         </div>

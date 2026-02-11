@@ -74,5 +74,7 @@ class TestGetMatrixSpacePath:
 
     def test_returns_full_path(self):
         path = get_matrix_space_path("My Project", "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
-        expected = os.path.join(os.path.expanduser("~"), ".matrix", "my-project-a1b2c3d4")
+        expected = os.path.join(
+            os.path.expanduser("~"), ".matrix", "matrices", "my-project-a1b2c3d4"
+        )
         assert path == expected

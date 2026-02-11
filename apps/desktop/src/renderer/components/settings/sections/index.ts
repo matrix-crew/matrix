@@ -12,6 +12,7 @@ export { DeveloperToolsSection, ideCardVariants } from './DeveloperToolsSection'
 export { DisplaySection, sizeCardVariants } from './DisplaySection';
 export { LanguageSection, languageCardVariants } from './LanguageSection';
 export { NotificationsSection } from './NotificationsSection';
+export { KeyboardShortcutsSection } from './KeyboardShortcutsSection';
 export { PathsSection } from './PathsSection';
 
 // Export section component prop types
@@ -22,4 +23,5 @@ export type { DeveloperToolsSectionProps } from './DeveloperToolsSection';
 export type { DisplaySectionProps } from './DisplaySection';
 export type { LanguageSectionProps } from './LanguageSection';
 export type { NotificationsSectionProps } from './NotificationsSection';
+export type { KeyboardShortcutsSectionProps } from './KeyboardShortcutsSection';
 export type { PathsSectionProps } from './PathsSection';

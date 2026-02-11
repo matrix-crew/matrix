@@ -16,6 +16,7 @@ import {
   NotificationsSection,
   DeveloperToolsSection,
   AgentSettingsSection,
+  KeyboardShortcutsSection,
   PathsSection,
   DebugLogsSection,
 } from './sections';
@@ -145,6 +146,8 @@ const getSectionComponent = (sectionId: SettingsSectionId): React.ReactNode => {
       return <DisplaySection />;
     case 'language':
       return <LanguageSection />;
+    case 'keyboard-shortcuts':
+      return <KeyboardShortcutsSection />;
     case 'notifications':
       return <NotificationsSection />;
     case 'developer-tools':

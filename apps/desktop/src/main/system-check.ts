@@ -11,17 +11,19 @@
  */
 
 import { ipcMain, shell } from 'electron';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { readFile, writeFile, mkdir, readdir, access } from 'fs/promises';
+import { constants as fsConstants } from 'fs';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { homedir, platform } from 'os';
+import { getAppPaths } from './app-paths';
 
 const CONFIG_DIR = join(homedir(), '.matrix');
 const CONFIG_PATH = join(CONFIG_DIR, '.matrix.json');
 
 /** Commands allowed for detection (security whitelist) */
-const ALLOWED_COMMANDS = new Set([
+export const ALLOWED_COMMANDS = new Set([
   'claude',
   'gemini',
   'codex',
@@ -37,7 +39,7 @@ const ALLOWED_COMMANDS = new Set([
 /**
  * Get the appropriate shell for command execution based on platform
  */
-function getShell(): string {
+export function getShell(): string {
   if (platform() === 'win32') {
     return process.env.COMSPEC || 'cmd.exe';
   }
@@ -47,7 +49,7 @@ function getShell(): string {
 /**
  * Execute a shell command and return stdout
  */
-function execAsync(cmd: string, timeout = 5000): Promise<string> {
+export function execAsync(cmd: string, timeout = 5000): Promise<string> {
   return new Promise((resolve, reject) => {
     exec(cmd, { timeout, shell: getShell() }, (error, stdout, stderr) => {
       if (error) reject(error);
@@ -56,7 +58,7 @@ function execAsync(cmd: string, timeout = 5000): Promise<string> {
   });
 }
 
-interface CommandCheckResult {
+export interface CommandCheckResult {
   exists: boolean;
   path?: string;
   version?: string;
@@ -65,7 +67,7 @@ interface CommandCheckResult {
 /**
  * Check if a command exists and get its version
  */
-async function checkCommand(command: string): Promise<CommandCheckResult> {
+export async function checkCommand(command: string): Promise<CommandCheckResult> {
   // Validate: must be in whitelist AND contain only safe characters
   if (!ALLOWED_COMMANDS.has(command) || !/^[a-zA-Z0-9_-]+$/.test(command)) {
     return { exists: false };
@@ -89,9 +91,57 @@ async function checkCommand(command: string): Promise<CommandCheckResult> {
   }
 }
 
+export interface ExecutableValidationResult {
+  valid: boolean;
+  version?: string;
+  error?: string;
+}
+
+/**
+ * Validate that a file path points to an executable
+ */
+export async function validateExecutablePath(
+  filePath: string
+): Promise<ExecutableValidationResult> {
+  if (!filePath || typeof filePath !== 'string') {
+    return { valid: false, error: 'Invalid path' };
+  }
+
+  // Basic path sanitization
+  const normalized = filePath.trim();
+  if (!normalized.startsWith('/') && !normalized.match(/^[A-Z]:\\/i)) {
+    return { valid: false, error: 'Path must be absolute' };
+  }
+
+  try {
+    await access(normalized, fsConstants.X_OK);
+
+    // Try to get version info (use execFile to avoid shell injection)
+    let version: string | undefined;
+    try {
+      const output = await new Promise<string>((resolve, reject) => {
+        execFile(normalized, ['--version'], { timeout: 2000 }, (error, stdout, stderr) => {
+          if (error) reject(error);
+          else resolve((stdout || stderr).trim());
+        });
+      });
+      const match = output.match(/(\d+\.\d+(?:\.\d+)*)/);
+      version = match?.[1];
+    } catch {
+      // Version check is optional
+    }
+
+    return { valid: true, version };
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'EACCES') return { valid: false, error: 'File is not executable' };
+    return { valid: false, error: 'File not found' };
+  }
+}
+
 // ── Terminal Detection ──────────────────────────────────────────────────
 
-interface TerminalInfo {
+export interface TerminalInfo {
   id: string;
   name: string;
   path: string;
@@ -105,7 +155,7 @@ interface TerminalCandidate {
   check: string;
 }
 
-const MACOS_TERMINALS: TerminalCandidate[] = [
+export const MACOS_TERMINALS: TerminalCandidate[] = [
   { id: 'terminal', name: 'Terminal', check: 'Terminal.app' },
   { id: 'iterm2', name: 'iTerm2', check: 'iTerm.app' },
   { id: 'warp', name: 'Warp', check: 'Warp.app' },
@@ -116,7 +166,7 @@ const MACOS_TERMINALS: TerminalCandidate[] = [
   { id: 'ghostty', name: 'Ghostty', check: 'Ghostty.app' },
 ];
 
-const LINUX_TERMINALS: TerminalCandidate[] = [
+export const LINUX_TERMINALS: TerminalCandidate[] = [
   { id: 'gnome-terminal', name: 'GNOME Terminal', check: 'gnome-terminal' },
   { id: 'konsole', name: 'Konsole', check: 'konsole' },
   { id: 'xfce4-terminal', name: 'XFCE Terminal', check: 'xfce4-terminal' },
@@ -130,7 +180,7 @@ const LINUX_TERMINALS: TerminalCandidate[] = [
   { id: 'ghostty', name: 'Ghostty', check: 'ghostty' },
 ];
 
-const WINDOWS_TERMINALS: TerminalCandidate[] = [
+export const WINDOWS_TERMINALS: TerminalCandidate[] = [
   { id: 'windows-terminal', name: 'Windows Terminal', check: 'wt.exe' },
   { id: 'powershell', name: 'PowerShell', check: 'pwsh.exe' },
   { id: 'cmd', name: 'Command Prompt', check: 'cmd.exe' },
@@ -142,7 +192,7 @@ const WINDOWS_TERMINALS: TerminalCandidate[] = [
 /**
  * Check if a path exists (async)
  */
-async function pathExists(p: string): Promise<boolean> {
+export async function pathExists(p: string): Promise<boolean> {
   try {
     await access(p);
     return true;
@@ -154,7 +204,7 @@ async function pathExists(p: string): Promise<boolean> {
 /**
  * Detect installed terminal emulators on macOS
  */
-async function detectMacOSTerminals(): Promise<TerminalInfo[]> {
+export async function detectMacOSTerminals(): Promise<TerminalInfo[]> {
   const results: TerminalInfo[] = [];
   const appDirs = ['/Applications', join(homedir(), 'Applications')];
 
@@ -195,7 +245,7 @@ async function detectMacOSTerminals(): Promise<TerminalInfo[]> {
 /**
  * Detect installed terminal emulators on Linux
  */
-async function detectLinuxTerminals(): Promise<TerminalInfo[]> {
+export async function detectLinuxTerminals(): Promise<TerminalInfo[]> {
   const results: TerminalInfo[] = [];
 
   // Detect default terminal
@@ -246,7 +296,7 @@ async function detectLinuxTerminals(): Promise<TerminalInfo[]> {
 /**
  * Detect installed terminal emulators on Windows
  */
-async function detectWindowsTerminals(): Promise<TerminalInfo[]> {
+export async function detectWindowsTerminals(): Promise<TerminalInfo[]> {
   const results: TerminalInfo[] = [];
 
   const searchPaths = [
@@ -331,7 +381,7 @@ async function detectWindowsTerminals(): Promise<TerminalInfo[]> {
 /**
  * Detect installed terminal emulators (cross-platform)
  */
-async function detectTerminals(): Promise<TerminalInfo[]> {
+export async function detectTerminals(): Promise<TerminalInfo[]> {
   try {
     switch (platform()) {
       case 'darwin':
@@ -350,7 +400,7 @@ async function detectTerminals(): Promise<TerminalInfo[]> {
 
 // ── IDE Detection ─────────────────────────────────────────────────────
 
-interface IDEInfo {
+export interface IDEInfo {
   id: string;
   name: string;
   path: string;
@@ -366,7 +416,7 @@ interface IDECandidate {
   winExe?: string;
 }
 
-const IDE_CANDIDATES: IDECandidate[] = [
+export const IDE_CANDIDATES: IDECandidate[] = [
   {
     id: 'vscode',
     name: 'VS Code',
@@ -412,7 +462,7 @@ const IDE_CANDIDATES: IDECandidate[] = [
 /**
  * Detect installed IDEs on macOS
  */
-async function detectMacOSIDEs(): Promise<IDEInfo[]> {
+export async function detectMacOSIDEs(): Promise<IDEInfo[]> {
   const results: IDEInfo[] = [];
   const appDirs = ['/Applications', join(homedir(), 'Applications')];
 
@@ -450,7 +500,7 @@ async function detectMacOSIDEs(): Promise<IDEInfo[]> {
 /**
  * Detect installed IDEs on Linux
  */
-async function detectLinuxIDEs(): Promise<IDEInfo[]> {
+export async function detectLinuxIDEs(): Promise<IDEInfo[]> {
   const results: IDEInfo[] = [];
 
   for (const candidate of IDE_CANDIDATES) {
@@ -471,7 +521,7 @@ async function detectLinuxIDEs(): Promise<IDEInfo[]> {
 /**
  * Detect installed IDEs on Windows
  */
-async function detectWindowsIDEs(): Promise<IDEInfo[]> {
+export async function detectWindowsIDEs(): Promise<IDEInfo[]> {
   const results: IDEInfo[] = [];
 
   for (const candidate of IDE_CANDIDATES) {
@@ -495,7 +545,7 @@ async function detectWindowsIDEs(): Promise<IDEInfo[]> {
 /**
  * Detect installed IDEs (cross-platform)
  */
-async function detectIDEs(): Promise<IDEInfo[]> {
+export async function detectIDEs(): Promise<IDEInfo[]> {
   try {
     switch (platform()) {
       case 'darwin':
@@ -517,7 +567,7 @@ async function detectIDEs(): Promise<IDEInfo[]> {
 /**
  * Read application config from ~/.matrix/.matrix.json
  */
-async function readConfig(): Promise<Record<string, unknown>> {
+export async function readConfig(): Promise<Record<string, unknown>> {
   try {
     const data = await readFile(CONFIG_PATH, 'utf-8');
     return JSON.parse(data);
@@ -529,7 +579,7 @@ async function readConfig(): Promise<Record<string, unknown>> {
 /**
  * Write application config to ~/.matrix/.matrix.json (merge with existing)
  */
-async function writeConfig(config: Record<string, unknown>): Promise<void> {
+export async function writeConfig(config: Record<string, unknown>): Promise<void> {
   if (!existsSync(CONFIG_DIR)) {
     await mkdir(CONFIG_DIR, { recursive: true });
   }
@@ -547,9 +597,20 @@ async function writeConfig(config: Record<string, unknown>): Promise<void> {
   await writeFile(CONFIG_PATH, JSON.stringify(merged, null, 2), { mode: 0o600 });
 }
 
+/**
+ * Reset application config to defaults (overwrites entire file)
+ */
+export async function resetConfig(): Promise<void> {
+  if (!existsSync(CONFIG_DIR)) {
+    await mkdir(CONFIG_DIR, { recursive: true });
+  }
+  const defaults = { onboarding_completed: false };
+  await writeFile(CONFIG_PATH, JSON.stringify(defaults, null, 2), { mode: 0o600 });
+}
+
 // ── Shell Detection (for PTY sessions) ──────────────────────────────────
 
-interface ShellInfo {
+export interface ShellInfo {
   id: string;
   name: string;
   path: string;
@@ -561,7 +622,7 @@ interface ShellInfo {
  * Unlike detectTerminals() which finds terminal emulator apps,
  * this finds actual shell executables (zsh, bash, fish, etc.).
  */
-async function detectShells(): Promise<ShellInfo[]> {
+export async function detectShells(): Promise<ShellInfo[]> {
   const defaultShell = process.env.SHELL || '/bin/zsh';
   const shells: ShellInfo[] = [];
 
@@ -649,6 +710,11 @@ export function setupSystemCheckHandlers(): void {
     return checkCommand(command);
   });
 
+  // Validate an executable file path
+  ipcMain.handle('system:validate-executable', async (_event, filePath: string) => {
+    return validateExecutablePath(filePath);
+  });
+
   // Detect installed terminal emulators
   ipcMain.handle('system:detect-terminals', async () => {
     return detectTerminals();
@@ -673,6 +739,18 @@ export function setupSystemCheckHandlers(): void {
   ipcMain.handle('config:write', async (_event, config: Record<string, unknown>) => {
     await writeConfig(config);
     return { success: true };
+  });
+
+  // Reset application config to defaults (overwrites entire file)
+  ipcMain.handle('config:reset', async () => {
+    await resetConfig();
+    return { success: true };
+  });
+
+  // Get application paths (for DevTools panel)
+  ipcMain.handle('system:get-paths', async () => {
+    const { dbPath, workspacePath } = getAppPaths();
+    return { configPath: CONFIG_PATH, dbPath, workspacePath };
   });
 
   // Open URL in default browser (only allow http/https)

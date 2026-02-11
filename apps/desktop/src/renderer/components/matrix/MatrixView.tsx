@@ -1,10 +1,16 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import type { Matrix, Source } from '@shared/types/matrix';
+import type {
+  Matrix,
+  Source,
+  ReconcileReport,
+  LocalSourceCreateData,
+  RemoteSourceCreateData,
+} from '@shared/types/matrix';
 import { SourceList, type SourceListState, createInitialSourceListState } from './SourceList';
 import { MatrixForm, type MatrixFormValues } from './MatrixForm';
-import { SourceForm, type SourceFormValues } from './SourceForm';
+import { SourceFormWizard } from './SourceFormWizard';
 
 /**
  * Action button variants using class-variance-authority
@@ -113,6 +119,29 @@ const MatrixView: React.FC<MatrixViewProps> = ({ matrixId, className }) => {
       }
 
       setIsLoading(false);
+
+      // Background reconcile: repair filesystem if needed (non-blocking)
+      window.api
+        .sendMessage({ type: 'matrix-reconcile', data: { id: matrixId } })
+        .then((reconcileResponse) => {
+          if (reconcileResponse.success && reconcileResponse.data) {
+            const report = (reconcileResponse.data as { report: ReconcileReport }).report;
+            if (report.has_repairs) {
+              console.info('[Matrix] Reconciled filesystem:', report);
+              // Refresh data if repairs were made
+              fetchAllSources().then((sources) => {
+                const matrixSources = sources.filter((s) => loadedMatrix.source_ids.includes(s.id));
+                setSourceListState((prev) => ({
+                  ...prev,
+                  sources: matrixSources,
+                }));
+              });
+            }
+          }
+        })
+        .catch(() => {
+          // Reconciliation is best-effort, don't show errors
+        });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Failed to load matrix';
       setErrorMessage(errorMsg);
@@ -199,17 +228,17 @@ const MatrixView: React.FC<MatrixViewProps> = ({ matrixId, className }) => {
    * Handle source form submit - create source and add to matrix
    */
   const handleSourceFormSubmit = React.useCallback(
-    async (values: SourceFormValues) => {
+    async (data: LocalSourceCreateData | RemoteSourceCreateData) => {
       if (!matrix) throw new Error('No matrix selected');
+
+      // Determine message type based on source_type
+      const messageType =
+        data.source_type === 'local' ? 'source-create-local' : 'source-create-remote';
 
       // Create the source
       const createResponse = await window.api.sendMessage({
-        type: 'source-create',
-        data: {
-          name: values.name,
-          path: values.path,
-          url: values.url || undefined,
-        },
+        type: messageType,
+        data,
       });
 
       if (!createResponse.success || !createResponse.data) {
@@ -218,7 +247,7 @@ const MatrixView: React.FC<MatrixViewProps> = ({ matrixId, className }) => {
 
       const newSource = (createResponse.data as { source: Source }).source;
 
-      // Add the source to the matrix
+      // Add the source to the matrix (this also creates the symlink)
       const addResponse = await window.api.sendMessage({
         type: 'matrix-add-source',
         data: {
@@ -491,7 +520,7 @@ const FormModal: React.FC<FormModalProps> = ({ mode, matrix, onSubmit, onCancel 
  * Source form modal component
  */
 interface SourceFormModalProps {
-  onSubmit: (values: SourceFormValues) => void | Promise<void>;
+  onSubmit: (data: LocalSourceCreateData | RemoteSourceCreateData) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -503,7 +532,7 @@ const SourceFormModal: React.FC<SourceFormModalProps> = ({ onSubmit, onCancel })
     onClick={onCancel}
   >
     <div className="w-full max-w-md animate-slide-in" onClick={(e) => e.stopPropagation()}>
-      <SourceForm mode="create" onSubmit={onSubmit} onCancel={onCancel} />
+      <SourceFormWizard onSubmit={onSubmit} onCancel={onCancel} />
     </div>
   </div>
 );

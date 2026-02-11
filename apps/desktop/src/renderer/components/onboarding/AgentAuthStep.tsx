@@ -41,7 +41,7 @@ export const AgentAuthStep: React.FC<AgentAuthStepProps> = ({
   };
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-8 animate-fade-in">
+    <div className="my-auto flex w-full max-w-xl flex-col gap-8 animate-fade-in">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-text-primary">Authentication</h2>

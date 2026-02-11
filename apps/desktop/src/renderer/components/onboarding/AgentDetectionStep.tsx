@@ -1,13 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 import type { AgentConfig, AgentState, CommandCheckResult } from './types';
 import { AGENT_CONFIGS } from './types';
+import { PathInput } from './PathInput';
 
 interface AgentDetectionStepProps {
   agents: Record<string, AgentState>;
   onAgentsChange: React.Dispatch<React.SetStateAction<Record<string, AgentState>>>;
   onNext: () => void;
+  onBack: () => void;
   onSkip: () => void;
 }
 
@@ -15,6 +17,7 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
   agents,
   onAgentsChange,
   onNext,
+  onBack,
   onSkip,
 }) => {
   const [isChecking, setIsChecking] = useState(false);
@@ -56,15 +59,74 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
     setIsChecking(false);
   }, [onAgentsChange]);
 
+  // ── Agent Path Editing ──────────────────────────────────────────────
+
+  const handleAgentPathChange = useCallback(
+    (agentId: string, path: string | undefined) => {
+      onAgentsChange((prev) => ({
+        ...prev,
+        [agentId]: {
+          ...prev[agentId],
+          customPath: path,
+          validationError: undefined,
+        },
+      }));
+    },
+    [onAgentsChange]
+  );
+
+  const validationCounterRef = useRef<Record<string, number>>({});
+
+  const handleAgentValidate = useCallback(
+    async (agentId: string, path: string) => {
+      const counter = (validationCounterRef.current[agentId] ?? 0) + 1;
+      validationCounterRef.current[agentId] = counter;
+
+      onAgentsChange((prev) => ({
+        ...prev,
+        [agentId]: { ...prev[agentId], validating: true, validationError: undefined },
+      }));
+
+      try {
+        const result = await window.api.validateExecutable(path);
+        // Ignore stale results
+        if (validationCounterRef.current[agentId] !== counter) return;
+
+        onAgentsChange((prev) => ({
+          ...prev,
+          [agentId]: {
+            ...prev[agentId],
+            validating: false,
+            ...(result.valid
+              ? { customPath: path, validationError: undefined }
+              : { validationError: result.error ?? 'Invalid path' }),
+            ...(result.valid && result.version ? { version: result.version } : {}),
+          },
+        }));
+      } catch {
+        if (validationCounterRef.current[agentId] !== counter) return;
+        onAgentsChange((prev) => ({
+          ...prev,
+          [agentId]: {
+            ...prev[agentId],
+            validating: false,
+            validationError: 'Validation failed',
+          },
+        }));
+      }
+    },
+    [onAgentsChange]
+  );
+
   useEffect(() => {
     checkAgents();
   }, [checkAgents]);
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-8 animate-fade-in">
+    <div className="my-auto flex w-full max-w-xl flex-col gap-8 animate-fade-in">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-text-primary">Agent Detection</h2>
+        <h2 className="text-2xl font-semibold text-text-primary">Agent</h2>
         <p className="mt-2 text-sm text-text-secondary">
           Checking which AI coding agents are installed on your system
         </p>
@@ -78,6 +140,8 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
             config={config}
             state={agents[config.id]}
             isChecking={isChecking}
+            onPathChange={handleAgentPathChange}
+            onValidate={handleAgentValidate}
           />
         ))}
       </div>
@@ -102,13 +166,22 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
         >
           Skip for now
         </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="rounded-lg bg-accent-cyan px-5 py-2.5 text-sm font-medium text-base-900 transition-colors hover:bg-accent-cyan/90"
-        >
-          Next
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-lg border border-border-default px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-raised"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            className="rounded-lg bg-accent-cyan px-5 py-2.5 text-sm font-medium text-base-900 transition-colors hover:bg-accent-cyan/90"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -122,47 +195,63 @@ interface AgentCardProps {
   config: AgentConfig;
   state: AgentState;
   isChecking: boolean;
+  onPathChange: (agentId: string, path: string | undefined) => void;
+  onValidate: (agentId: string, path: string) => void;
 }
 
-const AgentCard: React.FC<AgentCardProps> = ({ config, state, isChecking }) => {
+const AgentCard: React.FC<AgentCardProps> = ({
+  config,
+  state,
+  isChecking,
+  onPathChange,
+  onValidate,
+}) => {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-border-subtle bg-surface-raised p-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-text-primary">{config.name}</span>
-          {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
+    <div className="rounded-xl border border-border-subtle bg-surface-raised p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-text-primary">{config.name}</span>
+            {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
+          </div>
+          <span className="text-xs text-text-muted">{config.description}</span>
         </div>
-        <span className="text-xs text-text-muted">{config.description}</span>
-        {state.detected && state.path && (
-          <span className="font-mono text-xs text-text-muted">{state.path}</span>
-        )}
+
+        <div className="flex items-center gap-3">
+          {isChecking ? (
+            <Loader2 className="size-5 animate-spin text-text-muted" />
+          ) : state.detected ? (
+            <div className="flex items-center gap-1.5 text-accent-lime">
+              <CheckCircle2 className="size-4" />
+              <span className="text-xs font-medium">Detected</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-amber-400">
+                <XCircle className="size-4" />
+                <span className="text-xs font-medium">Not found</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.api.openExternal(config.installUrl)}
+                className="flex items-center gap-1 text-xs text-accent-cyan transition-colors hover:text-accent-cyan/80"
+              >
+                Install
+                <ExternalLink className="size-3" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {isChecking ? (
-          <Loader2 className="size-5 animate-spin text-text-muted" />
-        ) : state.detected ? (
-          <div className="flex items-center gap-1.5 text-accent-lime">
-            <CheckCircle2 className="size-4" />
-            <span className="text-xs font-medium">Detected</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-amber-400">
-              <XCircle className="size-4" />
-              <span className="text-xs font-medium">Not found</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => window.api.openExternal(config.installUrl)}
-              className="flex items-center gap-1 text-xs text-accent-cyan transition-colors hover:text-accent-cyan/80"
-            >
-              Install
-              <ExternalLink className="size-3" />
-            </button>
-          </div>
-        )}
-      </div>
+      <PathInput
+        detectedPath={state.path}
+        customPath={state.customPath}
+        validating={state.validating}
+        validationError={state.validationError}
+        onPathChange={(path) => onPathChange(config.id, path)}
+        onValidate={(path) => onValidate(config.id, path)}
+      />
     </div>
   );
 };

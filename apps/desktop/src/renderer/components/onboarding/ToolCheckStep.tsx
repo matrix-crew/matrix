@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { ToolConfig, ToolState, TerminalInfo, IDEInfo, CommandCheckResult } from './types';
 import { TOOL_CONFIGS } from './types';
+import { PathInput } from './PathInput';
 
 interface ToolCheckStepProps {
   tools: Record<string, ToolState>;
@@ -21,6 +22,7 @@ interface ToolCheckStepProps {
   selectedIDE: string | null;
   onIDEChange: (ide: string) => void;
   onNext: () => void;
+  onBack: () => void;
   onSkip: () => void;
 }
 
@@ -32,6 +34,7 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
   selectedIDE,
   onIDEChange,
   onNext,
+  onBack,
   onSkip,
 }) => {
   const [isCheckingTools, setIsCheckingTools] = useState(false);
@@ -126,6 +129,65 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
     setIsDetectingIDEs(false);
   }, [onIDEChange]);
 
+  // ── Tool Path Editing ──────────────────────────────────────────────
+
+  const handleToolPathChange = useCallback(
+    (toolId: string, path: string | undefined) => {
+      onToolsChange((prev) => ({
+        ...prev,
+        [toolId]: {
+          ...prev[toolId],
+          customPath: path,
+          validationError: undefined,
+        },
+      }));
+    },
+    [onToolsChange]
+  );
+
+  const validationCounterRef = useRef<Record<string, number>>({});
+
+  const handleToolValidate = useCallback(
+    async (toolId: string, path: string) => {
+      const counter = (validationCounterRef.current[toolId] ?? 0) + 1;
+      validationCounterRef.current[toolId] = counter;
+
+      onToolsChange((prev) => ({
+        ...prev,
+        [toolId]: { ...prev[toolId], validating: true, validationError: undefined },
+      }));
+
+      try {
+        const result = await window.api.validateExecutable(path);
+        // Ignore stale results
+        if (validationCounterRef.current[toolId] !== counter) return;
+
+        onToolsChange((prev) => ({
+          ...prev,
+          [toolId]: {
+            ...prev[toolId],
+            validating: false,
+            ...(result.valid
+              ? { customPath: path, validationError: undefined }
+              : { validationError: result.error ?? 'Invalid path' }),
+            ...(result.valid && result.version ? { version: result.version } : {}),
+          },
+        }));
+      } catch {
+        if (validationCounterRef.current[toolId] !== counter) return;
+        onToolsChange((prev) => ({
+          ...prev,
+          [toolId]: {
+            ...prev[toolId],
+            validating: false,
+            validationError: 'Validation failed',
+          },
+        }));
+      }
+    },
+    [onToolsChange]
+  );
+
   useEffect(() => {
     checkTools();
     detectTerminals();
@@ -134,7 +196,7 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
   }, []);
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-8 animate-fade-in">
+    <div className="my-auto flex w-full max-w-xl flex-col gap-8 animate-fade-in">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-text-primary">Development Tools</h2>
@@ -164,6 +226,8 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
               config={config}
               state={tools[config.id]}
               isChecking={isCheckingTools}
+              onPathChange={handleToolPathChange}
+              onValidate={handleToolValidate}
             />
           ))}
         </div>
@@ -228,13 +292,22 @@ export const ToolCheckStep: React.FC<ToolCheckStepProps> = ({
         >
           Skip for now
         </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="rounded-lg bg-accent-cyan px-5 py-2.5 text-sm font-medium text-base-900 transition-colors hover:bg-accent-cyan/90"
-        >
-          Next
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-lg border border-border-default px-5 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-raised"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            className="rounded-lg bg-accent-cyan px-5 py-2.5 text-sm font-medium text-base-900 transition-colors hover:bg-accent-cyan/90"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -248,47 +321,63 @@ interface ToolCardProps {
   config: ToolConfig;
   state: ToolState;
   isChecking: boolean;
+  onPathChange: (toolId: string, path: string | undefined) => void;
+  onValidate: (toolId: string, path: string) => void;
 }
 
-const ToolCard: React.FC<ToolCardProps> = ({ config, state, isChecking }) => {
+const ToolCard: React.FC<ToolCardProps> = ({
+  config,
+  state,
+  isChecking,
+  onPathChange,
+  onValidate,
+}) => {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-border-subtle bg-surface-raised p-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-text-primary">{config.name}</span>
-          {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
+    <div className="rounded-xl border border-border-subtle bg-surface-raised p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-text-primary">{config.name}</span>
+            {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
+          </div>
+          <span className="text-xs text-text-muted">{config.description}</span>
         </div>
-        <span className="text-xs text-text-muted">{config.description}</span>
-        {state.installed && state.path && (
-          <span className="font-mono text-xs text-text-muted">{state.path}</span>
-        )}
+
+        <div className="flex items-center gap-3">
+          {isChecking ? (
+            <Loader2 className="size-5 animate-spin text-text-muted" />
+          ) : state.installed ? (
+            <div className="flex items-center gap-1.5 text-accent-lime">
+              <CheckCircle2 className="size-4" />
+              <span className="text-xs font-medium">Installed</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-amber-400">
+                <XCircle className="size-4" />
+                <span className="text-xs font-medium">Not found</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.api.openExternal(config.installUrl)}
+                className="flex items-center gap-1 text-xs text-accent-cyan transition-colors hover:text-accent-cyan/80"
+              >
+                Install
+                <ExternalLink className="size-3" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {isChecking ? (
-          <Loader2 className="size-5 animate-spin text-text-muted" />
-        ) : state.installed ? (
-          <div className="flex items-center gap-1.5 text-accent-lime">
-            <CheckCircle2 className="size-4" />
-            <span className="text-xs font-medium">Installed</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-amber-400">
-              <XCircle className="size-4" />
-              <span className="text-xs font-medium">Not found</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => window.api.openExternal(config.installUrl)}
-              className="flex items-center gap-1 text-xs text-accent-cyan transition-colors hover:text-accent-cyan/80"
-            >
-              Install
-              <ExternalLink className="size-3" />
-            </button>
-          </div>
-        )}
-      </div>
+      <PathInput
+        detectedPath={state.path}
+        customPath={state.customPath}
+        validating={state.validating}
+        validationError={state.validationError}
+        onPathChange={(path) => onPathChange(config.id, path)}
+        onValidate={(path) => onValidate(config.id, path)}
+      />
     </div>
   );
 };

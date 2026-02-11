@@ -55,6 +55,17 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Validate that a file path points to an executable
+   * @param filePath - Absolute path to check
+   * @returns Validation result with optional version info
+   */
+  validateExecutable: (
+    filePath: string
+  ): Promise<{ valid: boolean; version?: string; error?: string }> => {
+    return ipcRenderer.invoke('system:validate-executable', filePath);
+  },
+
+  /**
    * Detect installed terminal emulators on the system
    * @returns Array of detected terminals with name, id, path, and isDefault flag
    */
@@ -97,10 +108,32 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Reset application config to defaults (overwrites entire file)
+   */
+  resetConfig: (): Promise<{ success: boolean }> => {
+    return ipcRenderer.invoke('config:reset');
+  },
+
+  /**
+   * Get application paths (config, DB, workspace)
+   */
+  getPaths: (): Promise<{ configPath: string; dbPath: string; workspacePath: string }> => {
+    return ipcRenderer.invoke('system:get-paths');
+  },
+
+  /**
    * Open a URL in the default browser
    */
   openExternal: (url: string): Promise<void> => {
     return ipcRenderer.invoke('shell:open-external', url);
+  },
+
+  /**
+   * Show directory picker dialog
+   * @returns Selected directory path or null if cancelled
+   */
+  selectDirectory: (): Promise<string | null> => {
+    return ipcRenderer.invoke('dialog:select-directory');
   },
 
   // ── Terminal PTY APIs ─────────────────────────────────────────

@@ -1,43 +1,10 @@
 import { app, BrowserWindow } from 'electron';
-import { mkdirSync } from 'fs';
-import { homedir } from 'os';
 import { join } from 'path';
+import { setupDialogHandlers } from './dialogs';
 import { setupIPCHandlers } from './ipc';
 import { setupSystemCheckHandlers } from './system-check';
 import { setupTerminalHandlers } from './terminal-manager';
-
-const MATRIX_WORKSPACE_DIR = '.matrix';
-
-/** Application paths for database and workspace */
-interface AppPaths {
-  /** Path to the SQLite database file (OS-standard app data directory) */
-  dbPath: string;
-  /** Path to the workspace root for matrix spaces ($HOME/.matrix/) */
-  workspacePath: string;
-}
-
-let appPaths: AppPaths;
-
-function initializeAppPaths(): void {
-  // OS-standard app data directory for database
-  const appDataDir = join(app.getPath('appData'), 'Matrix');
-  const dbPath = join(appDataDir, 'matrix.db');
-
-  // User workspace directory for matrix spaces
-  const workspacePath = join(homedir(), MATRIX_WORKSPACE_DIR);
-
-  // Create both directories
-  mkdirSync(appDataDir, { recursive: true });
-  mkdirSync(workspacePath, { recursive: true });
-
-  appPaths = { dbPath, workspacePath };
-  console.log(`Matrix app data: ${appDataDir}`);
-  console.log(`Matrix workspace: ${workspacePath}`);
-}
-
-export function getAppPaths(): AppPaths {
-  return appPaths;
-}
+import { initializeAppPaths } from './app-paths';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -88,6 +55,9 @@ app.whenReady().then(() => {
 
   // Initialize system check handlers for onboarding & config
   setupSystemCheckHandlers();
+
+  // Initialize dialog handlers for file/directory selection
+  setupDialogHandlers();
 
   // Initialize terminal PTY handlers
   setupTerminalHandlers();

@@ -23,6 +23,7 @@ class SourceRepository:
             name=source.name,
             path=source.path,
             url=source.url,
+            source_type=source.source_type,
             created_at=source.created_at,
         )
         self.session.add(entity)
@@ -52,6 +53,17 @@ class SourceRepository:
         self.session.flush()
         return True
 
+    def update(self, source: Source) -> None:
+        """Update an existing Source in the database."""
+        entity = self.session.get(SourceEntity, source.id)
+        if entity is None:
+            return
+        entity.name = source.name
+        entity.path = source.path
+        entity.url = source.url
+        entity.source_type = source.source_type
+        self.session.flush()
+
     def _to_domain(self, entity: SourceEntity) -> Source:
         """Convert a SourceEntity to a Source dataclass."""
         return Source(
@@ -59,5 +71,6 @@ class SourceRepository:
             name=entity.name,
             path=entity.path,
             url=entity.url,
+            source_type=entity.source_type,
             created_at=entity.created_at,
         )

@@ -171,6 +171,17 @@ const SourceList: React.FC<SourceListProps> = ({
     return initialState ?? createInitialSourceListState();
   });
 
+  // Sync sources and matrix from parent when they change
+  React.useEffect(() => {
+    if (initialState) {
+      setState((prev) => ({
+        ...prev,
+        sources: initialState.sources,
+        matrix: initialState.matrix,
+      }));
+    }
+  }, [initialState?.sources, initialState?.matrix]);
+
   /**
    * Update state and notify parent
    */

@@ -39,6 +39,13 @@ export interface ElectronAPI {
   checkCommand: (command: string) => Promise<{ exists: boolean; path?: string; version?: string }>;
 
   /**
+   * Validate that a file path points to an executable
+   */
+  validateExecutable: (
+    filePath: string
+  ) => Promise<{ valid: boolean; version?: string; error?: string }>;
+
+  /**
    * Detect installed terminal emulators on the system
    * @returns Array of detected terminals with name, id, path, and isDefault flag
    */
@@ -71,9 +78,25 @@ export interface ElectronAPI {
   writeConfig: (config: Record<string, unknown>) => Promise<{ success: boolean }>;
 
   /**
+   * Reset application config to defaults (overwrites entire file)
+   */
+  resetConfig: () => Promise<{ success: boolean }>;
+
+  /**
+   * Get application paths (config, DB, workspace)
+   */
+  getPaths: () => Promise<{ configPath: string; dbPath: string; workspacePath: string }>;
+
+  /**
    * Open a URL in the default browser
    */
   openExternal: (url: string) => Promise<void>;
+
+  /**
+   * Show directory picker dialog
+   * @returns Selected directory path or null if cancelled
+   */
+  selectDirectory: () => Promise<string | null>;
 
   // ── Terminal PTY APIs ─────────────────────────────────────────
 
