@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { MiniTerminal } from './MiniTerminal';
+import { RunTerminal } from './RunTerminal';
 
 type DataCb = (sessionId: string, data: string) => void;
 type ExitCb = (sessionId: string, exitCode: number) => void;
@@ -38,22 +38,22 @@ function emitExit(code: number) {
   if (sid) act(() => exitCb(sid, code));
 }
 
-describe('MiniTerminal', () => {
+describe('RunTerminal', () => {
   it('renders command and run button', () => {
-    render(<MiniTerminal command="uv --version" />);
+    render(<RunTerminal command="uv --version" />);
 
     expect(screen.getByText('uv --version')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /run/i })).toBeInTheDocument();
   });
 
   it('does not execute on mount', () => {
-    render(<MiniTerminal command="uv --version" />);
+    render(<RunTerminal command="uv --version" />);
 
     expect(window.api.execStream.start).not.toHaveBeenCalled();
   });
 
   it('starts streaming on Run click and shows live output', async () => {
-    render(<MiniTerminal command="uv --version" />);
+    render(<RunTerminal command="uv --version" />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {
@@ -68,7 +68,7 @@ describe('MiniTerminal', () => {
   });
 
   it('shows error state with exit code', async () => {
-    render(<MiniTerminal command="invalid-cmd" />);
+    render(<RunTerminal command="invalid-cmd" />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {
@@ -83,7 +83,7 @@ describe('MiniTerminal', () => {
   });
 
   it('limits output to maxLines', async () => {
-    render(<MiniTerminal command="git log" maxLines={3} />);
+    render(<RunTerminal command="git log" maxLines={3} />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {
@@ -101,7 +101,7 @@ describe('MiniTerminal', () => {
   });
 
   it('accumulates streamed chunks', async () => {
-    render(<MiniTerminal command="npm install" maxLines={5} />);
+    render(<RunTerminal command="npm install" maxLines={5} />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {
@@ -122,7 +122,7 @@ describe('MiniTerminal', () => {
   it('shows error when start returns not started', async () => {
     vi.mocked(window.api.execStream.start).mockResolvedValue({ started: false });
 
-    render(<MiniTerminal command="bad-cmd" />);
+    render(<RunTerminal command="bad-cmd" />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {
@@ -133,7 +133,7 @@ describe('MiniTerminal', () => {
   it('handles start failure gracefully', async () => {
     vi.mocked(window.api.execStream.start).mockRejectedValue(new Error('IPC error'));
 
-    render(<MiniTerminal command="uv --version" />);
+    render(<RunTerminal command="uv --version" />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {
@@ -142,7 +142,7 @@ describe('MiniTerminal', () => {
   });
 
   it('disables button during execution', async () => {
-    render(<MiniTerminal command="uv --version" />);
+    render(<RunTerminal command="uv --version" />);
     fireEvent.click(screen.getByRole('button', { name: /run/i }));
 
     await waitFor(() => {

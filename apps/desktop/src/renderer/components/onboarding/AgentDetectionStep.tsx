@@ -5,7 +5,7 @@ import type { AgentConfig, AgentState, CommandCheckResult, Platform } from './ty
 import { AGENT_CONFIGS } from './types';
 import { PathInput } from './PathInput';
 import { InlineTabs } from '../common/InlineTabs';
-import { MiniTerminal } from '../terminal/MiniTerminal';
+import { RunTerminal } from '../terminal/RunTerminal';
 
 interface AgentDetectionStepProps {
   agents: Record<string, AgentState>;
@@ -257,7 +257,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
         .filter((m) => m.platform.includes(platform))
         .map((m) => ({
           label: m.label,
-          content: <MiniTerminal command={m.command} maxLines={5} onSuccess={onInstallSuccess} />,
+          content: <RunTerminal command={m.command} maxLines={5} onSuccess={onInstallSuccess} />,
         })),
     [config.installMethods, platform, onInstallSuccess]
   );
@@ -279,7 +279,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
           ) : state.detected ? (
             <div className="flex items-center gap-1.5 text-accent-lime">
               <CheckCircle2 className="size-4" />
-              <span className="text-xs font-medium">Detected</span>
+              <span className="text-xs font-medium">Installed</span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-amber-400">

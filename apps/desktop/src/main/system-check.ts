@@ -91,7 +91,7 @@ export async function checkCommand(command: string): Promise<CommandCheckResult>
   }
 }
 
-// ── Command Execution (for MiniTerminal) ────────────────────────────────
+// ── Command Execution (for RunTerminal) ────────────────────────────────
 
 export interface CommandExecResult {
   success: boolean;
@@ -115,7 +115,7 @@ export const ALLOWED_INSTALL_COMMANDS = new Set([
 
 /**
  * Execute a whitelisted command and return its output.
- * Used by the MiniTerminal component for read-only command execution.
+ * Used by the RunTerminal component for read-only command execution.
  *
  * Accepts either:
  * - Simple commands whose base command is in ALLOWED_COMMANDS (regex-validated)
@@ -812,7 +812,7 @@ export function setupSystemCheckHandlers(): void {
     return checkCommand(command);
   });
 
-  // Execute a whitelisted command and return output (for MiniTerminal)
+  // Execute a whitelisted command and return output (for RunTerminal)
   ipcMain.handle('system:exec-command', async (_event, command: string) => {
     return execCommand(command);
   });

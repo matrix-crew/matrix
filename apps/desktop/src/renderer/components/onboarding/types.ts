@@ -22,7 +22,6 @@ export interface AgentConfig {
   command: string;
   installUrl: string;
   envVar: string;
-  authCommand: string;
   installMethods: InstallMethod[];
 }
 
@@ -44,7 +43,6 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     command: 'claude',
     installUrl: 'https://docs.anthropic.com/en/docs/claude-code',
     envVar: 'ANTHROPIC_API_KEY',
-    authCommand: 'claude auth login',
     installMethods: [
       {
         label: 'Native Install (Recommended)',
@@ -71,7 +69,6 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     command: 'gemini',
     installUrl: 'https://github.com/google-gemini/gemini-cli',
     envVar: 'GEMINI_API_KEY',
-    authCommand: 'gemini auth login',
     installMethods: [
       {
         label: 'npm (Recommended)',
@@ -92,7 +89,6 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     command: 'codex',
     installUrl: 'https://github.com/openai/codex',
     envVar: 'OPENAI_API_KEY',
-    authCommand: 'codex auth',
     installMethods: [
       {
         label: 'npm (Recommended)',

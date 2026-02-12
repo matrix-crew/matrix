@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Terminal, Loader2, CheckCircle2, XCircle, Play } from 'lucide-react';
 
-export interface MiniTerminalProps {
+export interface RunTerminalProps {
   /** Command to execute (e.g., "uv --version") */
   command: string;
   /** Maximum number of output lines to display */
@@ -16,16 +16,16 @@ export interface MiniTerminalProps {
 let streamCounter = 0;
 
 /**
- * MiniTerminal - A compact, read-only command runner with real-time output.
+ * RunTerminal - A compact, read-only command runner with real-time output.
  *
  * Displays a pre-defined command with a "Run" button. On execution,
  * streams output line-by-line as it arrives, keeping the last N lines visible.
  *
  * @example
- * <MiniTerminal command="uv --version" />
- * <MiniTerminal command="npm i -g @google/gemini-cli" maxLines={5} />
+ * <RunTerminal command="uv --version" />
+ * <RunTerminal command="npm i -g @google/gemini-cli" maxLines={5} />
  */
-export const MiniTerminal: React.FC<MiniTerminalProps> = ({
+export const RunTerminal: React.FC<RunTerminalProps> = ({
   command,
   maxLines = 5,
   onSuccess,
@@ -172,4 +172,4 @@ export const MiniTerminal: React.FC<MiniTerminalProps> = ({
   );
 };
 
-MiniTerminal.displayName = 'MiniTerminal';
+RunTerminal.displayName = 'RunTerminal';

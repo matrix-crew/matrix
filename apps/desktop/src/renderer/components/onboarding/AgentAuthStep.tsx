@@ -3,7 +3,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AgentConfig, AgentState } from './types';
 import { AGENT_CONFIGS } from './types';
-import { MiniTerminal } from '@/components/terminal/MiniTerminal';
 
 interface AgentAuthStepProps {
   agents: Record<string, AgentState>;
@@ -151,15 +150,7 @@ const AgentAuthCard: React.FC<AgentAuthCardProps> = ({
         </p>
       </div>
 
-      {/* CLI auth divider */}
-      <div className="my-3 flex items-center gap-3">
-        <div className="h-px flex-1 bg-border-subtle" />
-        <span className="text-xs text-text-muted">or use CLI</span>
-        <div className="h-px flex-1 bg-border-subtle" />
-      </div>
-
-      {/* CLI auth command (MiniTerminal) */}
-      <MiniTerminal command={config.authCommand} />
+      {/* TODO: Add inline PTY terminal for interactive CLI auth (e.g. claude auth login) */}
     </div>
   );
 };
