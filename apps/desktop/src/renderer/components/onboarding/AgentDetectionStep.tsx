@@ -24,6 +24,29 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
 }) => {
   const [isChecking, setIsChecking] = useState(false);
 
+  const checkSingleAgent = useCallback(
+    async (agentId: string) => {
+      const config = AGENT_CONFIGS.find((c) => c.id === agentId);
+      if (!config) return;
+
+      try {
+        const result: CommandCheckResult = await window.api.checkCommand(config.command);
+        onAgentsChange((prev) => ({
+          ...prev,
+          [agentId]: {
+            ...prev[agentId],
+            detected: result.exists,
+            path: result.path,
+            version: result.version,
+          },
+        }));
+      } catch {
+        // Ignore — keep current state
+      }
+    },
+    [onAgentsChange]
+  );
+
   const checkAgents = useCallback(async () => {
     setIsChecking(true);
 
@@ -144,6 +167,7 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
             isChecking={isChecking}
             onPathChange={handleAgentPathChange}
             onValidate={handleAgentValidate}
+            onInstallSuccess={() => checkSingleAgent(config.id)}
           />
         ))}
       </div>
@@ -208,6 +232,7 @@ interface AgentCardProps {
   isChecking: boolean;
   onPathChange: (agentId: string, path: string | undefined) => void;
   onValidate: (agentId: string, path: string) => void;
+  onInstallSuccess: () => void;
 }
 
 const AgentCard: React.FC<AgentCardProps> = ({
@@ -216,9 +241,15 @@ const AgentCard: React.FC<AgentCardProps> = ({
   isChecking,
   onPathChange,
   onValidate,
+  onInstallSuccess,
 }) => {
   const [showPathInput, setShowPathInput] = useState(false);
   const platform = useMemo(detectPlatform, []);
+
+  // Reset manual path input toggle when agent becomes detected
+  useEffect(() => {
+    if (state.detected) setShowPathInput(false);
+  }, [state.detected]);
 
   const installTabs = useMemo(
     () =>
@@ -226,9 +257,9 @@ const AgentCard: React.FC<AgentCardProps> = ({
         .filter((m) => m.platform.includes(platform))
         .map((m) => ({
           label: m.label,
-          content: <MiniTerminal command={m.command} maxLines={5} />,
+          content: <MiniTerminal command={m.command} maxLines={5} onSuccess={onInstallSuccess} />,
         })),
-    [config.installMethods, platform]
+    [config.installMethods, platform, onInstallSuccess]
   );
 
   const notFound = !isChecking && !state.detected;
@@ -236,13 +267,10 @@ const AgentCard: React.FC<AgentCardProps> = ({
 
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-text-primary">{config.name}</span>
-            {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
-          </div>
-          <span className="text-xs text-text-muted">{config.description}</span>
+      <div className="flex items-center justify-between py-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-text-primary">{config.name}</span>
+          {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
         </div>
 
         <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Terminal, Loader2, CheckCircle2, XCircle, Play } from 'lucide-react';
 
@@ -7,49 +7,104 @@ export interface MiniTerminalProps {
   command: string;
   /** Maximum number of output lines to display */
   maxLines?: number;
+  /** Called when command completes successfully (exit code 0) */
+  onSuccess?: () => void;
   /** Additional CSS classes */
   className?: string;
 }
 
+let streamCounter = 0;
+
 /**
- * MiniTerminal - A compact, read-only command runner.
+ * MiniTerminal - A compact, read-only command runner with real-time output.
  *
  * Displays a pre-defined command with a "Run" button. On execution,
- * shows the last N lines of output with success/failure indication.
- * Uses child_process via IPC (not PTY) for lightweight execution.
+ * streams output line-by-line as it arrives, keeping the last N lines visible.
  *
  * @example
  * <MiniTerminal command="uv --version" />
- * <MiniTerminal command="claude auth login" maxLines={5} />
+ * <MiniTerminal command="npm i -g @google/gemini-cli" maxLines={5} />
  */
-export const MiniTerminal: React.FC<MiniTerminalProps> = ({ command, maxLines = 3, className }) => {
+export const MiniTerminal: React.FC<MiniTerminalProps> = ({
+  command,
+  maxLines = 5,
+  onSuccess,
+  className,
+}) => {
   const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
-  const [output, setOutput] = useState<string[]>([]);
+  const [lines, setLines] = useState<string[]>([]);
   const [exitCode, setExitCode] = useState<number | null>(null);
+  const sessionRef = useRef<string | null>(null);
+  const outputRef = useRef<HTMLDivElement>(null);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  // Auto-scroll output to bottom
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [lines]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (sessionRef.current) {
+        window.api.execStream.kill(sessionRef.current);
+      }
+    };
+  }, []);
 
   const execute = useCallback(async () => {
+    // Kill previous run if any
+    if (sessionRef.current) {
+      window.api.execStream.kill(sessionRef.current);
+    }
+
+    const sessionId = `mini-${++streamCounter}-${Date.now()}`;
+    sessionRef.current = sessionId;
     setStatus('running');
-    setOutput([]);
+    setLines([]);
     setExitCode(null);
 
+    // Subscribe to streaming events
+    const cleanupData = window.api.execStream.onData((sid, data) => {
+      if (sid !== sessionId) return;
+      setLines((prev) => {
+        const newLines = data.split('\n').filter((l) => l.trim());
+        const merged = [...prev, ...newLines];
+        return merged.slice(-maxLines);
+      });
+    });
+
+    const cleanupExit = window.api.execStream.onExit((sid, code) => {
+      if (sid !== sessionId) return;
+      setExitCode(code);
+      setStatus(code === 0 ? 'success' : 'error');
+      sessionRef.current = null;
+      cleanupData();
+      cleanupExit();
+      if (code === 0) onSuccessRef.current?.();
+    });
+
     try {
-      const result = await window.api.execCommand(command);
-      setExitCode(result.exitCode);
-
-      const combined = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
-
-      if (combined) {
-        const lines = combined.split('\n').filter((line) => line.trim());
-        setOutput(lines.slice(-maxLines));
-      } else {
-        setOutput([result.success ? 'Done (no output)' : 'Failed with no output']);
+      const { started } = await window.api.execStream.start(sessionId, command);
+      if (!started) {
+        setLines(['Command not allowed']);
+        setStatus('error');
+        setExitCode(1);
+        sessionRef.current = null;
+        cleanupData();
+        cleanupExit();
       }
-
-      setStatus(result.success ? 'success' : 'error');
-    } catch {
-      setOutput(['Command execution failed']);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to start command';
+      setLines([msg]);
       setStatus('error');
       setExitCode(1);
+      sessionRef.current = null;
+      cleanupData();
+      cleanupExit();
     }
   }, [command, maxLines]);
 
@@ -68,7 +123,6 @@ export const MiniTerminal: React.FC<MiniTerminalProps> = ({ command, maxLines = 
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Status indicator */}
           {status === 'running' && <Loader2 className="size-3.5 animate-spin text-text-muted" />}
           {status === 'success' && <CheckCircle2 className="size-3.5 text-accent-lime" />}
           {status === 'error' && (
@@ -78,7 +132,6 @@ export const MiniTerminal: React.FC<MiniTerminalProps> = ({ command, maxLines = 
             </span>
           )}
 
-          {/* Run button */}
           <button
             type="button"
             onClick={execute}
@@ -96,10 +149,13 @@ export const MiniTerminal: React.FC<MiniTerminalProps> = ({ command, maxLines = 
         </div>
       </div>
 
-      {/* Output area */}
-      {output.length > 0 && (
-        <div className="border-t border-border-subtle px-3 py-2">
-          {output.map((line, idx) => (
+      {/* Output area — real-time streaming (fixed height to prevent layout shift) */}
+      {status !== 'idle' && (
+        <div
+          ref={outputRef}
+          className="h-20 overflow-y-auto border-t border-border-subtle px-3 py-2"
+        >
+          {lines.map((line, idx) => (
             <div
               key={idx}
               className={cn(

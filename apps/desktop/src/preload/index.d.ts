@@ -45,6 +45,14 @@ export interface ElectronAPI {
     command: string
   ) => Promise<{ success: boolean; stdout: string; stderr: string; exitCode: number }>;
 
+  /** Streaming command execution with real-time output */
+  execStream: {
+    start: (sessionId: string, command: string) => Promise<{ started: boolean }>;
+    kill: (sessionId: string) => void;
+    onData: (callback: (sessionId: string, data: string) => void) => () => void;
+    onExit: (callback: (sessionId: string, exitCode: number) => void) => () => void;
+  };
+
   /**
    * Validate that a file path points to an executable
    */

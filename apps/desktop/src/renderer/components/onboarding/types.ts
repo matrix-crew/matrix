@@ -20,7 +20,6 @@ export interface AgentConfig {
   id: string;
   name: string;
   command: string;
-  description: string;
   installUrl: string;
   envVar: string;
   authCommand: string;
@@ -43,7 +42,6 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     id: 'claude',
     name: 'Claude Code',
     command: 'claude',
-    description: "Anthropic's AI coding assistant",
     installUrl: 'https://docs.anthropic.com/en/docs/claude-code',
     envVar: 'ANTHROPIC_API_KEY',
     authCommand: 'claude auth login',
@@ -53,7 +51,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         command: 'curl -fsSL https://claude.ai/install.sh | bash',
         platform: ['mac', 'linux'],
       },
-      { label: 'Homebrew', command: 'brew install --cask claude-code', platform: ['mac'] },
+      { label: 'Homebrew', command: 'brew install --cask claude-code', platform: ['mac', 'linux'] },
       {
         label: 'PowerShell (Recommended)',
         command: 'irm https://claude.ai/install.ps1 | iex',
@@ -71,7 +69,6 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     id: 'gemini',
     name: 'Gemini CLI',
     command: 'gemini',
-    description: "Google's Gemini AI assistant",
     installUrl: 'https://github.com/google-gemini/gemini-cli',
     envVar: 'GEMINI_API_KEY',
     authCommand: 'gemini auth login',
@@ -86,13 +83,13 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         command: 'npx @google/gemini-cli',
         platform: ['mac', 'linux', 'windows'],
       },
+      { label: 'Homebrew', command: 'brew install gemini-cli', platform: ['mac', 'linux'] },
     ],
   },
   {
     id: 'codex',
     name: 'OpenAI Codex',
     command: 'codex',
-    description: "OpenAI's coding agent",
     installUrl: 'https://github.com/openai/codex',
     envVar: 'OPENAI_API_KEY',
     authCommand: 'codex auth',
@@ -102,7 +99,7 @@ export const AGENT_CONFIGS: AgentConfig[] = [
         command: 'npm i -g @openai/codex',
         platform: ['mac', 'linux', 'windows'],
       },
-      { label: 'Homebrew', command: 'brew install --cask codex', platform: ['mac'] },
+      { label: 'Homebrew', command: 'brew install --cask codex', platform: ['mac', 'linux'] },
     ],
   },
 ];

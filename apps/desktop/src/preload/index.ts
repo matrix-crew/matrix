@@ -66,6 +66,30 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Streaming command execution with real-time output
+   */
+  execStream: {
+    start: (sessionId: string, command: string): Promise<{ started: boolean }> => {
+      return ipcRenderer.invoke('system:exec-stream', sessionId, command);
+    },
+    kill: (sessionId: string): void => {
+      ipcRenderer.send('system:exec-stream-kill', sessionId);
+    },
+    onData: (callback: (sessionId: string, data: string) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, sessionId: string, data: string) =>
+        callback(sessionId, data);
+      ipcRenderer.on('exec-stream:data', listener);
+      return () => ipcRenderer.removeListener('exec-stream:data', listener);
+    },
+    onExit: (callback: (sessionId: string, exitCode: number) => void): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, sessionId: string, exitCode: number) =>
+        callback(sessionId, exitCode);
+      ipcRenderer.on('exec-stream:exit', listener);
+      return () => ipcRenderer.removeListener('exec-stream:exit', listener);
+    },
+  },
+
+  /**
    * Validate that a file path points to an executable
    * @param filePath - Absolute path to check
    * @returns Validation result with optional version info

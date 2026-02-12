@@ -10,8 +10,8 @@
  * Runs in the Electron main process only.
  */
 
-import { ipcMain, shell } from 'electron';
-import { exec, execFile } from 'child_process';
+import { ipcMain, shell, BrowserWindow } from 'electron';
+import { exec, execFile, spawn, type ChildProcess } from 'child_process';
 import { readFile, writeFile, mkdir, readdir, access } from 'fs/promises';
 import { constants as fsConstants } from 'fs';
 import { existsSync } from 'fs';
@@ -107,6 +107,7 @@ export const ALLOWED_INSTALL_COMMANDS = new Set([
   'irm https://claude.ai/install.ps1 | iex',
   'curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd',
   'npm i -g @google/gemini-cli',
+  'brew install gemini-cli',
   'npx @google/gemini-cli',
   'npm i -g @openai/codex',
   'brew install --cask codex',
@@ -146,6 +147,50 @@ export async function execCommand(command: string): Promise<CommandExecResult> {
       });
     });
   });
+}
+
+// ── Streaming Command Execution ─────────────────────────────────────────
+
+const activeStreams = new Map<string, ChildProcess>();
+
+/**
+ * Execute a whitelisted command with real-time output streaming.
+ * Sends `exec-stream:data` and `exec-stream:exit` events to the renderer.
+ */
+export function execCommandStream(sessionId: string, command: string): boolean {
+  const isInstall = ALLOWED_INSTALL_COMMANDS.has(command);
+
+  if (!isInstall) {
+    const baseCommand = command.split(/\s+/)[0];
+    if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
+      return false;
+    }
+  }
+
+  const shellPath = getShell();
+  const child = spawn(shellPath, ['-c', command], { stdio: ['ignore', 'pipe', 'pipe'] });
+  activeStreams.set(sessionId, child);
+
+  const send = (channel: string, ...args: unknown[]) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(channel, ...args);
+    }
+  };
+
+  child.stdout?.on('data', (chunk: Buffer) =>
+    send('exec-stream:data', sessionId, chunk.toString())
+  );
+  child.stderr?.on('data', (chunk: Buffer) =>
+    send('exec-stream:data', sessionId, chunk.toString())
+  );
+
+  child.on('close', (code) => {
+    activeStreams.delete(sessionId);
+    send('exec-stream:exit', sessionId, code ?? 1);
+  });
+
+  return true;
 }
 
 export interface ExecutableValidationResult {
@@ -770,6 +815,20 @@ export function setupSystemCheckHandlers(): void {
   // Execute a whitelisted command and return output (for MiniTerminal)
   ipcMain.handle('system:exec-command', async (_event, command: string) => {
     return execCommand(command);
+  });
+
+  // Start a streaming command execution (real-time output)
+  ipcMain.handle('system:exec-stream', async (_event, sessionId: string, command: string) => {
+    return { started: execCommandStream(sessionId, command) };
+  });
+
+  // Kill a running streaming command
+  ipcMain.on('system:exec-stream-kill', (_event, sessionId: string) => {
+    const child = activeStreams.get(sessionId);
+    if (child) {
+      child.kill();
+      activeStreams.delete(sessionId);
+    }
   });
 
   // Validate an executable file path
