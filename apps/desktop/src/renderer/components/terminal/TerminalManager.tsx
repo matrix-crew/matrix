@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { Plus, X, Maximize2, Minimize2 } from 'lucide-react';
 import type { TerminalSessionInfo } from '@shared/types/terminal';
 import { terminalService, MAX_TERMINAL_SESSIONS } from '@/services/TerminalService';
-import { TerminalInstance, type TerminalInstanceHandle } from './TerminalInstance';
+import { EmbedTerminal, type EmbedTerminalHandle } from './EmbedTerminal';
 import { ToolSelectionModal } from './ToolSelectionModal';
 
 export interface TerminalManagerProps {
@@ -64,11 +64,11 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [focusedSessionId, setFocusedSessionId] = React.useState<string | null>(null);
   const mountedRef = React.useRef(true);
-  const instanceRefs = React.useRef(new Map<string, TerminalInstanceHandle>());
+  const instanceRefs = React.useRef(new Map<string, EmbedTerminalHandle>());
   const prevWorkspaceRef = React.useRef<string | undefined>(undefined);
   const savingRef = React.useRef(false);
 
-  /** Get scrollback content for a session from its TerminalInstance ref */
+  /** Get scrollback content for a session from its EmbedTerminal ref */
   const getScrollback = React.useCallback((sessionId: string): string => {
     const handle = instanceRefs.current.get(sessionId);
     return handle?.getScrollback() ?? '';
@@ -142,7 +142,7 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
           // Map old ID → new for scrollback lookup
           const scrollback = saved.scrollbacks[savedSession.id];
           if (scrollback) {
-            // Schedule scrollback write after TerminalInstance mounts
+            // Schedule scrollback write after EmbedTerminal mounts
             requestAnimationFrame(() => {
               const handle = instanceRefs.current.get(session.id);
               handle?.writeToDisplay(scrollback);
@@ -349,7 +349,7 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
 
                     {/* Terminal content */}
                     <div className="flex-1 overflow-hidden">
-                      <TerminalInstance
+                      <EmbedTerminal
                         ref={(handle) => {
                           if (handle) {
                             instanceRefs.current.set(session.id, handle);

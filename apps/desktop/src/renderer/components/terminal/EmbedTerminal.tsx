@@ -1,5 +1,5 @@
 /**
- * TerminalInstance Component
+ * EmbedTerminal Component
  *
  * Renders a single xterm.js terminal instance connected to a PTY session
  * via the TerminalService. Handles:
@@ -21,14 +21,14 @@ import { useResizeObserver } from '@/hooks/useResizeObserver';
 
 import '@xterm/xterm/css/xterm.css';
 
-export interface TerminalInstanceHandle {
+export interface EmbedTerminalHandle {
   /** Get the full scrollback buffer content as plain text */
   getScrollback: () => string;
   /** Write content directly to the terminal display (not to PTY stdin) */
   writeToDisplay: (data: string) => void;
 }
 
-export interface TerminalInstanceProps {
+export interface EmbedTerminalProps {
   /** Session ID connecting this instance to a PTY process */
   sessionId: string;
   /** Whether this terminal tab is currently visible */
@@ -42,7 +42,7 @@ export interface TerminalInstanceProps {
 /**
  * xterm.js terminal instance connected to a PTY session
  */
-const TerminalInstance = React.forwardRef<TerminalInstanceHandle, TerminalInstanceProps>(
+const EmbedTerminal = React.forwardRef<EmbedTerminalHandle, EmbedTerminalProps>(
   ({ sessionId, isActive, onExit, className }, ref) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const terminalRef = React.useRef<Terminal | null>(null);
@@ -179,6 +179,6 @@ const TerminalInstance = React.forwardRef<TerminalInstanceHandle, TerminalInstan
   }
 );
 
-TerminalInstance.displayName = 'TerminalInstance';
+EmbedTerminal.displayName = 'EmbedTerminal';
 
-export { TerminalInstance };
+export { EmbedTerminal };

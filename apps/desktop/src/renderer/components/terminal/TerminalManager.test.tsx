@@ -29,11 +29,11 @@ vi.mock('@/services/TerminalService', () => ({
   MAX_TERMINAL_SESSIONS: 12,
 }));
 
-// Mock TerminalInstance since it requires xterm.js / canvas
-vi.mock('./TerminalInstance', async () => {
+// Mock EmbedTerminal since it requires xterm.js / canvas
+vi.mock('./EmbedTerminal', async () => {
   const react = await import('react');
   return {
-    TerminalInstance: react.forwardRef(({ sessionId }: { sessionId: string }, _ref: unknown) =>
+    EmbedTerminal: react.forwardRef(({ sessionId }: { sessionId: string }, _ref: unknown) =>
       react.createElement(
         'div',
         { 'data-testid': `terminal-instance-${sessionId}` },

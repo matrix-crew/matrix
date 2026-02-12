@@ -2,7 +2,7 @@
  * useResizeObserver Hook
  *
  * Observes element size changes and calls the callback with debouncing.
- * Used by TerminalInstance to auto-fit xterm.js when the container resizes.
+ * Used by EmbedTerminal to auto-fit xterm.js when the container resizes.
  */
 
 import { useEffect, useRef, type RefObject } from 'react';
