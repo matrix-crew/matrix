@@ -317,6 +317,130 @@ export interface MatrixReconcileResponse extends IPCResponse<{
 }
 
 // ============================================================================
+// GitHub Messages
+// ============================================================================
+
+/**
+ * Message to check GitHub CLI installation and auth status
+ */
+export interface GitHubCheckMessage extends IPCMessage {
+  type: 'github-check';
+}
+
+/**
+ * Response for github-check message
+ */
+export interface GitHubCheckResponse extends IPCResponse<{
+  installed: boolean;
+  authenticated: boolean;
+  user: string | null;
+  error: string | null;
+}> {
+  success: true;
+  data: {
+    installed: boolean;
+    authenticated: boolean;
+    user: string | null;
+    error: string | null;
+  };
+}
+
+/**
+ * GitHub repository detection result
+ */
+export interface GitHubRepoDetection {
+  source_id: string;
+  source_name: string;
+  owner: string;
+  repo: string;
+  full_name: string;
+}
+
+/**
+ * Message to detect GitHub repos from source IDs
+ */
+export interface GitHubDetectReposMessage extends IPCMessage<{ source_ids: string[] }> {
+  type: 'github-detect-repos';
+  data: { source_ids: string[] };
+}
+
+/**
+ * Response for github-detect-repos message
+ */
+export interface GitHubDetectReposResponse extends IPCResponse<{ repos: GitHubRepoDetection[] }> {
+  success: true;
+  data: { repos: GitHubRepoDetection[] };
+}
+
+/**
+ * Repo spec for GitHub list operations
+ */
+export interface GitHubRepoSpec {
+  owner: string;
+  repo: string;
+}
+
+/**
+ * Message to list GitHub issues
+ */
+export interface GitHubListIssuesMessage extends IPCMessage<{
+  repos: GitHubRepoSpec[];
+  state?: 'open' | 'closed' | 'all';
+  limit?: number;
+}> {
+  type: 'github-list-issues';
+  data: {
+    repos: GitHubRepoSpec[];
+    state?: 'open' | 'closed' | 'all';
+    limit?: number;
+  };
+}
+
+/**
+ * Response for github-list-issues message
+ */
+export interface GitHubListIssuesResponse extends IPCResponse<{
+  issues: Record<string, unknown>[];
+  errors: string[] | null;
+}> {
+  success: true;
+  data: {
+    issues: Record<string, unknown>[];
+    errors: string[] | null;
+  };
+}
+
+/**
+ * Message to list GitHub pull requests
+ */
+export interface GitHubListPRsMessage extends IPCMessage<{
+  repos: GitHubRepoSpec[];
+  state?: 'open' | 'closed' | 'merged' | 'all';
+  limit?: number;
+}> {
+  type: 'github-list-prs';
+  data: {
+    repos: GitHubRepoSpec[];
+    state?: 'open' | 'closed' | 'merged' | 'all';
+    limit?: number;
+  };
+}
+
+/**
+ * Response for github-list-prs message
+ */
+export interface GitHubListPRsResponse extends IPCResponse<{
+  prs: Record<string, unknown>[];
+  errors: string[] | null;
+}> {
+  success: true;
+  data: {
+    prs: Record<string, unknown>[];
+    errors: string[] | null;
+  };
+}
+
+// ============================================================================
 // Union Types
 // ============================================================================
 
@@ -337,7 +461,11 @@ export type IPCMessageTypes =
   | SourceGetMessage
   | MatrixAddSourceMessage
   | MatrixRemoveSourceMessage
-  | MatrixReconcileMessage;
+  | MatrixReconcileMessage
+  | GitHubCheckMessage
+  | GitHubDetectReposMessage
+  | GitHubListIssuesMessage
+  | GitHubListPRsMessage;
 
 /**
  * Union type of all possible IPC response types
@@ -356,4 +484,8 @@ export type IPCResponseTypes =
   | SourceGetResponse
   | MatrixAddSourceResponse
   | MatrixRemoveSourceResponse
-  | MatrixReconcileResponse;
+  | MatrixReconcileResponse
+  | GitHubCheckResponse
+  | GitHubDetectReposResponse
+  | GitHubListIssuesResponse
+  | GitHubListPRsResponse;
