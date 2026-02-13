@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { getHostPlatform } from '@/lib/platform';
-import { MiniTerminal } from '@/components/terminal/MiniTerminal';
+import { getHostPlatform } from '@shared/lib/platform';
+import { RunTerminal } from '@/components/terminal/RunTerminal';
 import type { GitHubStatus } from '@/hooks/useGitHubData';
 
 export interface GitHubSetupPromptProps {
@@ -22,7 +22,7 @@ const INSTALL_COMMANDS: Record<ReturnType<typeof getHostPlatform>, string> = {
 
 /**
  * Prompt shown when gh CLI is not installed or not authenticated.
- * Provides inline MiniTerminals that auto-execute setup commands.
+ * Provides inline RunTerminals for executing setup commands.
  *
  * During the initial status check, shows a minimal placeholder instead
  * of a full-page spinner to avoid jarring flashes on every tab switch.
@@ -90,7 +90,7 @@ export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Install gh CLI
               </p>
-              <MiniTerminal command={installCommand} rows={3} />
+              <RunTerminal command={installCommand} />
               <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
                 Then click <strong>Check Again</strong> to continue with authentication.
               </p>
@@ -100,7 +100,7 @@ export const GitHubSetupPrompt: React.FC<GitHubSetupPromptProps> = ({
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Authenticate with GitHub
               </p>
-              <MiniTerminal command="gh auth login" rows={5} />
+              <RunTerminal command="gh auth login" />
               <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
                 Follow the prompts above to authenticate with your GitHub account.
               </p>
