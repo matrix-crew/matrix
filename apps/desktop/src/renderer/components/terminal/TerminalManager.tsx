@@ -14,11 +14,11 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, X, Maximize2, Minimize2 } from 'lucide-react';
-import type { TerminalSessionInfo } from '@shared/types/terminal';
+import { Plus, X, Maximize2, Minimize2, Terminal } from 'lucide-react';
+import type { TerminalSessionInfo, DetectedShell } from '@shared/types/terminal';
 import { terminalService, MAX_TERMINAL_SESSIONS } from '@/services/TerminalService';
-import { TerminalInstance, type TerminalInstanceHandle } from './TerminalInstance';
-import { ToolSelectionModal } from './ToolSelectionModal';
+import { EmbedTerminal, type EmbedTerminalHandle } from './EmbedTerminal';
+import { ToolSelectionModal, type SelectionItem } from '../common/ToolSelectionModal';
 
 export interface TerminalManagerProps {
   /** Workspace path for the active Matrix (persistence root) */
@@ -59,16 +59,32 @@ function getRowDistribution(count: number): number[] {
 /**
  * Multi-session terminal manager with dynamic grid layout
  */
+interface ShellItem extends SelectionItem {
+  path: string;
+}
+
+function toShellItems(shells: DetectedShell[]): ShellItem[] {
+  return shells.map((s) => ({
+    id: s.id,
+    name: s.name,
+    description: s.path,
+    isDefault: s.isDefault,
+    path: s.path,
+  }));
+}
+
 const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, className }) => {
   const [sessions, setSessions] = React.useState<TerminalSessionInfo[]>([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [shellItems, setShellItems] = React.useState<ShellItem[]>([]);
+  const [shellsLoading, setShellsLoading] = React.useState(false);
   const [focusedSessionId, setFocusedSessionId] = React.useState<string | null>(null);
   const mountedRef = React.useRef(true);
-  const instanceRefs = React.useRef(new Map<string, TerminalInstanceHandle>());
+  const instanceRefs = React.useRef(new Map<string, EmbedTerminalHandle>());
   const prevWorkspaceRef = React.useRef<string | undefined>(undefined);
   const savingRef = React.useRef(false);
 
-  /** Get scrollback content for a session from its TerminalInstance ref */
+  /** Get scrollback content for a session from its EmbedTerminal ref */
   const getScrollback = React.useCallback((sessionId: string): string => {
     const handle = instanceRefs.current.get(sessionId);
     return handle?.getScrollback() ?? '';
@@ -142,7 +158,7 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
           // Map old ID → new for scrollback lookup
           const scrollback = saved.scrollbacks[savedSession.id];
           if (scrollback) {
-            // Schedule scrollback write after TerminalInstance mounts
+            // Schedule scrollback write after EmbedTerminal mounts
             requestAnimationFrame(() => {
               const handle = instanceRefs.current.get(session.id);
               handle?.writeToDisplay(scrollback);
@@ -162,14 +178,52 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
     switchWorkspace();
   }, [workspacePath, getScrollback]);
 
+  const loadShells = React.useCallback(async () => {
+    setShellsLoading(true);
+    try {
+      const config = await window.api.readConfig();
+      const configShells = config.detected_terminals as DetectedShell[] | undefined;
+
+      if (configShells && configShells.length > 0) {
+        setShellItems(toShellItems(configShells));
+      } else {
+        const detected = await window.api.detectShells();
+        if (detected.length > 0) {
+          setShellItems(toShellItems(detected));
+        } else {
+          const defaultPath = '/bin/zsh';
+          setShellItems([
+            {
+              id: 'default',
+              name: 'Default Shell',
+              description: defaultPath,
+              path: defaultPath,
+              isDefault: true,
+            },
+          ]);
+        }
+      }
+    } catch {
+      setShellItems([
+        { id: 'default', name: 'Default Shell', description: '', path: '', isDefault: true },
+      ]);
+    } finally {
+      setShellsLoading(false);
+    }
+  }, []);
+
+  const openModal = React.useCallback(() => {
+    setIsModalOpen(true);
+    loadShells();
+  }, [loadShells]);
+
   const handleCreateTerminal = React.useCallback(
-    async (selection: { shell: string; name: string; cwd?: string }) => {
+    async (selection: ShellItem) => {
       try {
         const sessionNumber = sessions.length + 1;
         const session = await terminalService.createTerminal({
           name: `${selection.name} ${sessionNumber}`,
-          shell: selection.shell,
-          cwd: selection.cwd,
+          shell: selection.path,
         });
 
         if (!mountedRef.current) {
@@ -267,7 +321,7 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
           )}
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={openModal}
             disabled={!canCreate}
             className={cn(
               'rounded p-1 transition-colors',
@@ -349,7 +403,7 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
 
                     {/* Terminal content */}
                     <div className="flex-1 overflow-hidden">
-                      <TerminalInstance
+                      <EmbedTerminal
                         ref={(handle) => {
                           if (handle) {
                             instanceRefs.current.set(session.id, handle);
@@ -375,7 +429,7 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
             <p className="text-sm text-text-muted">No terminal sessions</p>
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={openModal}
               className="rounded-md bg-accent-lime px-4 py-1.5 text-xs font-medium text-base-900 transition-colors hover:bg-accent-lime/90"
             >
               Create Terminal
@@ -388,6 +442,13 @@ const TerminalManager: React.FC<TerminalManagerProps> = ({ workspacePath, classN
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleCreateTerminal}
+        items={shellItems}
+        isLoading={shellsLoading}
+        title="New Terminal"
+        icon={Terminal}
+        description="Select a shell for the terminal session:"
+        loadingText="Detecting shells..."
+        confirmLabel="Create Terminal"
       />
     </div>
   );

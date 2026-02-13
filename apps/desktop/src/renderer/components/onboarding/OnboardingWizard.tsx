@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import type { AgentState, ToolState, TerminalInfo, IDEInfo } from './types';
+import type { AgentDetection, ToolState, TerminalInfo, IDEInfo } from './types';
 import {
   createInitialAgentStates,
   createInitialToolStates,
   TOOL_CONFIGS,
   AGENT_CONFIGS,
 } from './types';
+import type { AgentAccount } from '../agent/types';
 import { WelcomeStep } from './WelcomeStep';
 import { ToolCheckStep } from './ToolCheckStep';
 import { AgentDetectionStep } from './AgentDetectionStep';
@@ -27,7 +28,8 @@ interface OnboardingWizardProps {
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const [step, setStep] = useState(0);
-  const [agents, setAgents] = useState<Record<string, AgentState>>(createInitialAgentStates);
+  const [agents, setAgents] = useState<Record<string, AgentDetection>>(createInitialAgentStates);
+  const [accounts, setAccounts] = useState<AgentAccount[]>([]);
   const [tools, setTools] = useState<Record<string, ToolState>>(createInitialToolStates);
   const [selectedTerminal, setSelectedTerminal] = useState<string | null>(null);
   const [selectedIDE, setSelectedIDE] = useState<string | null>(null);
@@ -48,15 +50,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
         if (skipped) {
           // Run all detection fresh — steps may not have mounted yet
-          const [toolConfig, agentConfig, detectedTerminals, detectedIDEs] = await Promise.all([
+          const [toolConfig, agentDetections, detectedTerminals, detectedIDEs] = await Promise.all([
             detectAllTools(),
-            detectAllAgents(),
+            detectAllAgentDetections(),
             window.api.detectTerminals().catch((): TerminalInfo[] => []),
             window.api.detectIDEs().catch((): IDEInfo[] => []),
           ]);
 
           config.tools = toolConfig;
-          config.agents = agentConfig;
+          config.agent_detections = agentDetections;
+          config.accounts = [];
 
           const defaultTerminal = detectedTerminals.find((t) => t.isDefault);
           const terminalId = defaultTerminal?.id ?? detectedTerminals[0]?.id;
@@ -64,19 +67,28 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
           if (detectedIDEs.length > 0) config.default_ide = detectedIDEs[0].id;
         } else {
-          // Use existing state from completed wizard steps
-          const agentConfig: Record<string, unknown> = {};
-          for (const [id, state] of Object.entries(agents)) {
-            const cliPath = state.customPath || state.path;
-            agentConfig[id] = {
-              detected: state.detected,
-              auth_method: state.authMethod,
-              ...(state.apiKey ? { api_key: state.apiKey } : {}),
+          // Agent detection info
+          const agentDetections: Record<string, unknown> = {};
+          for (const [id, det] of Object.entries(agents)) {
+            const cliPath = det.customPath || det.path;
+            agentDetections[id] = {
+              detected: det.detected,
               ...(cliPath ? { cli_path: cliPath } : {}),
             };
           }
-          config.agents = agentConfig;
+          config.agent_detections = agentDetections;
 
+          // Accounts (array order = priority)
+          config.accounts = accounts.map((a) => ({
+            id: a.id,
+            agent_id: a.agentId,
+            type: a.type,
+            label: a.label,
+            ...(a.apiKey ? { api_key: a.apiKey } : {}),
+            authenticated: a.authenticated,
+          }));
+
+          // Tools
           const toolConfig: Record<string, unknown> = {};
           for (const [id, state] of Object.entries(tools)) {
             const toolPath = state.customPath || state.path;
@@ -99,7 +111,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
       onComplete();
     },
-    [agents, tools, selectedTerminal, selectedIDE, onComplete]
+    [agents, accounts, tools, selectedTerminal, selectedIDE, onComplete]
   );
 
   const handleSkip = useCallback(() => finishOnboarding(true), [finishOnboarding]);
@@ -146,8 +158,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
         {step === 2 && (
           <AgentAuthStep
-            agents={agents}
-            onAgentsChange={setAgents}
+            accounts={accounts}
+            onAccountsChange={setAccounts}
             onNext={() => setStep(3)}
             onBack={() => setStep(1)}
             onSkip={handleSkip}
@@ -198,7 +210,7 @@ async function detectAllTools(): Promise<Record<string, unknown>> {
   return results;
 }
 
-async function detectAllAgents(): Promise<Record<string, unknown>> {
+async function detectAllAgentDetections(): Promise<Record<string, unknown>> {
   const results: Record<string, unknown> = {};
   await Promise.all(
     AGENT_CONFIGS.map(async (cfg) => {
@@ -206,11 +218,10 @@ async function detectAllAgents(): Promise<Record<string, unknown>> {
         const r = await window.api.checkCommand(cfg.command);
         results[cfg.id] = {
           detected: r.exists,
-          auth_method: null,
           ...(r.path ? { cli_path: r.path } : {}),
         };
       } catch {
-        results[cfg.id] = { detected: false, auth_method: null };
+        results[cfg.id] = { detected: false };
       }
     })
   );

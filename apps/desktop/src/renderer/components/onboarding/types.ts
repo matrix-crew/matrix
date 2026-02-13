@@ -8,54 +8,106 @@
 // Agent Configuration
 // ============================================================================
 
+export type Platform = 'mac' | 'linux' | 'windows';
+
+export interface InstallMethod {
+  label: string;
+  command: string;
+  platform: Platform[];
+}
+
 export interface AgentConfig {
   id: string;
   name: string;
   command: string;
-  description: string;
   installUrl: string;
   envVar: string;
-  authCommand: string;
+  installMethods: InstallMethod[];
+  /** CLI auth command (e.g. "claude /login") — enables inline terminal auth */
+  authCommand?: string;
+  /** Regex pattern to detect successful auth in terminal output */
+  authSuccessPattern?: string;
 }
 
-export interface AgentState {
+export interface AgentDetection {
   detected: boolean;
   path?: string;
   version?: string;
-  authMethod: 'cli' | 'api-key' | null;
-  apiKey: string;
   customPath?: string;
   validating?: boolean;
   validationError?: string;
 }
+
+/** @deprecated Use AgentDetection instead */
+export type AgentState = AgentDetection;
 
 export const AGENT_CONFIGS: AgentConfig[] = [
   {
     id: 'claude',
     name: 'Claude Code',
     command: 'claude',
-    description: "Anthropic's AI coding assistant",
     installUrl: 'https://docs.anthropic.com/en/docs/claude-code',
     envVar: 'ANTHROPIC_API_KEY',
-    authCommand: 'claude auth login',
+    authCommand: 'claude /login',
+    authSuccessPattern: 'Claude Code login successful|Login successful|Logged in as',
+    installMethods: [
+      {
+        label: 'Native Install (Recommended)',
+        command: 'curl -fsSL https://claude.ai/install.sh | bash',
+        platform: ['mac', 'linux'],
+      },
+      { label: 'Homebrew', command: 'brew install --cask claude-code', platform: ['mac', 'linux'] },
+      {
+        label: 'PowerShell (Recommended)',
+        command: 'irm https://claude.ai/install.ps1 | iex',
+        platform: ['windows'],
+      },
+      {
+        label: 'CMD',
+        command:
+          'curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd',
+        platform: ['windows'],
+      },
+    ],
   },
   {
     id: 'gemini',
     name: 'Gemini CLI',
     command: 'gemini',
-    description: "Google's Gemini AI assistant",
     installUrl: 'https://github.com/google-gemini/gemini-cli',
     envVar: 'GEMINI_API_KEY',
-    authCommand: 'gemini auth login',
+    authCommand: 'gemini',
+    authSuccessPattern: 'authenticated|Successfully logged in|Welcome',
+    installMethods: [
+      {
+        label: 'npm (Recommended)',
+        command: 'npm i -g @google/gemini-cli',
+        platform: ['mac', 'linux', 'windows'],
+      },
+      {
+        label: 'npx',
+        command: 'npx @google/gemini-cli',
+        platform: ['mac', 'linux', 'windows'],
+      },
+      { label: 'Homebrew', command: 'brew install gemini-cli', platform: ['mac', 'linux'] },
+    ],
   },
   {
     id: 'codex',
     name: 'OpenAI Codex',
     command: 'codex',
-    description: "OpenAI's coding agent",
     installUrl: 'https://github.com/openai/codex',
     envVar: 'OPENAI_API_KEY',
-    authCommand: 'codex auth',
+    authCommand: 'codex login',
+    authSuccessPattern: 'Logged in|logged in|Successfully authenticated',
+    installMethods: [
+      {
+        label: 'npm (Recommended)',
+        command: 'npm i -g @openai/codex',
+        platform: ['mac', 'linux', 'windows'],
+      },
+      { label: 'Homebrew', command: 'brew install --cask codex', platform: ['mac', 'linux'] },
+    ],
   },
 ];
 
@@ -141,10 +193,10 @@ export interface CommandCheckResult {
 // Initial State Helpers
 // ============================================================================
 
-export function createInitialAgentStates(): Record<string, AgentState> {
-  const states: Record<string, AgentState> = {};
+export function createInitialAgentStates(): Record<string, AgentDetection> {
+  const states: Record<string, AgentDetection> = {};
   for (const agent of AGENT_CONFIGS) {
-    states[agent.id] = { detected: false, authMethod: null, apiKey: '' };
+    states[agent.id] = { detected: false };
   }
   return states;
 }

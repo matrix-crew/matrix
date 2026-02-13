@@ -1,13 +1,15 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
-import type { AgentConfig, AgentState, CommandCheckResult } from './types';
+import { CheckCircle2, XCircle, Loader2, RefreshCw } from 'lucide-react';
+import type { AgentConfig, AgentDetection, CommandCheckResult, Platform } from './types';
 import { AGENT_CONFIGS } from './types';
 import { PathInput } from './PathInput';
+import { InlineTabs } from '../common/InlineTabs';
+import { RunTerminal } from '../terminal/RunTerminal';
 
 interface AgentDetectionStepProps {
-  agents: Record<string, AgentState>;
-  onAgentsChange: React.Dispatch<React.SetStateAction<Record<string, AgentState>>>;
+  agents: Record<string, AgentDetection>;
+  onAgentsChange: React.Dispatch<React.SetStateAction<Record<string, AgentDetection>>>;
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
@@ -21,6 +23,29 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
   onSkip,
 }) => {
   const [isChecking, setIsChecking] = useState(false);
+
+  const checkSingleAgent = useCallback(
+    async (agentId: string) => {
+      const config = AGENT_CONFIGS.find((c) => c.id === agentId);
+      if (!config) return;
+
+      try {
+        const result: CommandCheckResult = await window.api.checkCommand(config.command);
+        onAgentsChange((prev) => ({
+          ...prev,
+          [agentId]: {
+            ...prev[agentId],
+            detected: result.exists,
+            path: result.path,
+            version: result.version,
+          },
+        }));
+      } catch {
+        // Ignore — keep current state
+      }
+    },
+    [onAgentsChange]
+  );
 
   const checkAgents = useCallback(async () => {
     setIsChecking(true);
@@ -142,6 +167,7 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
             isChecking={isChecking}
             onPathChange={handleAgentPathChange}
             onValidate={handleAgentValidate}
+            onInstallSuccess={() => checkSingleAgent(config.id)}
           />
         ))}
       </div>
@@ -189,14 +215,24 @@ export const AgentDetectionStep: React.FC<AgentDetectionStepProps> = ({
 
 AgentDetectionStep.displayName = 'AgentDetectionStep';
 
+// ── Platform Detection ────────────────────────────────────────────────────
+
+function detectPlatform(): Platform {
+  const p = navigator.platform.toLowerCase();
+  if (p.startsWith('mac')) return 'mac';
+  if (p.startsWith('win')) return 'windows';
+  return 'linux';
+}
+
 // ── Agent Card ────────────────────────────────────────────────────────────
 
 interface AgentCardProps {
   config: AgentConfig;
-  state: AgentState;
+  state: AgentDetection;
   isChecking: boolean;
   onPathChange: (agentId: string, path: string | undefined) => void;
   onValidate: (agentId: string, path: string) => void;
+  onInstallSuccess: () => void;
 }
 
 const AgentCard: React.FC<AgentCardProps> = ({
@@ -205,16 +241,36 @@ const AgentCard: React.FC<AgentCardProps> = ({
   isChecking,
   onPathChange,
   onValidate,
+  onInstallSuccess,
 }) => {
+  const [showPathInput, setShowPathInput] = useState(false);
+  const platform = useMemo(detectPlatform, []);
+
+  // Reset manual path input toggle when agent becomes detected
+  useEffect(() => {
+    if (state.detected) setShowPathInput(false);
+  }, [state.detected]);
+
+  const installTabs = useMemo(
+    () =>
+      config.installMethods
+        .filter((m) => m.platform.includes(platform))
+        .map((m) => ({
+          label: m.label,
+          content: <RunTerminal command={m.command} maxLines={5} onSuccess={onInstallSuccess} />,
+        })),
+    [config.installMethods, platform, onInstallSuccess]
+  );
+
+  const notFound = !isChecking && !state.detected;
+  const showInstall = notFound && installTabs.length > 0;
+
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-text-primary">{config.name}</span>
-            {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
-          </div>
-          <span className="text-xs text-text-muted">{config.description}</span>
+      <div className="flex items-center justify-between py-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-text-primary">{config.name}</span>
+          {state.version && <span className="text-xs text-text-muted">v{state.version}</span>}
         </div>
 
         <div className="flex items-center gap-3">
@@ -223,35 +279,39 @@ const AgentCard: React.FC<AgentCardProps> = ({
           ) : state.detected ? (
             <div className="flex items-center gap-1.5 text-accent-lime">
               <CheckCircle2 className="size-4" />
-              <span className="text-xs font-medium">Detected</span>
+              <span className="text-xs font-medium">Installed</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-amber-400">
-                <XCircle className="size-4" />
-                <span className="text-xs font-medium">Not found</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => window.api.openExternal(config.installUrl)}
-                className="flex items-center gap-1 text-xs text-accent-cyan transition-colors hover:text-accent-cyan/80"
-              >
-                Install
-                <ExternalLink className="size-3" />
-              </button>
+            <div className="flex items-center gap-1.5 text-amber-400">
+              <XCircle className="size-4" />
+              <span className="text-xs font-medium">Not found</span>
             </div>
           )}
         </div>
       </div>
 
-      <PathInput
-        detectedPath={state.path}
-        customPath={state.customPath}
-        validating={state.validating}
-        validationError={state.validationError}
-        onPathChange={(path) => onPathChange(config.id, path)}
-        onValidate={(path) => onValidate(config.id, path)}
-      />
+      {showInstall && <InlineTabs tabs={installTabs} className="mt-3" />}
+
+      {notFound && !showPathInput && (
+        <button
+          type="button"
+          onClick={() => setShowPathInput(true)}
+          className="mt-2 text-xs text-text-muted transition-colors hover:text-text-secondary"
+        >
+          Already installed?
+        </button>
+      )}
+
+      {(state.detected || showPathInput) && (
+        <PathInput
+          detectedPath={state.path}
+          customPath={state.customPath}
+          validating={state.validating}
+          validationError={state.validationError}
+          onPathChange={(path) => onPathChange(config.id, path)}
+          onValidate={(path) => onValidate(config.id, path)}
+        />
+      )}
     </div>
   );
 };

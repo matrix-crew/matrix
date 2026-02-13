@@ -4,9 +4,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const {
   mockHandle,
+  mockOn,
   mockOpenExternal,
   mockExec,
   mockExecFile,
+  mockSpawn,
   mockAccess,
   mockReadFile,
   mockWriteFile,
@@ -15,11 +17,14 @@ const {
   mockExistsSync,
   mockPlatform,
   mockHomedir,
+  mockGetAllWindows,
 } = vi.hoisted(() => ({
   mockHandle: vi.fn(),
+  mockOn: vi.fn(),
   mockOpenExternal: vi.fn(),
   mockExec: vi.fn(),
   mockExecFile: vi.fn(),
+  mockSpawn: vi.fn(),
   mockAccess: vi.fn(),
   mockReadFile: vi.fn(),
   mockWriteFile: vi.fn(),
@@ -28,20 +33,27 @@ const {
   mockExistsSync: vi.fn(),
   mockPlatform: vi.fn<() => string>().mockReturnValue('darwin'),
   mockHomedir: vi.fn().mockReturnValue('/Users/testuser'),
+  mockGetAllWindows: vi.fn().mockReturnValue([]),
 }));
 
 // ── Mock modules ────────────────────────────────────────────────────
 
 vi.mock('electron', () => ({
-  default: { ipcMain: { handle: mockHandle }, shell: { openExternal: mockOpenExternal } },
-  ipcMain: { handle: mockHandle },
+  default: {
+    ipcMain: { handle: mockHandle, on: mockOn },
+    shell: { openExternal: mockOpenExternal },
+    BrowserWindow: { getAllWindows: mockGetAllWindows },
+  },
+  ipcMain: { handle: mockHandle, on: mockOn },
   shell: { openExternal: mockOpenExternal },
+  BrowserWindow: { getAllWindows: mockGetAllWindows },
 }));
 
 vi.mock('child_process', () => ({
-  default: { exec: mockExec, execFile: mockExecFile },
+  default: { exec: mockExec, execFile: mockExecFile, spawn: mockSpawn },
   exec: mockExec,
   execFile: mockExecFile,
+  spawn: mockSpawn,
 }));
 
 vi.mock('fs/promises', () => ({
@@ -82,6 +94,7 @@ vi.mock('./app-paths', () => ({
 
 import {
   ALLOWED_COMMANDS,
+  ALLOWED_INSTALL_COMMANDS,
   MACOS_TERMINALS,
   LINUX_TERMINALS,
   WINDOWS_TERMINALS,
@@ -89,6 +102,7 @@ import {
   getShell,
   checkCommand,
   execCommand,
+  execCommandStream,
   validateExecutablePath,
   pathExists,
   detectMacOSTerminals,
@@ -354,6 +368,54 @@ describe('system-check', () => {
 
       const result = await execCommand('node --version');
       expect(result.exitCode).toBe(1);
+    });
+  });
+
+  // ── execCommandStream ──────────────────────────────────────────
+
+  describe('execCommandStream', () => {
+    it('rejects commands not in whitelist', () => {
+      const result = execCommandStream('s1', 'rm -rf /');
+      expect(result).toBe(false);
+      expect(mockSpawn).not.toHaveBeenCalled();
+    });
+
+    it('accepts simple whitelisted commands', () => {
+      const mockChild = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn(),
+        kill: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild);
+
+      const result = execCommandStream('s1', 'uv --version');
+      expect(result).toBe(true);
+      expect(mockSpawn).toHaveBeenCalled();
+    });
+
+    it('accepts exact install commands', () => {
+      const mockChild = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn(),
+        kill: vi.fn(),
+      };
+      mockSpawn.mockReturnValue(mockChild);
+
+      const result = execCommandStream('s1', 'brew install --cask codex');
+      expect(result).toBe(true);
+      expect(mockSpawn).toHaveBeenCalled();
+    });
+  });
+
+  // ── ALLOWED_INSTALL_COMMANDS ────────────────────────────────────
+
+  describe('ALLOWED_INSTALL_COMMANDS', () => {
+    it('contains expected install commands', () => {
+      expect(ALLOWED_INSTALL_COMMANDS.has('npm i -g @google/gemini-cli')).toBe(true);
+      expect(ALLOWED_INSTALL_COMMANDS.has('brew install --cask codex')).toBe(true);
+      expect(ALLOWED_INSTALL_COMMANDS.has('rm -rf /')).toBe(false);
     });
   });
 
@@ -913,6 +975,7 @@ describe('system-check', () => {
       const registeredChannels = mockHandle.mock.calls.map((call: unknown[]) => call[0] as string);
       expect(registeredChannels).toContain('system:check-command');
       expect(registeredChannels).toContain('system:exec-command');
+      expect(registeredChannels).toContain('system:exec-stream');
       expect(registeredChannels).toContain('system:validate-executable');
       expect(registeredChannels).toContain('system:detect-terminals');
       expect(registeredChannels).toContain('system:detect-shells');
@@ -922,6 +985,9 @@ describe('system-check', () => {
       expect(registeredChannels).toContain('config:reset');
       expect(registeredChannels).toContain('system:get-paths');
       expect(registeredChannels).toContain('shell:open-external');
+
+      const onChannels = mockOn.mock.calls.map((call: unknown[]) => call[0] as string);
+      expect(onChannels).toContain('system:exec-stream-kill');
     });
 
     it('shell:open-external allows https URLs', async () => {

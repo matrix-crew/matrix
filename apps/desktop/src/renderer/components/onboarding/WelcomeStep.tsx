@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, FolderGit2, Workflow, ArrowRight } from 'lucide-react';
+import { Bot, Lightbulb, Columns3, Workflow, GitFork, Activity, ArrowRight } from 'lucide-react';
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -8,18 +8,33 @@ interface WelcomeStepProps {
 const features = [
   {
     icon: Bot,
-    title: 'AI Agents',
-    description: 'Connect Claude, Gemini, and Codex to supercharge your development',
+    title: 'Agents',
+    description: 'Connect multiple AI agents to accelerate your development',
   },
   {
-    icon: FolderGit2,
-    title: 'Workspaces',
-    description: 'Organize repositories and sources into focused project spaces',
+    icon: Lightbulb,
+    title: 'Ideation',
+    description: 'Structure your ideas and turn them into actionable plans',
+  },
+  {
+    icon: Columns3,
+    title: 'Kanban',
+    description: 'Manage task flow with intuitive visual boards',
   },
   {
     icon: Workflow,
-    title: 'Workflows',
-    description: 'Build automated pipelines to streamline your development process',
+    title: 'Pipeline',
+    description: 'Automate workflows and eliminate repetitive tasks',
+  },
+  {
+    icon: GitFork,
+    title: 'Worktree',
+    description: 'Every task runs in parallel within its own isolated space',
+  },
+  {
+    icon: Activity,
+    title: 'Monitoring',
+    description: 'Track project status and progress in real time',
   },
 ];
 
@@ -43,17 +58,20 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-text-primary">Welcome to Matrix</h1>
         <p className="mt-3 max-w-md text-base text-text-secondary">
-          Your AI-powered development workspace. Connect agents, organize sources, and build
-          powerful workflows.
+          A new way to work with AI. Let agents think, plan, and build alongside you — so you can
+          focus on what truly matters.
         </p>
       </div>
 
-      {/* Feature cards */}
-      <div className="flex gap-4">
-        {features.map((feature) => (
+      {/* Feature cards – 3×2 grid */}
+      <div className="grid grid-cols-3 gap-4">
+        {features.map((feature, index) => (
           <div
             key={feature.title}
-            className="flex w-48 flex-col items-center gap-3 rounded-xl border border-border-subtle bg-surface-raised p-5 text-center"
+            className="flex w-44 flex-col items-center gap-3 rounded-xl border border-border-subtle bg-surface-raised p-5 text-center opacity-0"
+            style={{
+              animation: `slide-in 0.4s ease-out ${0.08 * index}s forwards`,
+            }}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-base-700">
               <feature.icon className="size-5 text-accent-cyan" />

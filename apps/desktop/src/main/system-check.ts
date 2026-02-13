@@ -10,8 +10,8 @@
  * Runs in the Electron main process only.
  */
 
-import { ipcMain, shell } from 'electron';
-import { exec, execFile } from 'child_process';
+import { ipcMain, shell, BrowserWindow } from 'electron';
+import { exec, execFile, spawn, type ChildProcess } from 'child_process';
 import { readFile, writeFile, mkdir, readdir, access } from 'fs/promises';
 import { constants as fsConstants } from 'fs';
 import { existsSync } from 'fs';
@@ -91,7 +91,7 @@ export async function checkCommand(command: string): Promise<CommandCheckResult>
   }
 }
 
-// ── Command Execution (for MiniTerminal) ────────────────────────────────
+// ── Command Execution (for RunTerminal) ────────────────────────────────
 
 export interface CommandExecResult {
   success: boolean;
@@ -100,19 +100,42 @@ export interface CommandExecResult {
   exitCode: number;
 }
 
+/** Exact install commands allowed to bypass the simple-command regex. */
+export const ALLOWED_INSTALL_COMMANDS = new Set([
+  'curl -fsSL https://claude.ai/install.sh | bash',
+  'brew install --cask claude-code',
+  'irm https://claude.ai/install.ps1 | iex',
+  'curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd',
+  'npm i -g @google/gemini-cli',
+  'brew install gemini-cli',
+  'npx @google/gemini-cli',
+  'npm i -g @openai/codex',
+  'brew install --cask codex',
+]);
+
 /**
  * Execute a whitelisted command and return its output.
- * Used by the MiniTerminal component for read-only command execution.
+ * Used by the RunTerminal component for read-only command execution.
+ *
+ * Accepts either:
+ * - Simple commands whose base command is in ALLOWED_COMMANDS (regex-validated)
+ * - Exact install commands from ALLOWED_INSTALL_COMMANDS (longer timeout)
  */
 export async function execCommand(command: string): Promise<CommandExecResult> {
-  // Extract the base command (first word) for whitelist validation
-  const baseCommand = command.split(/\s+/)[0];
-  if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
-    return { success: false, stdout: '', stderr: 'Command not allowed', exitCode: 1 };
+  const isInstall = ALLOWED_INSTALL_COMMANDS.has(command);
+
+  if (!isInstall) {
+    // Simple command validation (original path)
+    const baseCommand = command.split(/\s+/)[0];
+    if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
+      return { success: false, stdout: '', stderr: 'Command not allowed', exitCode: 1 };
+    }
   }
 
+  const timeout = isInstall ? 120_000 : 10_000;
+
   return new Promise((resolve) => {
-    exec(command, { timeout: 10000, shell: getShell() }, (error, stdout, stderr) => {
+    exec(command, { timeout, shell: getShell() }, (error, stdout, stderr) => {
       const exitCode = error
         ? ((error as NodeJS.ErrnoException & { status?: number }).status ?? 1)
         : 0;
@@ -124,6 +147,50 @@ export async function execCommand(command: string): Promise<CommandExecResult> {
       });
     });
   });
+}
+
+// ── Streaming Command Execution ─────────────────────────────────────────
+
+const activeStreams = new Map<string, ChildProcess>();
+
+/**
+ * Execute a whitelisted command with real-time output streaming.
+ * Sends `exec-stream:data` and `exec-stream:exit` events to the renderer.
+ */
+export function execCommandStream(sessionId: string, command: string): boolean {
+  const isInstall = ALLOWED_INSTALL_COMMANDS.has(command);
+
+  if (!isInstall) {
+    const baseCommand = command.split(/\s+/)[0];
+    if (!ALLOWED_COMMANDS.has(baseCommand) || !/^[a-zA-Z0-9_\-\s]+$/.test(command)) {
+      return false;
+    }
+  }
+
+  const shellPath = getShell();
+  const child = spawn(shellPath, ['-c', command], { stdio: ['ignore', 'pipe', 'pipe'] });
+  activeStreams.set(sessionId, child);
+
+  const send = (channel: string, ...args: unknown[]) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(channel, ...args);
+    }
+  };
+
+  child.stdout?.on('data', (chunk: Buffer) =>
+    send('exec-stream:data', sessionId, chunk.toString())
+  );
+  child.stderr?.on('data', (chunk: Buffer) =>
+    send('exec-stream:data', sessionId, chunk.toString())
+  );
+
+  child.on('close', (code) => {
+    activeStreams.delete(sessionId);
+    send('exec-stream:exit', sessionId, code ?? 1);
+  });
+
+  return true;
 }
 
 export interface ExecutableValidationResult {
@@ -739,15 +806,56 @@ export async function detectShells(): Promise<ShellInfo[]> {
 /**
  * Register IPC handlers for system checks and config management
  */
+// ── Agent Auth Check ──────────────────────────────────────────────────────
+
+/** Known credential file locations per agent */
+const AGENT_AUTH_PATHS: Record<string, { file: string; key: string }> = {
+  claude: { file: join(homedir(), '.claude', '.claude.json'), key: 'userID' },
+  gemini: { file: join(homedir(), '.gemini', 'oauth_creds.json'), key: 'client_id' },
+  codex: { file: join(homedir(), '.codex', 'auth.json'), key: 'token' },
+};
+
+/**
+ * Check if an agent has valid auth credentials by reading its config file.
+ * Returns { authenticated: true } if the expected key is present and non-empty.
+ */
+export async function checkAgentAuth(agentId: string): Promise<{ authenticated: boolean }> {
+  const spec = AGENT_AUTH_PATHS[agentId];
+  if (!spec) return { authenticated: false };
+
+  try {
+    const raw = await readFile(spec.file, 'utf-8');
+    const data = JSON.parse(raw);
+    const value = data[spec.key];
+    return { authenticated: typeof value === 'string' && value.length > 0 };
+  } catch {
+    return { authenticated: false };
+  }
+}
+
 export function setupSystemCheckHandlers(): void {
   // Check if a CLI command exists and get version info
   ipcMain.handle('system:check-command', async (_event, command: string) => {
     return checkCommand(command);
   });
 
-  // Execute a whitelisted command and return output (for MiniTerminal)
+  // Execute a whitelisted command and return output (for RunTerminal)
   ipcMain.handle('system:exec-command', async (_event, command: string) => {
     return execCommand(command);
+  });
+
+  // Start a streaming command execution (real-time output)
+  ipcMain.handle('system:exec-stream', async (_event, sessionId: string, command: string) => {
+    return { started: execCommandStream(sessionId, command) };
+  });
+
+  // Kill a running streaming command
+  ipcMain.on('system:exec-stream-kill', (_event, sessionId: string) => {
+    const child = activeStreams.get(sessionId);
+    if (child) {
+      child.kill();
+      activeStreams.delete(sessionId);
+    }
   });
 
   // Validate an executable file path
@@ -791,6 +899,11 @@ export function setupSystemCheckHandlers(): void {
   ipcMain.handle('system:get-paths', async () => {
     const { dbPath, workspacePath } = getAppPaths();
     return { configPath: CONFIG_PATH, dbPath, workspacePath };
+  });
+
+  // Check if an agent has stored auth credentials
+  ipcMain.handle('system:check-agent-auth', async (_event, agentId: string) => {
+    return checkAgentAuth(agentId);
   });
 
   // Open URL in default browser (only allow http/https)
