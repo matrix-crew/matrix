@@ -23,18 +23,23 @@ export interface AgentConfig {
   installUrl: string;
   envVar: string;
   installMethods: InstallMethod[];
+  /** CLI auth command (e.g. "claude /login") — enables inline terminal auth */
+  authCommand?: string;
+  /** Regex pattern to detect successful auth in terminal output */
+  authSuccessPattern?: string;
 }
 
-export interface AgentState {
+export interface AgentDetection {
   detected: boolean;
   path?: string;
   version?: string;
-  authMethod: 'cli' | 'api-key' | null;
-  apiKey: string;
   customPath?: string;
   validating?: boolean;
   validationError?: string;
 }
+
+/** @deprecated Use AgentDetection instead */
+export type AgentState = AgentDetection;
 
 export const AGENT_CONFIGS: AgentConfig[] = [
   {
@@ -43,6 +48,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     command: 'claude',
     installUrl: 'https://docs.anthropic.com/en/docs/claude-code',
     envVar: 'ANTHROPIC_API_KEY',
+    authCommand: 'claude /login',
+    authSuccessPattern: 'Claude Code login successful|Login successful|Logged in as',
     installMethods: [
       {
         label: 'Native Install (Recommended)',
@@ -69,6 +76,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     command: 'gemini',
     installUrl: 'https://github.com/google-gemini/gemini-cli',
     envVar: 'GEMINI_API_KEY',
+    authCommand: 'gemini',
+    authSuccessPattern: 'authenticated|Successfully logged in|Welcome',
     installMethods: [
       {
         label: 'npm (Recommended)',
@@ -89,6 +98,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     command: 'codex',
     installUrl: 'https://github.com/openai/codex',
     envVar: 'OPENAI_API_KEY',
+    authCommand: 'codex login',
+    authSuccessPattern: 'Logged in|logged in|Successfully authenticated',
     installMethods: [
       {
         label: 'npm (Recommended)',
@@ -182,10 +193,10 @@ export interface CommandCheckResult {
 // Initial State Helpers
 // ============================================================================
 
-export function createInitialAgentStates(): Record<string, AgentState> {
-  const states: Record<string, AgentState> = {};
+export function createInitialAgentStates(): Record<string, AgentDetection> {
+  const states: Record<string, AgentDetection> = {};
   for (const agent of AGENT_CONFIGS) {
-    states[agent.id] = { detected: false, authMethod: null, apiKey: '' };
+    states[agent.id] = { detected: false };
   }
   return states;
 }

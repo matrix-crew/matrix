@@ -15,6 +15,7 @@ if (typeof window !== 'undefined') {
     off: vi.fn(),
     checkCommand: vi.fn().mockResolvedValue({ exists: false }),
     execCommand: vi.fn().mockResolvedValue({ success: true, stdout: '', stderr: '', exitCode: 0 }),
+    checkAgentAuth: vi.fn().mockResolvedValue({ authenticated: false }),
     execStream: {
       start: vi.fn().mockResolvedValue({ started: true }),
       kill: vi.fn(),

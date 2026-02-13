@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, Loader2, RefreshCw } from 'lucide-react';
-import type { AgentConfig, AgentState, CommandCheckResult, Platform } from './types';
+import type { AgentConfig, AgentDetection, CommandCheckResult, Platform } from './types';
 import { AGENT_CONFIGS } from './types';
 import { PathInput } from './PathInput';
 import { InlineTabs } from '../common/InlineTabs';
 import { RunTerminal } from '../terminal/RunTerminal';
 
 interface AgentDetectionStepProps {
-  agents: Record<string, AgentState>;
-  onAgentsChange: React.Dispatch<React.SetStateAction<Record<string, AgentState>>>;
+  agents: Record<string, AgentDetection>;
+  onAgentsChange: React.Dispatch<React.SetStateAction<Record<string, AgentDetection>>>;
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
@@ -228,7 +228,7 @@ function detectPlatform(): Platform {
 
 interface AgentCardProps {
   config: AgentConfig;
-  state: AgentState;
+  state: AgentDetection;
   isChecking: boolean;
   onPathChange: (agentId: string, path: string | undefined) => void;
   onValidate: (agentId: string, path: string) => void;

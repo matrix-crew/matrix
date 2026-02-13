@@ -54,6 +54,11 @@ export interface ElectronAPI {
   };
 
   /**
+   * Check if an agent has stored auth credentials
+   */
+  checkAgentAuth: (agentId: string) => Promise<{ authenticated: boolean }>;
+
+  /**
    * Validate that a file path points to an executable
    */
   validateExecutable: (

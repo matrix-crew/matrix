@@ -806,6 +806,33 @@ export async function detectShells(): Promise<ShellInfo[]> {
 /**
  * Register IPC handlers for system checks and config management
  */
+// ── Agent Auth Check ──────────────────────────────────────────────────────
+
+/** Known credential file locations per agent */
+const AGENT_AUTH_PATHS: Record<string, { file: string; key: string }> = {
+  claude: { file: join(homedir(), '.claude', '.claude.json'), key: 'userID' },
+  gemini: { file: join(homedir(), '.gemini', 'oauth_creds.json'), key: 'client_id' },
+  codex: { file: join(homedir(), '.codex', 'auth.json'), key: 'token' },
+};
+
+/**
+ * Check if an agent has valid auth credentials by reading its config file.
+ * Returns { authenticated: true } if the expected key is present and non-empty.
+ */
+export async function checkAgentAuth(agentId: string): Promise<{ authenticated: boolean }> {
+  const spec = AGENT_AUTH_PATHS[agentId];
+  if (!spec) return { authenticated: false };
+
+  try {
+    const raw = await readFile(spec.file, 'utf-8');
+    const data = JSON.parse(raw);
+    const value = data[spec.key];
+    return { authenticated: typeof value === 'string' && value.length > 0 };
+  } catch {
+    return { authenticated: false };
+  }
+}
+
 export function setupSystemCheckHandlers(): void {
   // Check if a CLI command exists and get version info
   ipcMain.handle('system:check-command', async (_event, command: string) => {
@@ -872,6 +899,11 @@ export function setupSystemCheckHandlers(): void {
   ipcMain.handle('system:get-paths', async () => {
     const { dbPath, workspacePath } = getAppPaths();
     return { configPath: CONFIG_PATH, dbPath, workspacePath };
+  });
+
+  // Check if an agent has stored auth credentials
+  ipcMain.handle('system:check-agent-auth', async (_event, agentId: string) => {
+    return checkAgentAuth(agentId);
   });
 
   // Open URL in default browser (only allow http/https)

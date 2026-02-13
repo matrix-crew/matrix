@@ -90,6 +90,15 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   /**
+   * Check if an agent has stored auth credentials
+   * @param agentId - Agent identifier (e.g., 'claude')
+   * @returns Whether the agent is authenticated
+   */
+  checkAgentAuth: (agentId: string): Promise<{ authenticated: boolean }> => {
+    return ipcRenderer.invoke('system:check-agent-auth', agentId);
+  },
+
+  /**
    * Validate that a file path points to an executable
    * @param filePath - Absolute path to check
    * @returns Validation result with optional version info
