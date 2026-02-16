@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import {
   type PRsViewState,
   type PullRequest,
+  type PRCIStatus,
+  type CICheck,
   type Repository,
   type PRFilter,
   type PRState,
@@ -35,6 +37,8 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
     refetchAll,
     refreshPRs,
   } = useGitHubData({ sourceIds });
+
+  const contentRef = React.useRef<HTMLDivElement>(null);
 
   const [selectedRepositoryId, setSelectedRepositoryId] = React.useState<string | null>(
     initialState?.selectedRepositoryId ?? null
@@ -279,7 +283,7 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
       </div>
 
       {/* Main content — list + detail panel */}
-      <div className="flex flex-1 overflow-hidden">
+      <div ref={contentRef} className="flex flex-1 overflow-hidden">
         {/* PR list */}
         <div className="flex-1 overflow-y-auto p-3">
           {isGitHubLoading ? (
@@ -324,7 +328,11 @@ const PRsView: React.FC<PRsViewProps> = ({ sourceIds, initialState, onStateChang
 
         {/* Right detail panel */}
         {selectedPR && (
-          <PRDetailsPanel pr={selectedPR} onClose={() => handleSelectPR(selectedPR.id)} />
+          <PRDetailsPanel
+            pr={selectedPR}
+            onClose={() => handleSelectPR(selectedPR.id)}
+            containerWidth={contentRef.current?.clientWidth}
+          />
         )}
       </div>
     </div>
@@ -527,7 +535,7 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, onClick }) => {
 
         {/* Right side: CI + reviews + reviewers */}
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0 mt-0.5">
-          <CIStatusBadge status={pr.ciStatus} />
+          <CIStatusBadge status={pr.ciStatus} checks={pr.ciChecks} />
 
           {pr.reviews.length > 0 && (
             <div className="flex items-center gap-1.5">
@@ -595,26 +603,48 @@ const PRCard: React.FC<PRCardProps> = ({ pr, selected, onClick }) => {
 
 /* ── CI Status Badge ────────────────────────────────────────── */
 
-const CIStatusBadge: React.FC<{ status: PullRequest['ciStatus'] }> = ({ status }) => (
-  <span
-    className={cn(
-      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
-      getPRCIStatusBgClass(status),
-      status === 'success'
-        ? 'text-green-400'
-        : status === 'failure'
-          ? 'text-rose-400'
-          : status === 'running'
-            ? 'text-amber-400'
-            : 'text-text-muted'
-    )}
-  >
-    {status === 'success' ? (
+interface CIStatusBadgeProps {
+  status: PullRequest['ciStatus'];
+  checks?: CICheck[];
+}
+
+const CIStatusBadge: React.FC<CIStatusBadgeProps> = ({ status, checks }) => {
+  const totalCount = checks?.length ?? 0;
+  const passedCount =
+    totalCount > 0 ? checks!.filter((c) => checkToDisplayStatus(c) === 'success').length : 0;
+  const showCount = totalCount > 0;
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+        getPRCIStatusBgClass(status),
+        status === 'success'
+          ? 'text-green-400'
+          : status === 'failure'
+            ? 'text-rose-400'
+            : status === 'running'
+              ? 'text-amber-400'
+              : 'text-text-muted'
+      )}
+    >
+      <CIStatusIcon status={status} />
+      {showCount ? `${passedCount}/${totalCount}` : getPRCIStatusText(status)}
+    </span>
+  );
+};
+
+const CIStatusIcon: React.FC<{ status: PullRequest['ciStatus']; className?: string }> = ({
+  status,
+  className,
+}) => {
+  if (status === 'success')
+    return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 16 16"
         fill="currentColor"
-        className="h-3 w-3"
+        className={cn('h-3 w-3', className)}
       >
         <path
           fillRule="evenodd"
@@ -622,12 +652,14 @@ const CIStatusBadge: React.FC<{ status: PullRequest['ciStatus'] }> = ({ status }
           clipRule="evenodd"
         />
       </svg>
-    ) : status === 'failure' ? (
+    );
+  if (status === 'failure')
+    return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 16 16"
         fill="currentColor"
-        className="h-3 w-3"
+        className={cn('h-3 w-3', className)}
       >
         <path
           fillRule="evenodd"
@@ -635,12 +667,14 @@ const CIStatusBadge: React.FC<{ status: PullRequest['ciStatus'] }> = ({ status }
           clipRule="evenodd"
         />
       </svg>
-    ) : status === 'running' ? (
+    );
+  if (status === 'running')
+    return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 16 16"
         fill="currentColor"
-        className="h-3 w-3 animate-spin"
+        className={cn('h-3 w-3 animate-spin', className)}
       >
         <path
           fillRule="evenodd"
@@ -648,37 +682,149 @@ const CIStatusBadge: React.FC<{ status: PullRequest['ciStatus'] }> = ({ status }
           clipRule="evenodd"
         />
       </svg>
-    ) : (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 16 16"
-        fill="currentColor"
-        className="h-3 w-3"
+    );
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className={cn('h-3 w-3', className)}
+    >
+      <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+      <path
+        fillRule="evenodd"
+        d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm0-1.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+};
+
+/** Map a single CICheck to a display-level PRCIStatus. */
+function checkToDisplayStatus(check: CICheck): PRCIStatus {
+  if (check.status !== 'completed') return check.status === 'in_progress' ? 'running' : 'pending';
+  switch (check.conclusion) {
+    case 'success':
+    case 'neutral':
+    case 'skipped':
+      return 'success';
+    case 'failure':
+    case 'timed_out':
+    case 'action_required':
+      return 'failure';
+    case 'cancelled':
+      return 'cancelled';
+    default:
+      return 'pending';
+  }
+}
+
+const CICheckRow: React.FC<{ check: CICheck }> = ({ check }) => {
+  const checkStatus = checkToDisplayStatus(check);
+
+  const content = (
+    <div
+      className={cn(
+        'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs',
+        check.detailsUrl ? 'hover:bg-base-700 transition-colors cursor-pointer' : ''
+      )}
+    >
+      <CIStatusIcon status={checkStatus} />
+      <span className="flex-1 min-w-0 truncate text-text-secondary">{check.name}</span>
+      {check.detailsUrl && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          className="h-3 w-3 flex-shrink-0 text-text-muted"
+        >
+          <path d="M8.22 2.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l2.97-2.97H3.75a.75.75 0 0 1 0-1.5h7.44L8.22 4.03a.75.75 0 0 1 0-1.06Z" />
+        </svg>
+      )}
+    </div>
+  );
+
+  if (check.detailsUrl) {
+    return (
+      <a
+        href={check.detailsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block"
+        title={`Open ${check.name} in browser`}
       >
-        <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
-        <path
-          fillRule="evenodd"
-          d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm0-1.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z"
-          clipRule="evenodd"
-        />
-      </svg>
-    )}
-    {getPRCIStatusText(status)}
-  </span>
-);
+        {content}
+      </a>
+    );
+  }
+
+  return content;
+};
 
 /* ── Detail Panel (right sidebar) ───────────────────────────── */
+
+const PANEL_MIN_WIDTH = 280;
+const PANEL_MAX_WIDTH = 960;
+const PANEL_DEFAULT_WIDTH = 380;
 
 interface PRDetailsPanelProps {
   pr: PullRequest;
   onClose: () => void;
+  containerWidth?: number;
 }
 
-const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
+const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose, containerWidth }) => {
   const reviewSummary = getPRReviewSummary(pr.reviews);
+  const [width, setWidth] = React.useState(() => {
+    if (containerWidth) {
+      return Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.floor(containerWidth / 2)));
+    }
+    return PANEL_DEFAULT_WIDTH;
+  });
+  const isResizing = React.useRef(false);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current || !panelRef.current) return;
+      const panelRight = panelRef.current.getBoundingClientRect().right;
+      const newWidth = Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, panelRight - e.clientX));
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizing.current) return;
+      isResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
 
   return (
-    <div className="flex w-80 flex-shrink-0 flex-col border-l border-border-default bg-base-800 animate-slide-in">
+    <div
+      ref={panelRef}
+      style={{ width }}
+      className="relative flex flex-shrink-0 flex-col border-l border-border-default bg-base-800 animate-slide-in"
+    >
+      {/* Resize handle (left edge) */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="absolute top-0 left-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-accent-primary/30 active:bg-accent-primary/50"
+      />
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border-subtle p-4">
         <div className="min-w-0 flex-1">
@@ -775,7 +921,14 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose }) => {
           {/* CI Status */}
           <div>
             <SectionLabel>CI Status</SectionLabel>
-            <CIStatusBadge status={pr.ciStatus} />
+            <CIStatusBadge status={pr.ciStatus} checks={pr.ciChecks} />
+            {pr.ciChecks.length > 0 && (
+              <div className="mt-2 space-y-1.5">
+                {pr.ciChecks.map((check) => (
+                  <CICheckRow key={check.name} check={check} />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Description */}

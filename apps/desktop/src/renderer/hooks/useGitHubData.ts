@@ -13,6 +13,9 @@ import type {
   IssueLabel,
   PRState,
   PRCIStatus,
+  CICheck,
+  CheckRunStatus,
+  CheckRunConclusion,
 } from '@/types/workspace';
 import type { GitHubRepoDetection } from '@shared/types/ipc';
 
@@ -79,6 +82,55 @@ function buildRepoMap(detections: GitHubRepoDetection[]): Map<string, Repository
   }
   return map;
 }
+
+// ── GitHub Check Run value parsers ──────────────────────────────────────────
+
+const VALID_STATUSES = new Set<CheckRunStatus>([
+  'queued',
+  'in_progress',
+  'completed',
+  'waiting',
+  'requested',
+  'pending',
+]);
+const VALID_CONCLUSIONS = new Set<CheckRunConclusion>([
+  'success',
+  'failure',
+  'neutral',
+  'cancelled',
+  'skipped',
+  'timed_out',
+  'action_required',
+]);
+
+function parseCheckRunStatus(raw: string): CheckRunStatus {
+  const v = raw.toLowerCase() as CheckRunStatus;
+  return VALID_STATUSES.has(v) ? v : 'queued';
+}
+
+function parseCheckRunConclusion(raw: string): CheckRunConclusion {
+  const v = raw.toLowerCase() as CheckRunConclusion;
+  return VALID_CONCLUSIONS.has(v) ? v : 'failure';
+}
+
+/** Derive a single aggregate PRCIStatus from individual check runs (worst-case). */
+function aggregateCIStatus(checks: CICheck[]): PRCIStatus {
+  if (checks.length === 0) return 'pending';
+  if (
+    checks.some(
+      (c) =>
+        c.conclusion === 'failure' ||
+        c.conclusion === 'timed_out' ||
+        c.conclusion === 'action_required'
+    )
+  )
+    return 'failure';
+  if (checks.some((c) => c.conclusion === 'cancelled')) return 'cancelled';
+  if (checks.some((c) => c.status !== 'completed')) return 'running';
+  return 'success';
+}
+
+// ── Data transformers ───────────────────────────────────────────────────────
 
 function transformIssue(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,18 +199,20 @@ function transformPR(
     state = 'closed';
   }
 
-  // Determine CI status from statusCheckRollup
-  let ciStatus: PRCIStatus = 'pending';
+  // Parse individual CI checks from statusCheckRollup
   const rollup = raw.statusCheckRollup;
-  if (Array.isArray(rollup) && rollup.length > 0) {
-    const first = rollup[0];
-    const conclusion = (first.conclusion ?? '').toUpperCase();
-    const status = (first.status ?? '').toUpperCase();
-    if (conclusion === 'SUCCESS') ciStatus = 'success';
-    else if (conclusion === 'FAILURE') ciStatus = 'failure';
-    else if (conclusion === 'CANCELLED') ciStatus = 'cancelled';
-    else if (status === 'IN_PROGRESS') ciStatus = 'running';
-  }
+  const ciChecks: CICheck[] = Array.isArray(rollup)
+    ? rollup.map((c: Record<string, unknown>) => ({
+        name: (c.name as string) ?? 'Unknown',
+        status: parseCheckRunStatus((c.status as string) ?? ''),
+        conclusion: c.conclusion ? parseCheckRunConclusion(c.conclusion as string) : null,
+        detailsUrl: (c.detailsUrl as string) ?? undefined,
+        workflowName: (c.workflowName as string) ?? undefined,
+      }))
+    : [];
+
+  // Derive aggregate CI status (worst-case across all checks)
+  const ciStatus = aggregateCIStatus(ciChecks);
 
   const labels: IssueLabel[] = (raw.labels ?? []).map(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,6 +243,7 @@ function transformPR(
     reviewers,
     reviews: [],
     ciStatus,
+    ciChecks,
     isDraft: raw.isDraft ?? false,
     hasConflicts: raw.mergeable === 'CONFLICTING',
     commitCount: 0,

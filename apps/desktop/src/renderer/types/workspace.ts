@@ -232,7 +232,50 @@ export type PRState = 'open' | 'closed' | 'merged';
 export type PRReviewState = 'pending' | 'approved' | 'changes_requested' | 'commented';
 
 /**
- * Pull request CI status
+ * GitHub Check Run status (execution state).
+ * @see https://docs.github.com/en/rest/checks/runs
+ */
+export type CheckRunStatus =
+  | 'queued'
+  | 'in_progress'
+  | 'completed'
+  | 'waiting'
+  | 'requested'
+  | 'pending';
+
+/**
+ * GitHub Check Run conclusion (result when completed).
+ * @see https://docs.github.com/en/rest/checks/runs
+ */
+export type CheckRunConclusion =
+  | 'success'
+  | 'failure'
+  | 'neutral'
+  | 'cancelled'
+  | 'skipped'
+  | 'timed_out'
+  | 'action_required';
+
+/**
+ * Individual CI check run — follows the GitHub Check Runs model.
+ * @see https://docs.github.com/en/rest/checks/runs
+ */
+export interface CICheck {
+  /** Check name (e.g. "Desktop App (Lint, Type-check, Test, Build)") */
+  name: string;
+  /** Execution state of the check */
+  status: CheckRunStatus;
+  /** Result of the check (null when not yet completed) */
+  conclusion: CheckRunConclusion | null;
+  /** URL to check details (GitHub Actions run) */
+  detailsUrl?: string;
+  /** Workflow name */
+  workflowName?: string;
+}
+
+/**
+ * Aggregate CI status derived from all CICheck runs on a PR.
+ * This is a UI-level summary — not a GitHub API type.
  */
 export type PRCIStatus = 'pending' | 'running' | 'success' | 'failure' | 'cancelled';
 
@@ -276,8 +319,10 @@ export interface PullRequest {
   reviewers: string[];
   /** Reviews received */
   reviews: PRReview[];
-  /** CI status */
+  /** Aggregate CI status (worst-case across all checks) */
   ciStatus: PRCIStatus;
+  /** Individual CI check runs */
+  ciChecks: CICheck[];
   /** Whether PR is a draft */
   isDraft: boolean;
   /** Whether PR has conflicts */
@@ -1018,6 +1063,7 @@ export function createPullRequest(
     reviewers: options.reviewers ?? [],
     reviews: options.reviews ?? [],
     ciStatus: options.ciStatus ?? 'pending',
+    ciChecks: options.ciChecks ?? [],
     isDraft: options.isDraft ?? false,
     hasConflicts: options.hasConflicts ?? false,
     commitCount: options.commitCount ?? 1,
