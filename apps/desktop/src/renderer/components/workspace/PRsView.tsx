@@ -1,4 +1,6 @@
 import * as React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import {
   type PRsViewState,
@@ -722,43 +724,12 @@ function checkToDisplayStatus(check: CICheck): PRCIStatus {
 const CICheckRow: React.FC<{ check: CICheck }> = ({ check }) => {
   const checkStatus = checkToDisplayStatus(check);
 
-  const content = (
-    <div
-      className={cn(
-        'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs',
-        check.detailsUrl ? 'hover:bg-base-700 transition-colors cursor-pointer' : ''
-      )}
-    >
+  return (
+    <div className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs">
       <CIStatusIcon status={checkStatus} />
       <span className="flex-1 min-w-0 truncate text-text-secondary">{check.name}</span>
-      {check.detailsUrl && (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 16 16"
-          fill="currentColor"
-          className="h-3 w-3 flex-shrink-0 text-text-muted"
-        >
-          <path d="M8.22 2.97a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042l2.97-2.97H3.75a.75.75 0 0 1 0-1.5h7.44L8.22 4.03a.75.75 0 0 1 0-1.06Z" />
-        </svg>
-      )}
     </div>
   );
-
-  if (check.detailsUrl) {
-    return (
-      <a
-        href={check.detailsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block"
-        title={`Open ${check.name} in browser`}
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return content;
 };
 
 /* ── Detail Panel (right sidebar) ───────────────────────────── */
@@ -935,9 +906,92 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose, containerW
           {pr.body && (
             <div>
               <SectionLabel>Description</SectionLabel>
-              <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
-                {pr.body}
-              </p>
+              <div className="prose-markdown text-sm text-text-secondary leading-relaxed">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ children }) => (
+                      <h1 className="text-base font-semibold text-text-primary mt-3 mb-1.5 first:mt-0">
+                        {children}
+                      </h1>
+                    ),
+                    h2: ({ children }) => (
+                      <h2 className="text-sm font-semibold text-text-primary mt-3 mb-1.5 first:mt-0">
+                        {children}
+                      </h2>
+                    ),
+                    h3: ({ children }) => (
+                      <h3 className="text-sm font-medium text-text-primary mt-2 mb-1 first:mt-0">
+                        {children}
+                      </h3>
+                    ),
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    ul: ({ children }) => (
+                      <ul className="list-disc pl-4 mb-2 space-y-0.5">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="list-decimal pl-4 mb-2 space-y-0.5">{children}</ol>
+                    ),
+                    li: ({ children }) => <li className="text-sm">{children}</li>,
+                    a: ({ href, children }) => (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accent hover:underline"
+                      >
+                        {children}
+                      </a>
+                    ),
+                    code: ({ className, children }) => {
+                      const isBlock = className?.includes('language-');
+                      return isBlock ? (
+                        <pre className="bg-bg-tertiary rounded-md p-3 my-2 overflow-x-auto">
+                          <code className="text-xs text-text-primary font-mono">{children}</code>
+                        </pre>
+                      ) : (
+                        <code className="bg-bg-tertiary rounded px-1.5 py-0.5 text-xs font-mono text-text-primary">
+                          {children}
+                        </code>
+                      );
+                    },
+                    pre: ({ children }) => <>{children}</>,
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-2 border-border-secondary pl-3 my-2 text-text-muted italic">
+                        {children}
+                      </blockquote>
+                    ),
+                    hr: () => <hr className="border-border-primary my-3" />,
+                    table: ({ children }) => (
+                      <div className="overflow-x-auto my-2">
+                        <table className="w-full text-xs border-collapse">{children}</table>
+                      </div>
+                    ),
+                    th: ({ children }) => (
+                      <th className="border border-border-primary px-2 py-1 text-left font-medium bg-bg-tertiary">
+                        {children}
+                      </th>
+                    ),
+                    td: ({ children }) => (
+                      <td className="border border-border-primary px-2 py-1">{children}</td>
+                    ),
+                    input: ({ checked, ...props }) => (
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled
+                        className="mr-1.5 accent-accent"
+                        {...props}
+                      />
+                    ),
+                    img: ({ src, alt }) => (
+                      <img src={src} alt={alt} className="max-w-full rounded my-1" />
+                    ),
+                  }}
+                >
+                  {pr.body}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
 
@@ -1078,6 +1132,7 @@ const PRDetailsPanel: React.FC<PRDetailsPanelProps> = ({ pr, onClose, containerW
           <button
             type="button"
             className="w-full rounded-lg bg-accent-primary px-4 py-2 text-sm font-medium text-base-900 transition-colors hover:bg-accent-primary/90"
+            onClick={() => window.api.openExternal(pr.url)}
           >
             View in Browser
           </button>

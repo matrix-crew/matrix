@@ -343,6 +343,8 @@ export interface PullRequest {
   mergedAt?: Date;
   /** Close date (if closed without merge) */
   closedAt?: Date;
+  /** URL to the PR on GitHub */
+  url: string;
 }
 
 /**
@@ -1074,6 +1076,7 @@ export function createPullRequest(
     updatedAt: options.updatedAt ?? new Date(),
     mergedAt: options.mergedAt,
     closedAt: options.closedAt,
+    url: options.url ?? `https://github.com/${repository.fullName}/pull/${options.number ?? 0}`,
   };
 }
 

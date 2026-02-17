@@ -254,6 +254,7 @@ function transformPR(
     updatedAt: new Date(raw.updatedAt),
     mergedAt: raw.mergedAt ? new Date(raw.mergedAt) : undefined,
     closedAt: raw.closedAt ? new Date(raw.closedAt) : undefined,
+    url: raw.url ?? `https://github.com/${repoKey}/pull/${raw.number}`,
   };
 }
 
