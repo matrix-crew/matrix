@@ -64,7 +64,7 @@ describe('ShortcutProvider', () => {
       </ShortcutProvider>
     );
 
-    expect(screen.getByTestId('shortcut-count').textContent).toBe('21');
+    expect(screen.getByTestId('shortcut-count').textContent).toBe('22');
     expect(screen.getByTestId('override-count').textContent).toBe('0');
     expect(screen.getByTestId('conflict-count').textContent).toBe('0');
   });

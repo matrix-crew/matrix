@@ -205,8 +205,8 @@ describe('shortcut-defaults', () => {
   });
 
   describe('DEFAULT_SHORTCUTS', () => {
-    it('has 21 shortcuts defined (9 tabs + 3 nav + 9 context)', () => {
-      expect(DEFAULT_SHORTCUTS).toHaveLength(21);
+    it('has 22 shortcuts defined (9 tabs + 3 nav + 10 context)', () => {
+      expect(DEFAULT_SHORTCUTS).toHaveLength(22);
     });
 
     it('all actions are covered by categories', () => {

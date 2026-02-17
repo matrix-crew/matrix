@@ -14,6 +14,7 @@ import { PRsView } from '@/components/workspace/PRsView';
 import { IssuesView } from '@/components/workspace/IssuesView';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { MatrixForm, type MatrixFormValues } from '@/components/matrix/MatrixForm';
+import { MatrixView } from '@/components/matrix/MatrixView';
 import { DevToolsModal } from '@/components/devtools/DevToolsModal';
 import { useShortcutAction } from '@/hooks/useShortcutAction';
 import { useShortcuts } from '@/contexts/ShortcutProvider';
@@ -307,6 +308,11 @@ const App: React.FC = () => {
     canSwitchContext
   );
   useShortcutAction(
+    'context-sources',
+    useCallback(() => setActiveContextItem('sources'), []),
+    canSwitchContext
+  );
+  useShortcutAction(
     'context-worktree',
     useCallback(() => setActiveContextItem('worktree'), []),
     canSwitchContext
@@ -364,6 +370,8 @@ const App: React.FC = () => {
       case 'mcp':
         return <MCPControl />;
       // Source
+      case 'sources':
+        return <MatrixView key={activeMatrixId} matrixId={activeMatrixId} />;
       case 'worktree':
         return (
           <div className="flex h-full items-center justify-center text-text-muted">

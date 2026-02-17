@@ -157,6 +157,7 @@ class GitHubClient:
                 "deletions",
                 "changedFiles",
                 "reviewRequests",
+                "url",
             ]
         )
 
