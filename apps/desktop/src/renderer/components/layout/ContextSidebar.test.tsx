@@ -32,6 +32,7 @@ describe('ContextSidebar', () => {
     expect(screen.getByText('Terminal')).toBeInTheDocument();
     expect(screen.getByText('MCP')).toBeInTheDocument();
     // Source group
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Worktree')).toBeInTheDocument();
     expect(screen.getByText('PR')).toBeInTheDocument();
     expect(screen.getByText('Issue')).toBeInTheDocument();
@@ -57,5 +58,8 @@ describe('ContextSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /PR/i }));
     expect(onItemSelect).toHaveBeenCalledWith('pr');
+
+    await user.click(screen.getByRole('button', { name: /Dashboard/i }));
+    expect(onItemSelect).toHaveBeenCalledWith('dashboard');
   });
 });

@@ -63,6 +63,7 @@ const App: React.FC = () => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [activeContextItem, setActiveContextItem] = useState<ContextItemId>('kanban');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingMatrix, setEditingMatrix] = useState<Matrix | null>(null);
   const [isLoading, setIsLoading] = useState(initialMatricesCache === null);
 
   /**
@@ -238,8 +239,42 @@ const App: React.FC = () => {
     [matrices, activeMatrixId]
   );
 
+  /**
+   * Open edit form for a matrix
+   */
+  const handleEditMatrix = useCallback(
+    (id: string) => {
+      const matrix = matrices.find((m) => m.id === id);
+      if (matrix) setEditingMatrix(matrix);
+    },
+    [matrices]
+  );
+
+  /**
+   * Update matrix name via IPC
+   */
+  const handleUpdateMatrix = useCallback(
+    async (values: MatrixFormValues) => {
+      if (!editingMatrix) return;
+
+      const response = await window.api.sendMessage({
+        type: 'matrix-update',
+        data: { id: editingMatrix.id, name: values.name },
+      });
+
+      if (response.success && response.data) {
+        const updated = (response.data as { matrix: Matrix }).matrix;
+        setMatrices((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+        setEditingMatrix(null);
+      } else {
+        throw new Error(response.error || 'Failed to update matrix');
+      }
+    },
+    [editingMatrix]
+  );
+
   // ── Keyboard shortcut registrations ──
-  const noModal = !showGlobalSettings && !showDevTools && !isFormOpen;
+  const noModal = !showGlobalSettings && !showDevTools && !isFormOpen && !editingMatrix;
   const canSwitchContext = !!activeMatrixId && !isHomeActive && noModal;
 
   // Tab shortcuts: ⌘1 = Home, ⌘2–⌘9 = matrix tabs by position, ⌘9 = last tab
@@ -462,6 +497,7 @@ const App: React.FC = () => {
         onSelectHome={handleSelectHome}
         onCreateMatrix={handleOpenCreateForm}
         onCloseMatrix={handleCloseMatrix}
+        onEditMatrix={handleEditMatrix}
         onOpenSettings={handleToggleSettings}
         onOpenDevTools={handleToggleDevTools}
       />
@@ -551,6 +587,25 @@ const App: React.FC = () => {
       {/* Create matrix form modal */}
       {isFormOpen && (
         <FormModal onSubmit={handleCreateMatrix} onCancel={() => setIsFormOpen(false)} />
+      )}
+
+      {/* Edit matrix form modal */}
+      {editingMatrix && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setEditingMatrix(null)}
+        >
+          <div className="w-full max-w-md animate-slide-in" onClick={(e) => e.stopPropagation()}>
+            <MatrixForm
+              mode="edit"
+              matrix={editingMatrix}
+              onSubmit={handleUpdateMatrix}
+              onCancel={() => setEditingMatrix(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
