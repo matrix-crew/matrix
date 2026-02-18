@@ -192,14 +192,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ matrixId, classNam
 
   return (
     <div className={cn('flex h-full flex-col overflow-hidden', className)}>
-      {/* Matrix header */}
-      <div className="mb-4 flex items-center rounded-lg border border-border-default bg-surface-raised p-4">
-        <h2 className="text-lg font-semibold text-text-primary">{matrix.name}</h2>
-        <span className="ml-3 text-sm text-text-secondary">
-          {sources.length} source{sources.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
       {/* GitHub setup prompt (inline, not full-page) */}
       {sourceIds.length > 0 && (!ghConnected || !hasCheckedOnce) && (
         <div className="mb-4">
