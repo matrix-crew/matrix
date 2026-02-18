@@ -148,9 +148,9 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   },
   // Context sidebar — Source
   {
-    id: 'context-sources',
-    label: 'Sources',
-    description: 'Switch to Sources context',
+    id: 'context-dashboard',
+    label: 'Dashboard',
+    description: 'Switch to Dashboard context',
     category: 'context',
     defaultBinding: { modifiers: ['meta'], key: 's' },
   },
@@ -200,7 +200,7 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       'context-ctx',
       'context-console',
       'context-mcp',
-      'context-sources',
+      'context-dashboard',
       'context-worktree',
       'context-pr',
       'context-issue',

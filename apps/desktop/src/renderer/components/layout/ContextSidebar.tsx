@@ -7,7 +7,7 @@ import {
   Brain,
   Terminal,
   Zap,
-  FolderOpen,
+  LayoutGrid,
   GitFork,
   GitPullRequest,
   CircleDot,
@@ -22,7 +22,7 @@ export type ContextItemId =
   | 'ctx'
   | 'console'
   | 'mcp'
-  | 'sources'
+  | 'dashboard'
   | 'worktree'
   | 'pr'
   | 'issue';
@@ -90,10 +90,10 @@ const sections: SidebarSection[] = [
     title: 'Source',
     items: [
       {
-        id: 'sources',
-        label: 'Sources',
-        icon: <FolderOpen className="size-4" />,
-        actionId: 'context-sources',
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: <LayoutGrid className="size-4" />,
+        actionId: 'context-dashboard',
       },
       {
         id: 'worktree',
