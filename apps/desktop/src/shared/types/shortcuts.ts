@@ -31,7 +31,7 @@ export type ShortcutActionId =
   | 'context-console'
   | 'context-mcp'
   // Context sidebar — Source
-  | 'context-sources'
+  | 'context-dashboard'
   | 'context-worktree'
   | 'context-pr'
   | 'context-issue';

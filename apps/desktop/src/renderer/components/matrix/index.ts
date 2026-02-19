@@ -4,11 +4,13 @@
  * Re-exports matrix page components and their variants for easy importing.
  */
 
-// Export main MatrixView component with its variants
-export { MatrixView, actionButtonVariants } from './MatrixView';
+// Export DashboardView component
+export { DashboardView } from './DashboardView';
+export type { DashboardViewProps } from './DashboardView';
 
-// Export MatrixView prop types
-export type { MatrixViewProps } from './MatrixView';
+// Export DashboardSourceCard component
+export { DashboardSourceCard } from './DashboardSourceCard';
+export type { DashboardSourceCardProps } from './DashboardSourceCard';
 
 // Export MatrixList component with its variants
 export { MatrixList, matrixItemVariants } from './MatrixList';

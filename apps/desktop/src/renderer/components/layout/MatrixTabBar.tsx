@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, X, Home, Settings, Wrench } from 'lucide-react';
+import { Plus, X, Home, Settings, Wrench, Settings2 } from 'lucide-react';
 import type { Matrix } from '@shared/types/matrix';
 
 export interface MatrixTabBarProps {
@@ -13,6 +13,7 @@ export interface MatrixTabBarProps {
   onSelectHome?: () => void;
   onCreateMatrix: () => void;
   onCloseMatrix: (id: string) => void;
+  onEditMatrix?: (id: string) => void;
   onOpenSettings?: () => void;
   onOpenDevTools?: () => void;
   className?: string;
@@ -28,6 +29,7 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
   onSelectHome,
   onCreateMatrix,
   onCloseMatrix,
+  onEditMatrix,
   onOpenSettings,
   onOpenDevTools,
   className,
@@ -71,6 +73,31 @@ export const MatrixTabBar: React.FC<MatrixTabBarProps> = ({
               )}
             >
               <span className="truncate">{matrix.name}</span>
+              {onEditMatrix && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditMatrix(matrix.id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onEditMatrix(matrix.id);
+                    }
+                  }}
+                  className={cn(
+                    'flex-shrink-0 rounded p-0.5 transition-colors',
+                    isActive
+                      ? 'text-text-muted hover:bg-base-400 hover:text-text-primary'
+                      : 'text-transparent group-hover:text-text-muted group-hover:hover:bg-base-500 group-hover:hover:text-text-primary'
+                  )}
+                  aria-label={`Edit ${matrix.name}`}
+                >
+                  <Settings2 className="size-3" />
+                </span>
+              )}
               <span
                 role="button"
                 tabIndex={0}

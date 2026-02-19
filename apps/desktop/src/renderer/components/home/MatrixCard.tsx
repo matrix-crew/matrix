@@ -46,7 +46,7 @@ export const MatrixCard: React.FC<MatrixCardProps> = ({
       }}
       onDoubleClick={onDoubleClick}
       className={cn(
-        'flex flex-col rounded-lg border p-5 text-left transition-all',
+        'flex min-w-0 flex-col overflow-hidden rounded-lg border p-5 text-left transition-all',
         isSelected
           ? 'border-accent-lime bg-accent-lime/5 ring-1 ring-accent-lime/20'
           : 'border-border-default bg-surface-raised hover:border-base-400 hover:bg-base-700',
@@ -62,23 +62,22 @@ export const MatrixCard: React.FC<MatrixCardProps> = ({
         </p>
       </div>
 
-      {/* Source sub-cards */}
+      {/* Sources */}
       {sources.length > 0 ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {sources.slice(0, 3).map((source) => (
             <div
               key={source.id}
-              className="flex items-start gap-2.5 rounded-md border border-border-subtle bg-base-800 px-3 py-2"
+              className="flex max-w-full items-center gap-1.5 rounded-md border border-border-subtle bg-base-800 px-2 py-1"
             >
-              <FolderGit2 className="mt-0.5 size-3.5 flex-shrink-0 text-text-muted" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-text-secondary">{source.name}</p>
-                <p className="truncate font-mono text-[10px] text-text-muted">{source.path}</p>
-              </div>
+              <FolderGit2 className="size-3 flex-shrink-0 text-text-muted" />
+              <span className="truncate text-xs text-text-secondary">{source.name}</span>
             </div>
           ))}
           {sources.length > 3 && (
-            <p className="text-center text-[10px] text-text-muted">+{sources.length - 3} more</p>
+            <span className="self-center text-[10px] text-text-muted">
+              +{sources.length - 3} more
+            </span>
           )}
         </div>
       ) : (
